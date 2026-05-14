@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Freshify",
+    "slug": "freshify",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#2ECC71"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.freshify.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Freshify needs camera access to scan food products",
+        "NSPhotoLibraryUsageDescription": "Freshify needs photo library access to upload product images"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#2ECC71"
+      },
+      "package": "com.freshify.app",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      ["expo-camera", { "cameraPermission": "Allow Freshify to access your camera" }],
+      ["expo-notifications", {
+        "icon": "./src/assets/icon.png",
+        "color": "#2ECC71"
+      }]
+    ]
+  }
+}
