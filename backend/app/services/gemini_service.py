@@ -17,7 +17,12 @@ def analyze_product_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> 
         response = chat(
             model=VISION_MODEL,
             messages=[{'role': 'user', 'content': prompt, 'images': [image_bytes]}],
-            format='json'
+            format='json',
+            keep_alive=-1,
+            options={
+                'num_gpu': 42,
+                'num_ctx': 2048
+            }
         )
         return json.loads(response['message']['content'])
     except Exception:
@@ -54,7 +59,12 @@ def generate_recipes(products: list[dict], include_grocery: bool = False) -> dic
         response = chat(
             model=TEXT_MODEL,
             messages=[{'role': 'user', 'content': prompt}],
-            format='json'
+            format='json',
+            keep_alive=-1,
+            options={
+                'num_gpu': 99,
+                'num_ctx': 4096
+            }
         )
         return json.loads(response['message']['content'])
     except Exception:
@@ -83,7 +93,11 @@ def generate_diet_recommendations(consumed_data: list[dict]) -> dict:
         response = chat(
             model=TEXT_MODEL,
             messages=[{'role': 'user', 'content': prompt}],
-            format='json'
+            format='json',
+            keep_alive=-1,
+            options={
+                'num_gpu': 99
+            }
         )
         return json.loads(response['message']['content'])
     except Exception:
