@@ -7,7 +7,7 @@ import uuid
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
-    name: Optional[str] = None
+    name: str
 
 
 class UserLogin(BaseModel):
@@ -17,12 +17,14 @@ class UserLogin(BaseModel):
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
 
 
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
-    name: Optional[str] = None
+    name: str
     created_at: datetime
 
     class Config:

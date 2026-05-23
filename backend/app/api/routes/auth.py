@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.schemas.user import UserCreate, UserLogin, UserResponse, UserUpdate, TokenResponse
-from app.services.auth_service import register_user, authenticate_user, create_access_token
+from app.services.auth_service import register_user, authenticate_user, create_access_token, update_user
 from app.utils.dependencies import get_current_user
 from app.db.models import User
 
@@ -30,8 +30,5 @@ def get_me(current_user: User = Depends(get_current_user)):
 
 @router.put("/me", response_model=UserResponse)
 def update_me(data: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if data.name is not None:
-        current_user.name = data.name
-    db.commit()
-    db.refresh(current_user)
-    return current_user
+    user = update_user(db, current_user, data)
+    return user
