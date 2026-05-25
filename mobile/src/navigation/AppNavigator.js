@@ -18,6 +18,7 @@ import AnalyticsScreen from '../screens/AnalyticsScreen';
 import RecipesScreen from '../screens/RecipesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import OnboardingStack from '../screens/OnboardingStack';
+import HistoryScreen from '../screens/HistoryScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -77,6 +78,7 @@ export default function AppNavigator() {
             <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: 'Додати продукт' }} />
             <Stack.Screen name="Camera" component={CameraScreen} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Деталі' }} />
+            <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Історія споживання' }} />
           </>
         )}
       </Stack.Navigator>

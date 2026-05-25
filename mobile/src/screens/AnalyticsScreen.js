@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ScrollView, View, Text, StyleSheet, Dimensions, ActivityIndicator, RefreshControl } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { analyticsAPI } from '../services/api';
@@ -7,10 +7,9 @@ import { COLORS } from '../utils/constants';
 
 const screenWidth = Dimensions.get('window').width;
 
-// Генеруємо кольори для діаграми
 const chartColors = ['#2ECC71', '#3498DB', '#9B59B6', '#E67E22', '#E74C3C', '#1ABC9C', '#F1C40F'];
 
-export default function AnalyticsScreen() {
+export default function AnalyticsScreen({ navigation }) {
   const [data, setData] = useState(null);
   const [aiRecs, setAiRecs] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,14 +57,23 @@ export default function AnalyticsScreen() {
       refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
     >
       <View style={styles.statsRow}>
-        <View style={styles.statCard}>
+        <TouchableOpacity 
+          style={styles.statCard}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Холодильник')}
+        >
           <Text style={styles.statValue}>{data?.total_products_in_fridge || 0}</Text>
           <Text style={styles.statLabel}>Продуктів вдома</Text>
-        </View>
-        <View style={styles.statCard}>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.statCard}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('History')}
+        >
           <Text style={styles.statValue}>{data?.consumed_products?.length || 0}</Text>
           <Text style={styles.statLabel}>Спожито за місяць</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
