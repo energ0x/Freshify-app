@@ -61,8 +61,10 @@ def update_user(db: Session, user: User, data: UserUpdate) -> User:
     if data.name is not None:
         user.name = data.name
         
-    if data.password is not None:
-        user.password_hash = hash_password(data.password)
+    if data.new_password:
+        if not data.current_password or not verify_password(data.current_password, user.password_hash):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неправильний поточний пароль")
+        user.password_hash = hash_password(data.new_password)
         
     db.commit()
     db.refresh(user)
