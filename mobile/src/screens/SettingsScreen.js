@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Switch, Alert, Linking } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Switch, Alert, Linking, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../store/authStore';
 import { settingsAPI } from '../services/api';
@@ -7,13 +7,25 @@ import CustomButton from '../components/CustomButton';
 import { COLORS, CHARITY } from '../utils/constants';
 
 export default function SettingsScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateProfile } = useAuthStore();
   const [donationSettings, setDonationSettings] = useState({ auto_donate: false });
   const [saving, setSaving] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', email: '', current_password: '', new_password: '', confirmPassword: '' });
+  const [editErrors, setEditErrors] = useState({});
 
   useEffect(() => {
     loadSettings();
-  }, []);
+    if (user) {
+      setEditForm({
+        name: user.name || '',
+        email: user.email || '',
+        current_password: '',
+        new_password: '',
+        confirmPassword: ''
+      });
+    }
+  }, [user]);
 
   const loadSettings = async () => {
     try {
@@ -34,6 +46,43 @@ export default function SettingsScreen() {
     }
   };
 
+  const validateEditForm = () => {
+    const errors = {};
+    if (editForm.name.trim().length < 2) errors.name = 'Ім\'я повинно мати мінімум 2 символи';
+    if (editForm.email.trim().length === 0) errors.email = 'Email не може бути пустим';
+    if (!editForm.email.includes('@')) errors.email = 'Невалідний email';
+    if (editForm.new_password && editForm.new_password.length < 6) errors.new_password = 'Пароль повинен мати мінімум 6 символів';
+    if (editForm.new_password && !editForm.current_password) errors.current_password = 'Введіть поточний пароль';
+    if (editForm.new_password !== editForm.confirmPassword) errors.confirmPassword = 'Паролі не збігаються';
+    setEditErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSaveProfile = async () => {
+    if (!validateEditForm()) return;
+
+    setSaving(true);
+    const updateData = {
+      name: editForm.name.trim(),
+      email: editForm.email.trim(),
+      ...(editForm.new_password && { 
+        current_password: editForm.current_password,
+        new_password: editForm.new_password 
+      })
+    };
+
+    const res = await updateProfile(updateData);
+    setSaving(false);
+
+    if (res.success) {
+      Alert.alert('Успіх', 'Профіль оновлено');
+      setEditForm(prev => ({ ...prev, current_password: '', new_password: '', confirmPassword: '' }));
+      setEditModalVisible(false);
+    } else {
+      Alert.alert('Помилка', res.error || 'Не вдалося оновити профіль');
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert('Вихід', 'Ви впевнені, що хочете вийти з акаунту?', [
       { text: 'Скасувати', style: 'cancel' },
@@ -48,62 +97,180 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.profileSection}>
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</Text>
+    <>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.profileSection}>
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</Text>
+          </View>
+          <Text style={styles.userName}>{user?.name || 'Користувач'}</Text>
+          <Text style={styles.userEmail}>{user?.email}</Text>
+          <TouchableOpacity
+            style={styles.editProfileButton}
+            onPress={() => setEditModalVisible(true)}
+          >
+            <Ionicons name="pencil" size={16} color={COLORS.primary} />
+            <Text style={styles.editProfileText}>Редагувати профіль</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.userName}>{user?.name || 'Користувач'}</Text>
-        <Text style={styles.userEmail}>{user?.email}</Text>
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Відповідальне споживання</Text>
-        <View style={styles.card}>
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Ionicons name="heart" size={24} color={COLORS.danger} />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Авто-донат за зіпсовані продукти</Text>
-                <Text style={styles.settingDesc}>
-                  Якщо ви не встигли спожити продукт, застосунок запропонує перерахувати його вартість (або символічну суму) на ЗСУ.
-                </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Відповідальне споживання</Text>
+          <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Ionicons name="heart" size={24} color={COLORS.danger} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingTitle}>Авто-донат за зіпсовані продукти</Text>
+                  <Text style={styles.settingDesc}>
+                    Якщо ви не встигли спожити продукт, застосунок запропонує перерахувати його вартість (або символічну суму) на ЗСУ.
+                  </Text>
+                </View>
+              </View>
+              <Switch
+                value={donationSettings.auto_donate}
+                onValueChange={handleToggleDonation}
+                trackColor={{ false: COLORS.border, true: COLORS.primary }}
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Ionicons name="globe-outline" size={24} color={COLORS.secondary} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingTitle}>Фонд за замовчуванням</Text>
+                  <Text style={styles.settingDesc} onPress={openCharityLink} style={[styles.settingDesc, { color: COLORS.secondary, textDecorationLine: 'underline' }]}>
+                    {CHARITY.name}
+                  </Text>
+                </View>
               </View>
             </View>
-            <Switch
-              value={donationSettings.auto_donate}
-              onValueChange={handleToggleDonation}
-              trackColor={{ false: COLORS.border, true: COLORS.primary }}
-            />
           </View>
+        </View>
 
-          <View style={styles.divider} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Акаунт</Text>
+          <CustomButton
+            title="Вийти з акаунту"
+            variant="outline"
+            onPress={handleLogout}
+            style={styles.logoutButton}
+            textStyle={{ color: COLORS.danger }}
+          />
+        </View>
+      </ScrollView>
 
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Ionicons name="globe-outline" size={24} color={COLORS.secondary} />
-              <View style={styles.settingTextContainer}>
-                <Text style={styles.settingTitle}>Фонд за замовчуванням</Text>
-                <Text style={styles.settingDesc} onPress={openCharityLink} style={[styles.settingDesc, { color: COLORS.secondary, textDecorationLine: 'underline' }]}>
-                  {CHARITY.name}
-                </Text>
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <Ionicons name="close" size={28} color={COLORS.text} />
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Редагувати профіль</Text>
+                <View style={{ width: 28 }} />
+              </View>
+
+              <ScrollView style={styles.modalForm}>
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Ім'я</Text>
+                  <TextInput
+                    style={[styles.input, editErrors.name && styles.inputError]}
+                    placeholder="Введіть ім'я"
+                    value={editForm.name}
+                    onChangeText={(text) => setEditForm(prev => ({ ...prev, name: text }))}
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                  {editErrors.name && <Text style={styles.errorText}>{editErrors.name}</Text>}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Email</Text>
+                  <TextInput
+                    style={[styles.input, editErrors.email && styles.inputError]}
+                    placeholder="Введіть email"
+                    value={editForm.email}
+                    onChangeText={(text) => setEditForm(prev => ({ ...prev, email: text }))}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                  {editErrors.email && <Text style={styles.errorText}>{editErrors.email}</Text>}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Поточний пароль</Text>
+                  <TextInput
+                    style={[styles.input, editErrors.current_password && styles.inputError]}
+                    placeholder="Введіть поточний пароль"
+                    value={editForm.current_password}
+                    onChangeText={(text) => setEditForm(prev => ({ ...prev, current_password: text }))}
+                    secureTextEntry={true}
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                  {editErrors.current_password && <Text style={styles.errorText}>{editErrors.current_password}</Text>}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.formLabel}>Новий пароль (опціонально)</Text>
+                  <TextInput
+                    style={[styles.input, editErrors.new_password && styles.inputError]}
+                    placeholder="Залишите пустим, щоб не змінювати"
+                    value={editForm.new_password}
+                    onChangeText={(text) => setEditForm(prev => ({ ...prev, new_password: text }))}
+                    secureTextEntry={true}
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                  {editErrors.new_password && <Text style={styles.errorText}>{editErrors.new_password}</Text>}
+                </View>
+
+                {editForm.new_password !== '' && (
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Підтвердіть пароль</Text>
+                    <TextInput
+                      style={[styles.input, editErrors.confirmPassword && styles.inputError]}
+                      placeholder="Повторіть пароль"
+                      value={editForm.confirmPassword}
+                      onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
+                      secureTextEntry={true}
+                      placeholderTextColor={COLORS.textLight}
+                    />
+                    {editErrors.confirmPassword && <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>}
+                  </View>
+                )}
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <CustomButton
+                  title="Скасувати"
+                  variant="outline"
+                  onPress={() => setEditModalVisible(false)}
+                  style={styles.modalButton}
+                  disabled={saving}
+                />
+                <CustomButton
+                  title="Зберегти"
+                  onPress={handleSaveProfile}
+                  loading={saving}
+                  style={styles.modalButton}
+                />
               </View>
             </View>
           </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Акаунт</Text>
-        <CustomButton
-          title="Вийти з акаунту"
-          variant="outline"
-          onPress={handleLogout}
-          style={styles.logoutButton}
-          textStyle={{ color: COLORS.danger }}
-        />
-      </View>
-    </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 }
 
@@ -114,7 +281,21 @@ const styles = StyleSheet.create({
   avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   avatarText: { fontSize: 36, color: '#fff', fontWeight: 'bold' },
   userName: { fontSize: 22, fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
-  userEmail: { fontSize: 16, color: COLORS.textLight },
+  userEmail: { fontSize: 16, color: COLORS.textLight, marginBottom: 12 },
+  editProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: `${COLORS.primary}15`,
+  },
+  editProfileText: {
+    marginLeft: 6,
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textLight, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 },
   card: { backgroundColor: COLORS.surface, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2, padding: 16 },
@@ -125,4 +306,73 @@ const styles = StyleSheet.create({
   settingDesc: { fontSize: 14, color: COLORS.textLight, lineHeight: 20 },
   divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 16 },
   logoutButton: { borderColor: COLORS.danger, borderWidth: 1, backgroundColor: 'transparent' },
+
+  // Modal styles
+  modalContainer: { flex: 1 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 30,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  modalForm: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  formGroup: {
+    marginBottom: 18,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  inputError: {
+    borderColor: COLORS.danger,
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 12,
+    marginTop: 6,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
+  modalButton: {
+    flex: 1,
+  },
 });

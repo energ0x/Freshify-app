@@ -50,3 +50,18 @@ class ProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ConsumedProductResponse(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    product_id: Optional[uuid.UUID] = None
+    product_name: str
+    category: Optional[str] = None
+    quantity: float
+    unit: str
+    consumed_at: datetime
+
+    class Config:
+        from_attributes = True
+

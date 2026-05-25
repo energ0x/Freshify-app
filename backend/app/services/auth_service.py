@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.db.models import User
 from app.core.config import get_settings
+from app.schemas.user import UserUpdate
 
 settings = get_settings()
 
@@ -33,7 +34,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
 
-def register_user(db: Session, email: str, password: str, name: Optional[str] = None) -> User:
+def register_user(db: Session, email: str, password: str, name: str) -> User:
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
     
@@ -48,4 +49,23 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+    return user
+
+
+def update_user(db: Session, user: User, data: UserUpdate) -> User:
+    if data.email is not None and data.email != user.email:
+        if db.query(User).filter(User.email == data.email).first():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        user.email = data.email
+    
+    if data.name is not None:
+        user.name = data.name
+        
+    if data.new_password:
+        if not data.current_password or not verify_password(data.current_password, user.password_hash):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Неправильний поточний пароль")
+        user.password_hash = hash_password(data.new_password)
+        
+    db.commit()
+    db.refresh(user)
     return user

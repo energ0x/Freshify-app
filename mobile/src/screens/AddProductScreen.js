@@ -16,6 +16,7 @@ export default function AddProductScreen({ navigation, route }) {
     quantity: '1',
     unit: UNITS[0],
     expiry_date: new Date(),
+    notes: '',
   });
 
   // Обробка даних від камери (якщо вони прийшли через параметри навігації)
@@ -109,6 +110,19 @@ export default function AddProductScreen({ navigation, route }) {
         onDateChange={(date) => setForm({ ...form, expiry_date: date })}
       />
 
+      <View style={styles.section}>
+        <Text style={styles.label}>Нотатки</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={form.notes}
+          onChangeText={(val) => setForm({ ...form, notes: val })}
+          placeholder="Наприклад: Зберігати в холодильнику..."
+          multiline={true}
+          numberOfLines={3}
+          textAlignVertical="top"
+        />
+      </View>
+
       <CustomButton
         title="Зберегти"
         onPress={handleSave}
@@ -127,6 +141,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row' },
   label: { fontSize: 14, fontWeight: '500', color: COLORS.text, marginBottom: 8 },
   input: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 16 },
+  textArea: { minHeight: 80 },
   pickerContainer: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' },
   saveButton: { marginTop: 10 },
 });
