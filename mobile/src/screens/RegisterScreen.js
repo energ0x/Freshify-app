@@ -21,12 +21,6 @@ export default function RegisterScreen({ navigation }) {
       <Text style={styles.title}>Створити акаунт</Text>
       <TextInput
         style={styles.input}
-        placeholder="Ім'я (необов'язково)"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
         placeholder="Email *"
         value={email}
         onChangeText={setEmail}
