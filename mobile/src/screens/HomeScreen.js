@@ -3,42 +3,43 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableO
 import { Ionicons } from '@expo/vector-icons';
 import useProductStore from '../store/productStore';
 import ProductCard from '../components/ProductCard';
-import { COLORS, CATEGORIES } from '../utils/constants';
-import { getDaysUntilExpiry } from '../utils/dateHelpers';
+import { COLORS, CATEGORIES } from '../utils/constants'; // Імпортуємо ваші категорії
+import { getDaysUntilExpiry } from '../utils/dateHelpers'; // Імпортуємо ваш хелпер дат
 
 export default function HomeScreen({ navigation }) {
-  const { products, consumedProducts, fetchProducts, fetchConsumedProducts, isLoading } = useProductStore();
+  const { products, fetchProducts } = useProductStore();
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('products');
   const [refreshing, setRefreshing] = useState(false);
 
+  // Стани фільтрації та сортування
   const [selectedCategory, setSelectedCategory] = useState('Всі');
-  const [sortBy, setSortBy] = useState(null);
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortBy, setSortBy] = useState(null); // за замовчуванням null (без сортування)
+  const [sortDirection, setSortDirection] = useState('asc'); // 'asc' або 'desc'
   const [showFilterModal, setShowFilterModal] = useState(false);
 
   const loadData = useCallback(async () => {
     setRefreshing(true);
     await fetchProducts();
-    if (fetchConsumedProducts) {
-      await fetchConsumedProducts();
-    }
     setRefreshing(false);
-  }, [fetchProducts, fetchConsumedProducts]);
+  }, [fetchProducts]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  // Функція для перемикання типу сортування та його напрямку
   const handleSortPress = (type) => {
     if (sortBy === type) {
+      // Якщо натиснули на той самий тип — змінюємо напрямок
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
+      // Якщо на новий — ставимо його за зростанням
       setSortBy(type);
       setSortDirection('asc');
     }
   };
 
+  // Функція швидкого скидання всіх фільтрів та сортувань
   const resetFilters = () => {
     setSelectedCategory('Всі');
     setSortBy(null);
@@ -46,8 +47,10 @@ export default function HomeScreen({ navigation }) {
     setSearch('');
   };
 
+  // Чи активований зараз хоча б один фільтр або сортування
   const isFilterActive = selectedCategory !== 'Всі' || sortBy !== null || search !== '';
 
+  // Обробка масиву активних продуктів (Фільтрація + Реверсивне сортування)
   const filteredAndSortedProducts = products
     .filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -55,12 +58,14 @@ export default function HomeScreen({ navigation }) {
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
-      if (!sortBy) return 0;
+      if (!sortBy) return 0; // Якщо сортування не обрано — залишаємо порядок від API
+
       let comparison = 0;
 
       if (sortBy === 'alphabet') {
         comparison = a.name.localeCompare(b.name, 'uk-UA');
       } else if (sortBy === 'expiry') {
+        // Розрахунок залишку днів
         const daysA = getDaysUntilExpiry(a.expiry_date || a.expiry) ?? 9999;
         const daysB = getDaysUntilExpiry(b.expiry_date || b.expiry) ?? 9999;
         comparison = daysA - daysB;
@@ -68,19 +73,17 @@ export default function HomeScreen({ navigation }) {
         comparison = (a.quantity || 0) - (b.quantity || 0);
       }
 
+      // Якщо напрямок 'desc' (за спаданням) — перевертаємо результат
       return sortDirection === 'asc' ? comparison : -comparison;
     });
 
-  const filteredConsumed = (consumedProducts || []).filter(p => {
-    const nameToSearch = p.product_name || p.name || '';
-    return nameToSearch.toLowerCase().includes(search.toLowerCase());
-  });
-
+  // Хелпер для відображення стрілочки поруч із активним сортуванням
   const renderSortArrow = (type) => {
     if (sortBy !== type) return null;
     return sortDirection === 'asc' ? ' ↑' : ' ↓';
   };
 
+  // Рендер картки для продукту
   const renderProductItem = ({ item }) => (
     <ProductCard
       item={item}
@@ -88,61 +91,16 @@ export default function HomeScreen({ navigation }) {
     />
   );
 
-  const renderConsumedItem = ({ item }) => (
-    <View style={styles.consumedItemContainer}>
-      <View style={styles.consumedProductInfo}>
-        <Text style={styles.consumedProductName}>{item.product_name || item.name}</Text>
-        <Text style={styles.consumedProductCategory}>
-          {item.category && `Категорія: ${item.category}`}
-        </Text>
-        {item.consumed_at && (
-          <Text style={styles.consumedProductDate}>
-            {new Date(item.consumed_at).toLocaleDateString('uk-UA', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </Text>
-        )}
-      </View>
-      <View style={styles.consumedQuantity}>
-        <Text style={styles.quantityValue}>{item.quantity}</Text>
-        <Text style={styles.quantityUnit}>{item.unit || ''}</Text>
-      </View>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        {/* Вкладки: Продукти / Історія */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'products' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('products')}
-          >
-            <Ionicons name="fast-food-outline" size={20} color={activeTab === 'products' ? COLORS.primary : COLORS.textLight} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'products' && styles.tabTextActive]}>Продукти</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'history' && styles.tabButtonActive]}
-            onPress={() => setActiveTab('history')}
-          >
-            <Ionicons name="time" size={20} color={activeTab === 'history' ? COLORS.primary : COLORS.textLight} style={styles.tabIcon} />
-            <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>Історія</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Панель пошуку та кнопка модалки */}
+        {/* Панель пошуку та кнопка модалки фільтрів */}
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <Ionicons name="search-outline" size={20} color={COLORS.textLight} />
             <TextInput
               style={styles.searchInput}
-              placeholder={activeTab === 'products' ? "Пошук продуктів..." : "Пошук у історії..."}
+              placeholder="Пошук продуктів..."
               value={search}
               onChangeText={setSearch}
             />
@@ -153,22 +111,20 @@ export default function HomeScreen({ navigation }) {
             )}
           </View>
           
-          {activeTab === 'products' && (
-            <TouchableOpacity 
-              style={[styles.filterButton, (selectedCategory !== 'Всі' || sortBy !== null) && styles.filterButtonActive]} 
-              onPress={() => setShowFilterModal(true)}
-            >
-              <Ionicons 
-                name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"} 
-                size={24} 
-                color={selectedCategory !== 'Всі' || sortBy !== null ? '#fff' : COLORS.primary} 
-              />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity 
+            style={[styles.filterButton, (selectedCategory !== 'Всі' || sortBy !== null) && styles.filterButtonActive]} 
+            onPress={() => setShowFilterModal(true)}
+          >
+            <Ionicons 
+              name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"} 
+              size={24} 
+              color={selectedCategory !== 'Всі' || sortBy !== null ? '#fff' : COLORS.primary} 
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Швидке скасування фільтрів під пошуком */}
-        {activeTab === 'products' && isFilterActive && (
+        {isFilterActive && (
           <View style={styles.activeFiltersRow}>
             <Text style={styles.activeFiltersText}>
               Застосовано фільтри {sortBy ? `(сортування${renderSortArrow(sortBy)})` : ''}
@@ -181,7 +137,7 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {/* Кнопка "Ідеї для рецептів" */}
-        {activeTab === 'products' && products.length > 0 && (
+        {products.length > 0 && (
           <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Рецепти')}>
             <Ionicons name="restaurant-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.recipesIdeaText}>Що приготувати з цих продуктів?</Text>
@@ -189,24 +145,20 @@ export default function HomeScreen({ navigation }) {
         )}
       </View>
 
-      {/* Список контенту */}
+      {/* Список продуктів */}
       <FlatList
-        data={activeTab === 'products' ? filteredAndSortedProducts : filteredConsumed}
+        data={filteredAndSortedProducts}
         keyExtractor={(item) => item.id}
-        renderItem={activeTab === 'products' ? renderProductItem : renderConsumedItem}
+        renderItem={renderProductItem}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons 
-              name={activeTab === 'products' ? "fast-food-outline" : "checkmark-circle-outline"} 
-              size={64} 
-              color={COLORS.border} 
-            />
+            <Ionicons name="fast-food-outline" size={64} color={COLORS.border} />
             <Text style={styles.emptyText}>Нічого не знайдено</Text>
-            {isFilterActive && activeTab === 'products' && (
+            {isFilterActive && (
               <TouchableOpacity style={styles.emptyResetButton} onPress={resetFilters}>
                 <Text style={styles.emptyResetButtonText}>Скасувати фільтри</Text>
               </TouchableOpacity>
@@ -215,12 +167,10 @@ export default function HomeScreen({ navigation }) {
         }
       />
 
-      {/* FAB Кнопка створення */}
-      {activeTab === 'products' && (
-        <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddProduct')}>
-          <Ionicons name="add" size={30} color="#fff" />
-        </TouchableOpacity>
-      )}
+      {/* FAB Кнопка створення продукту */}
+      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddProduct')}>
+        <Ionicons name="add" size={30} color="#fff" />
+      </TouchableOpacity>
 
       {/* Нижня модалка конфігурації фільтрів */}
       <Modal animationType="slide" transparent={true} visible={showFilterModal} onRequestClose={() => setShowFilterModal(false)}>
@@ -304,16 +254,7 @@ export default function HomeScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  tabContainer: {
-    flexDirection: 'row', paddingHorizontal: 16, paddingTop: 16, marginBottom: 12,
-    borderBottomWidth: 2, borderBottomColor: COLORS.border,
-  },
-  tabButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingBottom: 12, marginHorizontal: 8 },
-  tabButtonActive: { borderBottomWidth: 3, borderBottomColor: COLORS.primary },
-  tabIcon: { marginRight: 6 },
-  tabText: { fontSize: 14, color: COLORS.textLight, fontWeight: '500' },
-  tabTextActive: { color: COLORS.primary, fontWeight: '700' },
+  header: { paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingTop: 16 },
   searchRow: { flexDirection: 'row', alignItems: 'center', paddingRight: 16 },
   searchContainer: {
     flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background,
@@ -348,18 +289,6 @@ const styles = StyleSheet.create({
     width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center',
     elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3,
   },
-  consumedItemContainer: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: COLORS.surface, padding: 14, borderRadius: 12, marginBottom: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2,
-  },
-  consumedProductInfo: { flex: 1 },
-  consumedProductName: { fontSize: 16, fontWeight: '600', color: COLORS.text, marginBottom: 4 },
-  consumedProductCategory: { fontSize: 12, color: COLORS.textLight, marginBottom: 2 },
-  consumedProductDate: { fontSize: 11, color: COLORS.textLight },
-  consumedQuantity: { alignItems: 'center', marginLeft: 12 },
-  quantityValue: { fontSize: 18, fontWeight: '700', color: COLORS.success },
-  quantityUnit: { fontSize: 12, color: COLORS.textLight },
   
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '80%' },
