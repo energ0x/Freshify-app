@@ -16,7 +16,7 @@ def get_products(
     sort_order: str = "desc",
 ) -> List[Product]:
     query = db.query(Product).filter(
-        and_(Product.user_id == user_id, Product.is_active == True)
+        and_(Product.user_id == user_id, Product.is_active == True, Product.quantity > 0)
     )
     if category:
         query = query.filter(Product.category == category)
@@ -104,3 +104,11 @@ def get_expired_products(db: Session, user_id: uuid.UUID) -> List[Product]:
             Product.expiry_date < date.today(),
         )
     ).all()
+
+
+def get_consumed_products(db: Session, user_id: uuid.UUID, limit: int = 100) -> List[ConsumedProduct]:
+    """Get consumption history for a user sorted by consumed_at descending."""
+    return db.query(ConsumedProduct).filter(
+        ConsumedProduct.user_id == user_id
+    ).order_by(ConsumedProduct.consumed_at.desc()).limit(limit).all()
+

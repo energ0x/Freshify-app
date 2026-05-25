@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, List
 from app.db.database import get_db
 from app.db.models import User
-from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductConsumeRequest
+from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductConsumeRequest, ConsumedProductResponse
 from app.services import product_service
 from app.utils.dependencies import get_current_user
 
@@ -47,6 +47,15 @@ def get_expired(
     return product_service.get_expired_products(db, current_user.id)
 
 
+@router.get("/history/consumed", response_model=List[ConsumedProductResponse])
+def get_consumed_history(
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return product_service.get_consumed_products(db, current_user.id, limit)
+
+
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(
     product_id: str,
@@ -87,3 +96,5 @@ def consume_product(
 ):
     import uuid
     return product_service.consume_product(db, uuid.UUID(product_id), data.quantity, current_user.id)
+
+

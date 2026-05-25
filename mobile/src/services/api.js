@@ -43,6 +43,7 @@ export const productsAPI = {
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
   consume: (id, quantity) => api.post(`/products/${id}/consume`, { quantity }),
+  getConsumed: (limit = 100) => api.get('/products/history/consumed', { params: { limit } }),
   getExpiring: (days = 3) => api.get('/products/expiring', { params: { days } }),
   getExpired: () => api.get('/products/expired'),
 };

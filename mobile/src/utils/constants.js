@@ -1,4 +1,4 @@
-export const API_URL = 'http://172.20.10.14:8000';
+export const API_URL = 'http://192.168.89.182:8000'; //172.20.10.14
 
 export const COLORS = {
   // в коментарях рекомендовані кольори з брендбука

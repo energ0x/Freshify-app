@@ -4,6 +4,7 @@ import { scheduleExpiryNotifications, scheduleLowQuantityNotification } from '..
 
 const useProductStore = create((set, get) => ({
   products: [],
+  consumedProducts: [],
   groceryItems: [],
   isLoading: false,
   error: null,
@@ -16,6 +17,15 @@ const useProductStore = create((set, get) => ({
       await scheduleExpiryNotifications(response.data);
     } catch (error) {
       set({ isLoading: false, error: error.response?.data?.detail || 'Помилка завантаження' });
+    }
+  },
+
+  fetchConsumedProducts: async (limit = 100) => {
+    try {
+      const response = await productsAPI.getConsumed(limit);
+      set({ consumedProducts: response.data });
+    } catch (error) {
+      set({ error: error.response?.data?.detail || 'Помилка завантаження історії' });
     }
   },
 
@@ -55,8 +65,12 @@ const useProductStore = create((set, get) => ({
     try {
       const response = await productsAPI.consume(id, quantity);
       set((state) => ({
-        products: state.products.map((p) => (p.id === id ? response.data : p)),
+        products: response.data.quantity > 0
+          ? state.products.map((p) => (p.id === id ? response.data : p))
+          : state.products.filter((p) => p.id !== id),
       }));
+      // After consuming, refresh the consumed history
+      get().fetchConsumedProducts();
       await scheduleLowQuantityNotification(response.data);
       return { success: true };
     } catch (error) {
