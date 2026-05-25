@@ -6,19 +6,25 @@ const useAuthStore = create((set, get) => ({
   user: null,
   token: null,
   isLoading: false,
+  isInitializing: true,
   isAuthenticated: false,
+  needsOnboarding: false,
+  
+  finishOnboarding: () => set({ needsOnboarding: false }),
 
   initialize: async () => {
     try {
       const token = await SecureStore.getItemAsync('auth_token');
       if (token) {
-        set({ token, isAuthenticated: true });
+        set({ token, isAuthenticated: true, needsOnboarding: false });
         const response = await authAPI.getMe();
         set({ user: response.data });
       }
     } catch {
       await SecureStore.deleteItemAsync('auth_token');
-      set({ token: null, isAuthenticated: false, user: null });
+      set({ token: null, isAuthenticated: false, user: null }); 
+    } finally {
+      set({ isInitializing: false });
     }
   },
 
@@ -28,7 +34,8 @@ const useAuthStore = create((set, get) => ({
       const response = await authAPI.register({ email, password, name });
       const { access_token, user } = response.data;
       await SecureStore.setItemAsync('auth_token', access_token);
-      set({ token: access_token, user, isAuthenticated: true, isLoading: false });
+      
+      set({ token: access_token, user, isAuthenticated: true, isLoading: false, needsOnboarding: true });
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
@@ -42,7 +49,8 @@ const useAuthStore = create((set, get) => ({
       const response = await authAPI.login({ email, password });
       const { access_token, user } = response.data;
       await SecureStore.setItemAsync('auth_token', access_token);
-      set({ token: access_token, user, isAuthenticated: true, isLoading: false });
+      
+      set({ token: access_token, user, isAuthenticated: true, isLoading: false, needsOnboarding: false });
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
@@ -52,7 +60,7 @@ const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     await SecureStore.deleteItemAsync('auth_token');
-    set({ token: null, user: null, isAuthenticated: false });
+    set({ token: null, user: null, isAuthenticated: false, needsOnboarding: false });
   },
 
   updateProfile: async (data) => {

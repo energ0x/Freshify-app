@@ -17,6 +17,7 @@ import GroceryListScreen from '../screens/GroceryListScreen';
 import AnalyticsScreen from '../screens/AnalyticsScreen';
 import RecipesScreen from '../screens/RecipesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import OnboardingStack from '../screens/OnboardingStack';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -46,20 +47,20 @@ const MainTabs = () => (
 );
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const { isAuthenticated, isInitializing, needsOnboarding, initialize } = useAuthStore();
 
   useEffect(() => {
     initialize();
   }, []);
 
-  if (isLoading) {
+  if (isInitializing) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
   }
-
+  
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -68,6 +69,8 @@ export default function AppNavigator() {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
+        ) : needsOnboarding ? (
+          <Stack.Screen name="OnboardingFlow" component={OnboardingStack} />
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
