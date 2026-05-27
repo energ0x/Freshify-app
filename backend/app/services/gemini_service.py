@@ -1,5 +1,5 @@
 import json
-from ollama import chat
+from ollama import chat, AsyncClient
 
 VISION_MODEL = "gemma4:e4b"
 TEXT_MODEL = "gemma3:4b"
@@ -71,34 +71,45 @@ def generate_recipes(products: list[dict], include_grocery: bool = False) -> dic
         return {"recipes": []}
 
 
-def generate_diet_recommendations(consumed_data: list[dict]) -> dict:
+async def stream_diet_recommendations(consumed_data: list[dict]):
     if not consumed_data:
-        return {"recommendations": "Недостатньо даних для аналізу раціону. Починайте фіксувати споживання продуктів!"}
+        yield "Недостатньо даних для аналізу раціону. Починайте фіксувати споживання продуктів!"
+        return
 
     consumed_list = "\n".join(
         f"- {item['product_name']} ({item.get('category', '')}): {item.get('total_quantity', 1)} {item.get('unit', 'шт')}"
         for item in consumed_data
     )
 
-    prompt = f"""Ти — дієтолог. Список нещодавно спожитих продуктів:
+    prompt = f"""Ти — лаконічний дієтолог. Ось список продуктів, які я спожив:
 {consumed_list}
-Дай персоналізовані рекомендації українською: чого не вистачає, чого забагато.
-Поверни JSON:
-{{
-  "recommendations": "текст рекомендацій",
-  "tips": ["порада 1", "порада 2"]
-}}"""
+
+Дуже коротко і по суті проаналізуй мій раціон (1-2 речення).
+Потім дай 3-4 ключові поради для покращення у вигляді маркованого списку.
+Відповідай українською мовою, використовуй Markdown.
+НЕ використовуй емодзі.
+
+Приклад:
+**Загальний аналіз:** Ваш раціон містить багато вуглеводів, але мало білка.
+---
+**Поради:**
+*   Додайте більше риби або курки.
+*   Замініть білий хліб на цільнозерновий.
+*   Їжте більше свіжих овочів.
+"""
 
     try:
-        response = chat(
+        client = AsyncClient()
+        async for chunk in await client.chat(
             model=TEXT_MODEL,
             messages=[{'role': 'user', 'content': prompt}],
-            format='json',
+            stream=True,
             keep_alive=-1,
-            options={
-                'num_gpu': 99
-            }
-        )
-        return json.loads(response['message']['content'])
-    except Exception:
-        return {"recommendations": "Не вдалося сформувати рекомендації", "tips": []}
+            options={'num_gpu': 99}
+        ):
+            content = chunk.get('message', {}).get('content', '')
+            if content:
+                yield content
+    except Exception as e:
+        print(f"Error streaming recommendations: {e}")
+        yield "\n\n**Помилка:** Не вдалося завершити генерацію рекомендацій."

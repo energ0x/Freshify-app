@@ -1,13 +1,29 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from datetime import datetime, timedelta
+from jose import JWTError, jwt
 from app.db.database import get_db
 from app.db.models import User, ConsumedProduct, Product
-from app.services.gemini_service import generate_diet_recommendations
+from app.services.gemini_service import stream_diet_recommendations
 from app.utils.dependencies import get_current_user
+from app.core.config import get_settings
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
+settings = get_settings()
+
+async def get_user_from_token(token: str, db: Session) -> User:
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+    except JWTError:
+        return None
+
+    user = db.query(User).filter(User.id == user_id).first()
+    return user
 
 
 @router.get("")
@@ -72,24 +88,43 @@ def get_analytics(
     }
 
 
-@router.get("/ai-recommendations")
-def get_ai_recommendations(
+@router.websocket("/ws/ai-recommendations")
+async def websocket_ai_recommendations(
+    websocket: WebSocket,
     days: int = Query(30, ge=7, le=365),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    token: str = Query(...),
 ):
-    since = datetime.utcnow() - timedelta(days=days)
-    consumed = db.query(
-        ConsumedProduct.product_name,
-        ConsumedProduct.category,
-        ConsumedProduct.unit,
-        func.sum(ConsumedProduct.quantity).label("total_quantity"),
-    ).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
-    ).group_by(ConsumedProduct.product_name, ConsumedProduct.category, ConsumedProduct.unit).all()
+    await websocket.accept()
+    db: Session = next(get_db())
+    
+    try:
+        user = await get_user_from_token(token, db)
+        if not user:
+            await websocket.close(code=1008, reason="Not authenticated")
+            return
 
-    consumed_data = [
-        {"product_name": r.product_name, "category": r.category, "unit": r.unit, "total_quantity": float(r.total_quantity or 0)}
-        for r in consumed
-    ]
-    return generate_diet_recommendations(consumed_data)
+        since = datetime.utcnow() - timedelta(days=days)
+        consumed = db.query(
+            ConsumedProduct.product_name,
+            ConsumedProduct.category,
+            ConsumedProduct.unit,
+            func.sum(ConsumedProduct.quantity).label("total_quantity"),
+        ).filter(
+            and_(ConsumedProduct.user_id == user.id, ConsumedProduct.consumed_at >= since)
+        ).group_by(ConsumedProduct.product_name, ConsumedProduct.category, ConsumedProduct.unit).all()
+
+        consumed_data = [
+            {"product_name": r.product_name, "category": r.category, "unit": r.unit, "total_quantity": float(r.total_quantity or 0)}
+            for r in consumed
+        ]
+        
+        async for chunk in stream_diet_recommendations(consumed_data):
+            await websocket.send_text(chunk)
+            
+    except WebSocketDisconnect:
+        print("Client disconnected")
+    except Exception as e:
+        print(f"WebSocket Error: {e}")
+    finally:
+        db.close()
+        await websocket.close()

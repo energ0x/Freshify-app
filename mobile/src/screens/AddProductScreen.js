@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Alert } from 'react-native';
-import { Picker } from '@react-native-picker/picker'; // Потрібно встановити: npx expo install @react-native-picker/picker
+import { ScrollView, View, Text, TextInput, StyleSheet, Alert, Platform } from 'react-native';
 import useProductStore from '../store/productStore';
+import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import DatePicker from '../components/DatePicker';
-import { COLORS, CATEGORIES, UNITS } from '../utils/constants';
+import CustomPicker from '../components/CustomPicker';
+import { CATEGORIES, UNITS } from '../utils/constants';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AddProductScreen({ navigation, route }) {
   const { addProduct } = useProductStore();
+  const { colors: COLORS } = useThemeStore();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -19,7 +22,8 @@ export default function AddProductScreen({ navigation, route }) {
     notes: '',
   });
 
-  // Обробка даних від камери (якщо вони прийшли через параметри навігації)
+  const styles = getStyles(COLORS);
+
   useEffect(() => {
     if (route.params?.aiResult) {
       const { name, category, estimated_shelf_life_days } = route.params.aiResult;
@@ -51,6 +55,9 @@ export default function AddProductScreen({ navigation, route }) {
     else Alert.alert('Помилка', res.error);
   };
 
+  const unitItems = UNITS.map(u => ({ label: u, value: u }));
+  const categoryItems = CATEGORIES.map(c => ({ label: c, value: c }));
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <CustomButton
@@ -58,6 +65,7 @@ export default function AddProductScreen({ navigation, route }) {
         variant="outline"
         onPress={() => navigation.navigate('Camera')}
         style={styles.aiButton}
+        icon={<Ionicons name="camera-outline" size={20} color={COLORS.primary} />}
       />
 
       <View style={styles.section}>
@@ -67,6 +75,7 @@ export default function AddProductScreen({ navigation, route }) {
           value={form.name}
           onChangeText={(val) => setForm({ ...form, name: val })}
           placeholder="Наприклад: Молоко"
+          placeholderTextColor={COLORS.onSurfaceVariant}
         />
       </View>
 
@@ -78,45 +87,43 @@ export default function AddProductScreen({ navigation, route }) {
             value={form.quantity}
             onChangeText={(val) => setForm({ ...form, quantity: val })}
             keyboardType="numeric"
+            placeholderTextColor={COLORS.onSurfaceVariant}
           />
         </View>
         <View style={[styles.section, { flex: 3 }]}>
-          <Text style={styles.label}>Одиниця</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={form.unit}
-              onValueChange={(val) => setForm({ ...form, unit: val })}
-            >
-              {UNITS.map(u => <Picker.Item key={u} label={u} value={u} />)}
-            </Picker>
-          </View>
+          <CustomPicker
+            label="Одиниця"
+            items={unitItems}
+            selectedValue={form.unit}
+            onValueChange={(val) => setForm({ ...form, unit: val })}
+          />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Категорія</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={form.category}
-            onValueChange={(val) => setForm({ ...form, category: val })}
-          >
-            {CATEGORIES.map(c => <Picker.Item key={c} label={c} value={c} />)}
-          </Picker>
-        </View>
+        <CustomPicker
+          label="Категорія"
+          items={categoryItems}
+          selectedValue={form.category}
+          onValueChange={(val) => setForm({ ...form, category: val })}
+        />
       </View>
 
-      <DatePicker
-        date={form.expiry_date}
-        onDateChange={(date) => setForm({ ...form, expiry_date: date })}
-      />
+      <View style={styles.section}>
+        <DatePicker
+          date={form.expiry_date}
+          onDateChange={(date) => setForm({ ...form, expiry_date: date })}
+        />
+      </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Нотатки</Text>
+        <Text style={styles.label}>Нотатки (опціонально)</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={form.notes}
           onChangeText={(val) => setForm({ ...form, notes: val })}
           placeholder="Наприклад: Зберігати в холодильнику..."
+          placeholderTextColor={COLORS.onSurfaceVariant}
           multiline={true}
           numberOfLines={3}
           textAlignVertical="top"
@@ -133,15 +140,47 @@ export default function AddProductScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: 20 },
-  aiButton: { marginBottom: 24, borderStyle: 'dashed' },
-  section: { marginBottom: 16 },
-  row: { flexDirection: 'row' },
-  label: { fontSize: 14, fontWeight: '500', color: COLORS.text, marginBottom: 8 },
-  input: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 16 },
-  textArea: { minHeight: 80 },
-  pickerContainer: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' },
-  saveButton: { marginTop: 10 },
+const getStyles = (COLORS) => StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.background 
+  },
+  content: { 
+    padding: 20,
+    paddingBottom: 40,
+  },
+  aiButton: { 
+    marginBottom: 24, 
+    borderStyle: 'dashed',
+    borderColor: COLORS.outline,
+  },
+  section: { 
+    marginBottom: 20 
+  },
+  row: { 
+    flexDirection: 'row' 
+  },
+  label: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: COLORS.text, 
+    marginBottom: 8 
+  },
+  input: { 
+    backgroundColor: COLORS.surfaceVariant, 
+    borderWidth: 1, 
+    borderColor: 'transparent', 
+    borderRadius: 12, 
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  textArea: { 
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  saveButton: { 
+    marginTop: 20,
+  },
 });

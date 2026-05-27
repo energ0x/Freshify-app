@@ -1,29 +1,32 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useProductStore from '../store/productStore';
+import useThemeStore from '../store/themeStore';
 import ProductCard from '../components/ProductCard';
 import CustomButton from '../components/CustomButton';
-import { COLORS, CATEGORIES } from '../utils/constants'; 
+import { CATEGORIES } from '../utils/constants'; 
 import { getDaysUntilExpiry } from '../utils/dateHelpers'; 
 
 export default function HomeScreen({ navigation }) {
-  const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore(); 
+  const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore();
+  const { colors: COLORS, theme } = useThemeStore();
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const insets = useSafeAreaInsets();
+  
+  const styles = getStyles(COLORS, insets);
 
-  // Фільтри та сортування
   const [selectedCategory, setSelectedCategory] = useState('Всі');
   const [sortBy, setSortBy] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [showFilterModal, setShowFilterModal] = useState(false);
 
-  // М'яке видалення (Snackbar)
   const [pendingDelete, setPendingDelete] = useState(null);
   const deleteTimeoutRef = useRef(null);
 
-  // Попап споживання
   const [consumeModalVisible, setConsumeModalVisible] = useState(false);
   const [productToConsume, setProductToConsume] = useState(null);
   const [consumeAmount, setConsumeAmount] = useState('');
@@ -73,15 +76,12 @@ export default function HomeScreen({ navigation }) {
     setPendingDelete(null);
   };
 
-  // ОНОВЛЕНА ЛОГІКА СПОЖИВАННЯ
   const handleConsumeTrigger = async (item) => {
     const qty = Number(item.quantity);
     
-    // Якщо кількість 1 або менше - споживаємо миттєво без модалки
     if (qty <= 1) {
       await consumeProduct(item.id, qty);
     } else {
-      // Якщо більше 1 - запитуємо скільки
       setProductToConsume(item);
       setConsumeAmount(qty.toString());
       setConsumeModalVisible(true);
@@ -135,15 +135,15 @@ export default function HomeScreen({ navigation }) {
 
     const renderLeftActions = () => (
       <View style={[styles.swipeAction, styles.consumeAction]}>
-        <Ionicons name="restaurant" size={24} color="#fff" />
-        <Text style={styles.swipeText}>Використати</Text>
+        <Ionicons name="restaurant" size={24} color={COLORS.onPrimaryContainer} />
+        <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>Спожито</Text>
       </View>
     );
 
     const renderRightActions = () => (
       <View style={[styles.swipeAction, styles.deleteAction]}>
-        <Ionicons name="trash" size={24} color="#fff" />
-        <Text style={styles.swipeText}>Видалити</Text>
+        <Ionicons name="trash" size={24} color={COLORS.onErrorContainer} />
+        <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>Видалити</Text>
       </View>
     );
 
@@ -170,19 +170,27 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
       <View style={styles.header}>
+        <Text style={styles.headerTitle}>Мій Холодильник</Text>
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
-            <Ionicons name="search-outline" size={20} color={COLORS.textLight} />
-            <TextInput style={styles.searchInput} placeholder="Пошук продуктів..." value={search} onChangeText={setSearch} />
+            <Ionicons name="search" size={20} color={COLORS.onSurfaceVariant} style={styles.searchIcon} />
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Пошук продуктів..." 
+              placeholderTextColor={COLORS.onSurfaceVariant}
+              value={search} 
+              onChangeText={setSearch} 
+            />
             {search !== '' && (
-              <TouchableOpacity onPress={() => setSearch('')} style={{ marginRight: 4 }}>
-                <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Ionicons name="close-circle" size={20} color={COLORS.onSurfaceVariant} />
               </TouchableOpacity>
             )}
           </View>
           <TouchableOpacity style={[styles.filterButton, (selectedCategory !== 'Всі' || sortBy !== null) && styles.filterButtonActive]} onPress={() => setShowFilterModal(true)}>
-            <Ionicons name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"} size={24} color={selectedCategory !== 'Всі' || sortBy !== null ? '#fff' : COLORS.primary} />
+            <Ionicons name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"} size={24} color={selectedCategory !== 'Всі' || sortBy !== null ? COLORS.onPrimaryContainer : COLORS.primary} />
           </TouchableOpacity>
         </View>
 
@@ -198,7 +206,7 @@ export default function HomeScreen({ navigation }) {
 
         {products.length > 0 && (
           <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Рецепти')}>
-            <Ionicons name="restaurant-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+            <Ionicons name="restaurant-outline" size={18} color={COLORS.onPrimaryContainer} style={{ marginRight: 8 }} />
             <Text style={styles.recipesIdeaText}>Що приготувати з цих продуктів?</Text>
           </TouchableOpacity>
         )}
@@ -212,8 +220,11 @@ export default function HomeScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="fast-food-outline" size={64} color={COLORS.border} />
-            <Text style={styles.emptyText}>Нічого не знайдено</Text>
+            <View style={styles.emptyIconContainer}>
+               <Ionicons name="fast-food-outline" size={48} color={COLORS.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>Холодильник порожній</Text>
+            <Text style={styles.emptyText}>Додайте продукти, щоб відслідковувати їх терміни придатності</Text>
           </View>
         }
       />
@@ -228,10 +239,9 @@ export default function HomeScreen({ navigation }) {
       )}
 
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddProduct')}>
-        <Ionicons name="add" size={30} color="#fff" />
+        <Ionicons name="add" size={32} color={COLORS.onPrimaryContainer} />
       </TouchableOpacity>
 
-      {/* Модалка скільки використати */}
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.consumeModalContent}>
@@ -304,58 +314,336 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingTop: 16 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', paddingRight: 16 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, marginLeft: 16, marginRight: 8 },
-  searchInput: { flex: 1, paddingVertical: 10, marginLeft: 8, fontSize: 16 },
-  filterButton: { padding: 10, backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
-  filterButtonActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  activeFiltersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginTop: 10 },
-  activeFiltersText: { fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' },
-  resetLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FCE8E6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  resetLinkText: { fontSize: 12, color: COLORS.danger, fontWeight: '600' },
-  recipesIdeaButton: { flexDirection: 'row', backgroundColor: COLORS.primary, marginHorizontal: 16, marginTop: 12, paddingVertical: 12, borderRadius: 10, justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41 },
-  recipesIdeaText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  list: { padding: 16, paddingBottom: 100 },
-  empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: 20 },
-  emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight, textAlign: 'center' },
-  
-  swipeAction: { justifyContent: 'center', alignItems: 'center', width: 90, marginBottom: 12, borderRadius: 16, height: '90%' },
-  consumeAction: { backgroundColor: COLORS.success, paddingRight: 10 },
-  deleteAction: { backgroundColor: COLORS.danger, paddingLeft: 10 },
-  swipeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
-
-  snackbar: { position: 'absolute', bottom: 90, left: 20, right: 20, backgroundColor: '#333', borderRadius: 8, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
-  snackbarText: { color: '#fff', fontSize: 14 },
-  snackbarAction: { color: COLORS.primary, fontWeight: 'bold', fontSize: 14 },
-
-  consumeModalContent: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 24, width: '85%' },
-  consumeSubtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 16, textAlign: 'center' },
-  consumeInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 16, fontSize: 20, textAlign: 'center', marginBottom: 24, backgroundColor: COLORS.background },
+const getStyles = (COLORS, insets) => StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.background 
+  },
+  header: { 
+    paddingTop: insets.top || 20, 
+    paddingBottom: 16, 
+    backgroundColor: COLORS.surface,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  searchRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingHorizontal: 20,
+  },
+  searchContainer: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: COLORS.surfaceVariant, 
+    borderRadius: 100, 
+    paddingHorizontal: 16, 
+    marginRight: 12,
+    height: 48,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: { 
+    flex: 1, 
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  filterButton: { 
+    width: 48,
+    height: 48,
+    backgroundColor: COLORS.surfaceVariant, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  filterButtonActive: { 
+    backgroundColor: COLORS.primaryContainer, 
+  },
+  activeFiltersRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20, 
+    marginTop: 12 
+  },
+  activeFiltersText: { 
+    fontSize: 12, 
+    color: COLORS.textLight, 
+    fontStyle: 'italic' 
+  },
+  resetLink: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: COLORS.errorContainer, 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 6 
+  },
+  resetLinkText: { 
+    fontSize: 12, 
+    color: COLORS.danger, 
+    fontWeight: '600' 
+  },
+  recipesIdeaButton: { 
+    flexDirection: 'row', 
+    backgroundColor: COLORS.primaryContainer, 
+    marginHorizontal: 20, 
+    marginTop: 16, 
+    paddingVertical: 12, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+  },
+  recipesIdeaText: { 
+    color: COLORS.onPrimaryContainer, 
+    fontSize: 14, 
+    fontWeight: '600' 
+  },
+  list: { 
+    padding: 16, 
+    paddingBottom: insets.bottom + 100 
+  },
+  empty: { 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    marginTop: 60,
+    paddingHorizontal: 32,
+  },
+  emptyIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: COLORS.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  emptyText: { 
+    fontSize: 16, 
+    color: COLORS.textLight,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  swipeAction: { 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    width: 90, 
+    marginBottom: 12, 
+    borderRadius: 20, 
+    height: '90%' 
+  },
+  consumeAction: { 
+    backgroundColor: COLORS.primaryContainer, 
+    paddingRight: 10 
+  },
+  deleteAction: { 
+    backgroundColor: COLORS.errorContainer, 
+    paddingLeft: 10 
+  },
+  swipeText: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    marginTop: 4 
+  },
+  snackbar: { 
+    position: 'absolute', 
+    bottom: insets.bottom + 80, 
+    left: 20, 
+    right: 20, 
+    backgroundColor: COLORS.onSurfaceVariant, 
+    borderRadius: 8, 
+    padding: 16, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    elevation: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 4 
+  },
+  snackbarText: { 
+    color: COLORS.surface, 
+    fontSize: 14 
+  },
+  snackbarAction: { 
+    color: COLORS.primaryContainer, 
+    fontWeight: 'bold', 
+    fontSize: 14 
+  },
+  consumeModalContent: { 
+    backgroundColor: COLORS.surface, 
+    borderRadius: 24, 
+    padding: 24, 
+    width: '85%' 
+  },
+  consumeSubtitle: { 
+    fontSize: 14, 
+    color: COLORS.textLight, 
+    marginBottom: 16, 
+    textAlign: 'center' 
+  },
+  consumeInput: { 
+    borderWidth: 1, 
+    borderColor: 'transparent', 
+    borderRadius: 12, 
+    padding: 16, 
+    fontSize: 20, 
+    textAlign: 'center', 
+    marginBottom: 24, 
+    backgroundColor: COLORS.surfaceVariant,
+    color: COLORS.text,
+  },
   modalButton: { flex: 1 },
-
-  fab: { position: 'absolute', right: 20, bottom: 20, backgroundColor: COLORS.primary, width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3 },
-  
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '80%', width: '100%', position: 'absolute', bottom: 0 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, textAlign: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: COLORS.text, marginTop: 12, marginBottom: 10 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
-  optionChip: { backgroundColor: COLORS.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border },
-  optionChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  optionChipText: { color: COLORS.text, fontSize: 13 },
-  optionChipTextActive: { color: '#fff', fontWeight: '600' },
-  categoriesScroll: { flexDirection: 'row', marginBottom: 24 },
-  categoryChip: { backgroundColor: COLORS.background, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8, height: 36, borderWidth: 1, borderColor: COLORS.border },
-  categoryChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  categoryChipText: { color: COLORS.text, fontSize: 13 },
-  categoryChipTextActive: { color: '#fff', fontWeight: '600' },
-  modalActionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  modalResetButton: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background },
-  modalResetButtonText: { color: COLORS.danger, fontSize: 15, fontWeight: '600' },
-  applyButton: { flex: 2, backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  applyButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  fab: { 
+    position: 'absolute', 
+    right: 20, 
+    bottom: insets.bottom,
+    backgroundColor: COLORS.primaryContainer, 
+    width: 64, 
+    height: 64, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    elevation: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 8 
+  },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  modalContent: { 
+    backgroundColor: COLORS.surface, 
+    borderTopLeftRadius: 28, 
+    borderTopRightRadius: 28, 
+    padding: 24, 
+    paddingBottom: insets.bottom + 24,
+    maxHeight: '80%', 
+    width: '100%', 
+    position: 'absolute', 
+    bottom: 0 
+  },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  modalTitle: { 
+    fontSize: 22, 
+    fontWeight: '700', 
+    color: COLORS.text, 
+  },
+  sectionTitle: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: COLORS.text, 
+    marginTop: 12, 
+    marginBottom: 10 
+  },
+  optionsRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    marginBottom: 10 
+  },
+  optionChip: { 
+    backgroundColor: COLORS.surfaceVariant, 
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    borderRadius: 100, 
+    marginRight: 8, 
+    marginBottom: 8, 
+    borderWidth: 1, 
+    borderColor: 'transparent' 
+  },
+  optionChipActive: { 
+    backgroundColor: COLORS.primaryContainer, 
+  },
+  optionChipText: { 
+    color: COLORS.text, 
+    fontSize: 14 
+  },
+  optionChipTextActive: { 
+    color: COLORS.onPrimaryContainer, 
+    fontWeight: '600' 
+  },
+  categoriesScroll: { 
+    flexDirection: 'row', 
+    marginBottom: 24 
+  },
+  categoryChip: { 
+    backgroundColor: COLORS.surfaceVariant, 
+    paddingHorizontal: 16, 
+    paddingVertical: 10, 
+    borderRadius: 100, 
+    marginRight: 8, 
+    borderWidth: 1, 
+    borderColor: 'transparent' 
+  },
+  categoryChipActive: { 
+    backgroundColor: COLORS.primaryContainer, 
+  },
+  categoryChipText: { 
+    color: COLORS.text, 
+    fontSize: 14 
+  },
+  categoryChipTextActive: { 
+    color: COLORS.onPrimaryContainer, 
+    fontWeight: '600' 
+  },
+  modalActionsRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    gap: 12 
+  },
+  modalResetButton: { 
+    flex: 1, 
+    paddingVertical: 14, 
+    borderRadius: 100, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 1, 
+    borderColor: COLORS.outline, 
+  },
+  modalResetButtonText: { 
+    color: COLORS.danger, 
+    fontSize: 15, 
+    fontWeight: '600' 
+  },
+  applyButton: { 
+    flex: 2, 
+    backgroundColor: COLORS.primary, 
+    paddingVertical: 14, 
+    borderRadius: 100, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  applyButtonText: { 
+    color: COLORS.onPrimary, 
+    fontSize: 16, 
+    fontWeight: 'bold' 
+  }
 });
