@@ -66,8 +66,8 @@ const MainTabs = () => {
 
           return (
             <View style={styles.tabItemContainer}>
-              <View style={[styles.iconPill, focused && { backgroundColor: COLORS.primaryContainer }]}>
-                <Ionicons name={iconName} size={size} color={focused ? COLORS.onPrimaryContainer : COLORS.textLight} />
+              <View style={[styles.iconPill, focused && { backgroundColor: COLORS.primary }]}>
+                <Ionicons name={iconName} size={size} color={focused ? COLORS.primaryContainer : COLORS.textLight} />
               </View>
               <Text style={[styles.tabLabel, { color: focused ? COLORS.primary : COLORS.textLight }]}>
                 {route.name}
