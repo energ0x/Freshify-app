@@ -1,13 +1,11 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
-import { lightColors, darkColors } from '../utils/constants';
-
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -18,10 +16,13 @@ import GroceryListScreen from '../screens/GroceryListScreen';
 import AnalyticsScreen from '../screens/AnalyticsScreen';
 import RecipesScreen from '../screens/RecipesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import OnboardingStack from '../screens/OnboardingStack';
+import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
+import DietScreen from '../screens/onboarding/DietScreen';
+import AllergensScreen from '../screens/onboarding/AllergensScreen';
+import GuideScreen from '../screens/onboarding/GuideScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
@@ -49,7 +50,7 @@ const MainTabs = () => {
           else if (route.name === 'Рецепти') iconName = focused ? 'restaurant' : 'restaurant-outline';
           else if (route.name === 'Аналітика') iconName = focused ? 'pie-chart' : 'pie-chart-outline';
           else if (route.name === 'Налаштування') iconName = focused ? 'settings' : 'settings-outline';
-          
+
           return (
             <View style={styles.tabItemContainer}>
               <View style={[styles.iconPill, focused && { backgroundColor: COLORS.primaryContainer }]}>
@@ -101,11 +102,12 @@ export default function AppNavigator() {
       </View>
     );
   }
-  
+
   return (
     <NavigationContainer theme={navigationTheme}>
-      <Stack.Navigator 
-        screenOptions={{ 
+      <Stack.Navigator
+        screenOptions={{
+            headerBackTitleVisible: false,
           headerShown: false,
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
@@ -118,7 +120,12 @@ export default function AppNavigator() {
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : needsOnboarding ? (
-          <Stack.Screen name="OnboardingFlow" component={OnboardingStack} />
+          <Stack.Group screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Diet" component={DietScreen} />
+            <Stack.Screen name="Allergens" component={AllergensScreen} />
+            <Stack.Screen name="Guide" component={GuideScreen} />
+          </Stack.Group>
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
