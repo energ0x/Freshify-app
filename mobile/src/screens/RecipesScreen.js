@@ -1,83 +1,103 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Switch, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, TouchableOpacity, StatusBar, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { recipesAPI } from '../services/api';
+import * as SecureStore from 'expo-secure-store';
+import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
+import RecipeCard from '../components/RecipeCard';
 
 export default function RecipesScreen() {
-  const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
-  const [expandedId, setExpandedId] = useState(null);
+  const [streamedText, setStreamedText] = useState('');
+  const [recipes, setRecipes] = useState([]);
 
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const styles = getStyles(COLORS, insets, tabBarHeight);
 
-  const fetchRecipes = async () => {
-    setLoading(true);
-    try {
-      const response = await recipesAPI.get(includeGrocery);
-      setRecipes(response.data.recipes || []);
-    } catch (error) {
-      console.log('Помилка генерації рецептів:', error);
-    } finally {
+  const animation = useRef(new Animated.Value(0)).current;
+  const wsRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Разделяем стрим текста на отдельные рецепты по разделителю "---"
+    if (streamedText) {
+      const rawRecipes = streamedText.split('---').filter(r => r.trim() !== '');
+      setRecipes(rawRecipes);
+    } else {
+        setRecipes([]);
+    }
+  }, [streamedText]);
+
+  const handleGenerateRecipes = async () => {
+    if (loading) {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
       setLoading(false);
+      Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+      return;
+    }
+
+    setLoading(true);
+    setStreamedText('');
+    setRecipes([]);
+    Animated.timing(animation, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+
+    try {
+      const token = await SecureStore.getItemAsync('auth_token');
+      
+      let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
+      if (Platform.OS === 'android' && wsUrl.includes('localhost')) {
+         wsUrl = wsUrl.replace('localhost', '10.0.2.2');
+      } else if (Platform.OS === 'android' && wsUrl.includes('127.0.0.1')) {
+         wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
+      }
+      
+      const ws = new WebSocket(`${wsUrl}/recipes/ws/generate?include_grocery=${includeGrocery}&token=${token}`);
+      wsRef.current = ws;
+
+      ws.onmessage = (event) => {
+        setStreamedText(prev => prev + event.data);
+      };
+
+      ws.onclose = (event) => {
+        setLoading(false);
+        Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+      };
+
+      ws.onerror = (e) => {
+        console.log("WebSocket Error:", e.message);
+        setLoading(false);
+        Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+      };
+
+    } catch (error) {
+      console.log('Помилка ініціалізації WebSocket', error);
+      setLoading(false);
+      Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
     }
   };
 
-  const toggleExpand = (index) => {
-    setExpandedId(expandedId === index ? null : index);
-  };
+  const rotateInterpolate = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg']
+  });
 
-  const renderRecipe = ({ item, index }) => {
-    const isExpanded = expandedId === index;
-
-    return (
-      <View style={styles.recipeCard}>
-        <TouchableOpacity style={styles.recipeHeader} onPress={() => toggleExpand(index)} activeOpacity={0.7}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.recipeName}>{item.name}</Text>
-            <View style={styles.recipeMeta}>
-              <Ionicons name="time-outline" size={16} color={COLORS.textLight} />
-              <Text style={styles.metaText}>{item.cooking_time}</Text>
-              <Ionicons name="bar-chart-outline" size={16} color={COLORS.textLight} style={{ marginLeft: 12 }} />
-              <Text style={styles.metaText}>{item.difficulty}</Text>
-            </View>
-          </View>
-          <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={24} color={COLORS.primary} />
-        </TouchableOpacity>
-
-        {isExpanded && (
-          <View style={styles.recipeDetails}>
-            <Text style={styles.description}>{item.description}</Text>
-
-            <Text style={styles.sectionTitle}>Інгредієнти:</Text>
-            {item.ingredients?.map((ing, idx) => (
-              <Text key={idx} style={styles.listItem}>• {ing}</Text>
-            ))}
-
-            {item.missing_ingredients && item.missing_ingredients.length > 0 && (
-              <>
-                <Text style={[styles.sectionTitle, { color: COLORS.warning, marginTop: 8 }]}>Треба докупити:</Text>
-                {item.missing_ingredients.map((ing, idx) => (
-                  <Text key={idx} style={styles.listItem}>- {ing}</Text>
-                ))}
-              </>
-            )}
-
-            <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Приготування:</Text>
-            {item.instructions?.map((step, idx) => (
-              <Text key={idx} style={styles.stepItem}><Text style={styles.stepNumber}>{idx + 1}.</Text> {step}</Text>
-            ))}
-          </View>
-        )}
-      </View>
-    );
+  const animatedStyle = {
+    transform: [{ rotate: rotateInterpolate }],
   };
 
   return (
@@ -96,37 +116,39 @@ export default function RecipesScreen() {
             />
           </View>
           <CustomButton
-            title="Згенерувати рецепти"
-            onPress={fetchRecipes}
-            loading={loading}
+            title={loading ? "Скасувати" : "Згенерувати рецепти"}
+            onPress={handleGenerateRecipes}
+            loading={loading && !streamedText}
             style={styles.generateBtn}
-            icon={<Ionicons name="sparkles-outline" size={20} color={COLORS.onPrimary} />}
+            icon={
+              <Animated.View style={animatedStyle}>
+                <Ionicons name={loading ? "close" : "sparkles-outline"} size={20} color={COLORS.onPrimary} />
+              </Animated.View>
+            }
           />
         </View>
       </View>
 
-      {loading && recipes.length === 0 ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Шеф-кухар Gemini думає...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={recipes}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={renderRecipe}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <View style={styles.emptyIconContainer}>
-                <Ionicons name="restaurant-outline" size={48} color={COLORS.primary} />
-              </View>
-              <Text style={styles.emptyTitle}>Згенеруйте рецепти</Text>
-              <Text style={styles.emptyText}>Натисніть кнопку, щоб отримати ідеї страв на основі продуктів у вашому холодильнику</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {loading && !streamedText ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Шеф-кухар Gemini думає...</Text>
+          </View>
+        ) : recipes.length > 0 ? (
+           recipes.map((recipeContent, index) => (
+             <RecipeCard key={index} content={recipeContent} />
+           ))
+        ) : (
+          <View style={styles.empty}>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="restaurant-outline" size={48} color={COLORS.primary} />
             </View>
-          }
-        />
-      )}
+            <Text style={styles.emptyTitle}>Згенеруйте рецепти</Text>
+            <Text style={styles.emptyText}>Натисніть кнопку, щоб отримати ідеї страв на основі продуктів у вашому холодильнику</Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -173,92 +195,25 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   generateBtn: { 
     borderRadius: 100,
   },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 16, 
+    paddingBottom: tabBarHeight + 40,
+  },
   center: { 
     flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center',
-    backgroundColor: COLORS.background,
   },
   loadingText: { 
     marginTop: 16, 
     color: COLORS.textLight, 
     fontSize: 16 
   },
-  list: { 
-    padding: 16, 
-    paddingBottom: tabBarHeight + 40,
-  },
-  recipeCard: { 
-    backgroundColor: COLORS.surface, 
-    borderRadius: 24, 
-    marginBottom: 16, 
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    overflow: 'hidden' 
-  },
-  recipeHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    padding: 20 
-  },
-  recipeName: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: COLORS.text, 
-    marginBottom: 8 
-  },
-  recipeMeta: { 
-    flexDirection: 'row', 
-    alignItems: 'center' 
-  },
-  metaText: { 
-    fontSize: 14, 
-    color: COLORS.textLight, 
-    marginLeft: 6 
-  },
-  recipeDetails: { 
-    padding: 20, 
-    paddingTop: 16, 
-    borderTopWidth: 1, 
-    borderTopColor: COLORS.border 
-  },
-  description: { 
-    fontSize: 15, 
-    fontStyle: 'italic', 
-    color: COLORS.text, 
-    marginBottom: 16, 
-    lineHeight: 22 
-  },
-  sectionTitle: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: COLORS.text, 
-    marginBottom: 8 
-  },
-  listItem: { 
-    fontSize: 15, 
-    color: COLORS.text, 
-    marginBottom: 6, 
-    paddingLeft: 8,
-    lineHeight: 22,
-  },
-  stepItem: { 
-    fontSize: 15, 
-    color: COLORS.text, 
-    marginBottom: 10, 
-    lineHeight: 22 
-  },
-  stepNumber: { 
-    fontWeight: 'bold', 
-    color: COLORS.primary 
-  },
   empty: { 
+    flex: 1,
     alignItems: 'center', 
-    marginTop: 60,
+    justifyContent: 'center',
     paddingHorizontal: 32,
   },
   emptyIconContainer: {

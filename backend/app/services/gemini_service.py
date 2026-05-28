@@ -29,46 +29,60 @@ def analyze_product_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> 
         return {"error": "Не вдалося розпізнати продукт"}
 
 
-def generate_recipes(products: list[dict], include_grocery: bool = False) -> dict:
+async def generate_recipes(products: list[dict], include_grocery: bool = False):
     product_list = "\n".join(
         f"- {p['name']} ({p.get('category', '')}, {p.get('quantity', 1)} {p.get('unit', 'шт')})"
         for p in products
     )
 
-    prompt = f"""Ти — кулінарний асистент. В холодильнику є такі продукти:
-{product_list}
-Запропонуй 5 різних страв з цих продуктів.
-{"Врахуй, що користувач може докупити додаткові продукти." if include_grocery else "Використовуй лише наявні продукти."}
+    if include_grocery:
+        grocery_rule = "You CAN use extra ingredients. List all missing items strictly under '### Треба докупити:'."
+    else:
+        grocery_rule = "Use ONLY the provided ingredients. Do NOT add anything new. NEVER output the '### Треба докупити:' section."
 
-Поверни JSON:
-{{
-  "recipes": [
-    {{
-      "name": "Назва",
-      "description": "Короткий опис",
-      "cooking_time": "30 хвилин",
-      "difficulty": "Легко",
-      "ingredients": ["інгредієнт 1"],
-      "missing_ingredients": ["чого не вистачає"],
-      "instructions": ["Крок 1"]
-    }}
-  ]
-}}"""
+    prompt = f"""You are a culinary AI assistant. 
+    Available ingredients:
+    {product_list}
+
+    TASK: Suggest 5 diverse recipes based on available ingredients.
+
+    CRITICAL CONSTRAINT 1: {grocery_rule}
+    CRITICAL CONSTRAINT 2: Respond strictly in Ukrainian.
+    CRITICAL CONSTRAINT 3: Do NOT use emojis.
+    CRITICAL CONSTRAINT 4: Separate recipes ONLY with `---`.
+    CRITICAL CONSTRAINT 5: Follow the exact Markdown template and headers below.
+
+    Template:
+    ## [Recipe Name]
+    [Short description, 1-2 sentences]
+
+    **Час:** [Time] | **Складність:** [Difficulty]
+
+    ### Інгредієнти:
+    - [Ingredient 1]
+
+    ### Треба докупити:
+    - [Missing ingredient]
+
+    ### Приготування:
+    1. [Step 1]
+    """
 
     try:
-        response = chat(
-            model=TEXT_MODEL,
+        client = AsyncClient()
+        async for chunk in await client.chat(
+            model=VISION_MODEL,
             messages=[{'role': 'user', 'content': prompt}],
-            format='json',
+            stream=True,
             keep_alive=-1,
-            options={
-                'num_gpu': 99,
-                'num_ctx': 4096
-            }
-        )
-        return json.loads(response['message']['content'])
-    except Exception:
-        return {"recipes": []}
+            options={'num_gpu': 42}
+        ):
+            content = chunk.get('message', {}).get('content', '')
+            if content:
+                yield content
+    except Exception as e:
+        print(f"Error streaming recipes: {e}")
+        yield "\n\n**Помилка:** Не вдалося згенерувати рецепти."
 
 
 async def stream_diet_recommendations(consumed_data: list[dict]):
@@ -81,31 +95,34 @@ async def stream_diet_recommendations(consumed_data: list[dict]):
         for item in consumed_data
     )
 
-    prompt = f"""Ти — лаконічний дієтолог. Ось список продуктів, які я спожив:
-{consumed_list}
+    prompt = f"""You are a concise nutritionist.
+    Consumed food list:
+    {consumed_list}
 
-Дуже коротко і по суті проаналізуй мій раціон (1-2 речення).
-Потім дай 3-4 ключові поради для покращення у вигляді маркованого списку.
-Відповідай українською мовою, використовуй Markdown.
-НЕ використовуй емодзі.
+    TASK: Analyze the diet and provide improvement tips.
 
-Приклад:
-**Загальний аналіз:** Ваш раціон містить багато вуглеводів, але мало білка.
----
-**Поради:**
-*   Додайте більше риби або курки.
-*   Замініть білий хліб на цільнозерновий.
-*   Їжте більше свіжих овочів.
-"""
+    CRITICAL CONSTRAINT 1: Respond strictly in Ukrainian.
+    CRITICAL CONSTRAINT 2: The analysis must be ultra-concise (1-2 sentences max).
+    CRITICAL CONSTRAINT 3: Do NOT use emojis.
+    CRITICAL CONSTRAINT 4: Follow the exact Markdown template and headers below.
+
+    Template:
+    **Загальний аналіз:** [Your 1-2 sentences analysis here]
+    ---
+    **Поради:**
+    * [Tip 1]
+    * [Tip 2]
+    * [Tip 3]
+    """
 
     try:
         client = AsyncClient()
         async for chunk in await client.chat(
-            model=TEXT_MODEL,
+            model=VISION_MODEL,
             messages=[{'role': 'user', 'content': prompt}],
             stream=True,
             keep_alive=-1,
-            options={'num_gpu': 99}
+            options={'num_gpu': 42}
         ):
             content = chunk.get('message', {}).get('content', '')
             if content:
