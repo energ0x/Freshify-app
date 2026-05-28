@@ -140,7 +140,7 @@ export default function AnalyticsScreen({ navigation }) {
           <TouchableOpacity 
             style={styles.statCard}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('Холодильник')}
+            onPress={() => navigation.navigate('Продукти')}
           >
             <Text style={styles.statValue}>{data?.total_products_in_fridge || 0}</Text>
             <Text style={styles.statLabel}>Продуктів вдома</Text>
