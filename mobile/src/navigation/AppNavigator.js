@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BlurView } from "expo-blur";
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
@@ -22,7 +23,7 @@ import AllergensScreen from '../screens/onboarding/AllergensScreen';
 import GuideScreen from '../screens/onboarding/GuideScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 
-const Stack = createNativeStackNavigator();
+const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
@@ -34,7 +35,7 @@ const MainTabs = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          height: 80,
+          height: 90,
           borderTopWidth: 0,
           backgroundColor: COLORS.surface,
           elevation: 10,
@@ -45,11 +46,11 @@ const MainTabs = () => {
         },
         tabBarIcon: ({ color, size, focused }) => {
           let iconName;
-          if (route.name === 'Холодильник') iconName = focused ? 'fast-food' : 'fast-food-outline';
+          if (route.name === 'Продукти') iconName = focused ? 'fast-food' : 'fast-food-outline';
           else if (route.name === 'Покупки') iconName = focused ? 'cart' : 'cart-outline';
           else if (route.name === 'Рецепти') iconName = focused ? 'restaurant' : 'restaurant-outline';
           else if (route.name === 'Аналітика') iconName = focused ? 'pie-chart' : 'pie-chart-outline';
-          else if (route.name === 'Налаштування') iconName = focused ? 'settings' : 'settings-outline';
+          else if (route.name === 'Параметри') iconName = focused ? 'settings' : 'settings-outline';
 
           return (
             <View style={styles.tabItemContainer}>
@@ -66,11 +67,11 @@ const MainTabs = () => {
         tabBarInactiveTintColor: COLORS.textLight,
       })}
     >
-      <Tab.Screen name="Холодильник" component={HomeScreen} />
+      <Tab.Screen name="Продукти" component={HomeScreen} />
       <Tab.Screen name="Покупки" component={GroceryListScreen} />
       <Tab.Screen name="Рецепти" component={RecipesScreen} />
       <Tab.Screen name="Аналітика" component={AnalyticsScreen} />
-      <Tab.Screen name="Налаштування" component={SettingsScreen} />
+      <Tab.Screen name="Параметри" component={SettingsScreen} />
     </Tab.Navigator>
   );
 };
@@ -109,6 +110,10 @@ export default function AppNavigator() {
         screenOptions={{
             headerBackTitleVisible: false,
           headerShown: false,
+            headerShadowVisible: false,
+            animation: 'slide_from_right',
+            headerTransparent: false,
+            contentStyle: { backgroundColor: COLORS.background },
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
           headerTitleStyle: { fontWeight: '600' }
@@ -152,7 +157,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   tabLabel: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '500',
   },
 });

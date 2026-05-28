@@ -140,7 +140,7 @@ export default function SettingsScreen({ navigation }) {
         contentContainerStyle={styles.content} 
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.headerTitle}>Налаштування</Text>
+        <Text style={styles.headerTitle}>Параметри</Text>
         
         <View style={styles.profileSection}>
           <View style={styles.avatarPlaceholder}>

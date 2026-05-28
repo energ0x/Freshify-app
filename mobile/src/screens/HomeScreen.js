@@ -172,7 +172,7 @@ export default function HomeScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Мій Холодильник</Text>
+        <Text style={styles.headerTitle}>Мої Продукти</Text>
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={20} color={COLORS.onSurfaceVariant} style={styles.searchIcon} />
