@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Switch, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { recipesAPI } from '../services/api';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -14,7 +15,8 @@ export default function RecipesScreen() {
 
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
-  const styles = getStyles(COLORS, insets);
+  const tabBarHeight = useBottomTabBarHeight();
+  const styles = getStyles(COLORS, insets, tabBarHeight);
 
   const fetchRecipes = async () => {
     setLoading(true);
@@ -129,7 +131,7 @@ export default function RecipesScreen() {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
+const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: COLORS.background 
@@ -184,7 +186,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   },
   list: { 
     padding: 16, 
-    paddingBottom: insets.bottom + 40,
+    paddingBottom: tabBarHeight + 40,
   },
   recipeCard: { 
     backgroundColor: COLORS.surface, 

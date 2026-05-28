@@ -3,6 +3,7 @@ import { ScrollView, View, Text, StyleSheet, Dimensions, ActivityIndicator, Refr
 import { PieChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import * as SecureStore from 'expo-secure-store';
 import { analyticsAPI } from '../services/api';
 import { API_URL } from '../utils/constants';
@@ -20,7 +21,8 @@ export default function AnalyticsScreen({ navigation }) {
   
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
-  const styles = getStyles(COLORS, insets);
+  const tabBarHeight = useBottomTabBarHeight();
+  const styles = getStyles(COLORS, insets, tabBarHeight);
 
   const animation = useRef(new Animated.Value(0)).current;
   const wsRef = useRef(null);
@@ -198,7 +200,7 @@ export default function AnalyticsScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
+const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: COLORS.background 
@@ -227,7 +229,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: insets.bottom + 40,
+    paddingBottom: tabBarHeight + 40,
   },
   loadingText: { 
     marginTop: 16, 

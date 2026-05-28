@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, Switch, Alert, Linking, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 import { settingsAPI } from '../services/api';
@@ -22,6 +23,7 @@ export default function SettingsScreen({ navigation }) {
   const [donationSettings, setDonationSettings] = useState({ auto_donate: false });
   const [saving, setSaving] = useState(false);
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', email: '', current_password: '', new_password: '', confirmPassword: '' });
@@ -113,7 +115,7 @@ export default function SettingsScreen({ navigation }) {
     toggleTheme(newTheme);
   };
 
-  const styles = getStyles(COLORS, insets);
+  const styles = getStyles(COLORS, insets, tabBarHeight);
 
   const SettingItem = ({ icon, title, value, onPress, iconColor = COLORS.primary, rightComponent }) => (
     <TouchableOpacity style={styles.settingRowItem} onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
@@ -427,7 +429,7 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
+const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: COLORS.background 
@@ -435,7 +437,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   content: { 
     paddingHorizontal: 20,
     paddingTop: insets.top || 20,
-    paddingBottom: insets.bottom + 40,
+    paddingBottom: tabBarHeight + 40,
   },
   headerTitle: {
     fontSize: 28,

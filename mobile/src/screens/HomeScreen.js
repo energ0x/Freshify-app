@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableO
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import ProductCard from '../components/ProductCard';
@@ -16,8 +17,9 @@ export default function HomeScreen({ navigation }) {
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   
-  const styles = getStyles(COLORS, insets);
+  const styles = getStyles(COLORS, insets, tabBarHeight);
 
   const [selectedCategory, setSelectedCategory] = useState('Всі');
   const [sortBy, setSortBy] = useState(null);
@@ -314,7 +316,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
+const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: COLORS.background 
@@ -412,7 +414,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   },
   list: { 
     padding: 16, 
-    paddingBottom: insets.bottom + 100 
+    paddingBottom: tabBarHeight + 20
   },
   empty: { 
     alignItems: 'center', 
@@ -464,7 +466,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   },
   snackbar: { 
     position: 'absolute', 
-    bottom: insets.bottom + 80, 
+    bottom: tabBarHeight + 80, 
     left: 20, 
     right: 20, 
     backgroundColor: COLORS.onSurfaceVariant, 
@@ -515,7 +517,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   fab: { 
     position: 'absolute', 
     right: 20, 
-    bottom: insets.bottom,
+    bottom: tabBarHeight + 20,
     backgroundColor: COLORS.primaryContainer, 
     width: 64, 
     height: 64, 

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, RefreshC
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -13,7 +14,8 @@ export default function GroceryListScreen() {
   const [newItemName, setNewItemName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const insets = useSafeAreaInsets();
-  const styles = getStyles(COLORS, insets);
+  const tabBarHeight = useBottomTabBarHeight();
+  const styles = getStyles(COLORS, insets, tabBarHeight);
 
   const [pendingDelete, setPendingDelete] = useState(null);
   const deleteTimeoutRef = useRef(null);
@@ -183,7 +185,7 @@ export default function GroceryListScreen() {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
+const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: COLORS.background 
@@ -246,7 +248,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   },
   list: { 
     padding: 16,
-    paddingBottom: insets.bottom + 40,
+    paddingBottom: tabBarHeight + 40,
   },
   itemContainer: { 
     flexDirection: 'row', 
@@ -331,7 +333,7 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
     position: 'absolute', 
     left: 20, 
     right: 20, 
-    bottom: insets.bottom + 80,
+    bottom: tabBarHeight + 80,
     backgroundColor: COLORS.onSurfaceVariant, 
     borderRadius: 8, 
     padding: 16, 

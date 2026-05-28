@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, Text, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -27,7 +27,7 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const MainTabs = () => {
-  const { colors: COLORS } = useThemeStore();
+  const { colors: COLORS, theme } = useThemeStore();
 
   return (
     <Tab.Navigator
@@ -35,15 +35,27 @@ const MainTabs = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
+           position: 'absolute',
           height: 90,
           borderTopWidth: 0,
-          backgroundColor: COLORS.surface,
+          backgroundColor: 'transparent',
           elevation: 10,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.1,
           shadowRadius: 4,
         },
+          tabBarBackground: () => (
+           <BlurView
+             experimentalBlurMethod="dimezisBlurView"
+             tint={theme === 'dark' ? 'systemThickMaterialDark' : 'systemThickMaterialLight'}
+             intensity={60}
+             style={{
+               ...StyleSheet.absoluteFillObject,
+               overflow: 'hidden',
+             }}
+           />
+          ),
         tabBarIcon: ({ color, size, focused }) => {
           let iconName;
           if (route.name === 'Продукти') iconName = focused ? 'fast-food' : 'fast-food-outline';
