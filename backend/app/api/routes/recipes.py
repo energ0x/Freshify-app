@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
+import asyncio
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
+from starlette.websockets import WebSocketState
 from app.db.database import get_db
 from app.db.models import User
 from app.services.gemini_service import generate_recipes
 from app.services.product_service import get_products
-from app.utils.dependencies import get_current_user
 from app.core.config import get_settings
 from jose import JWTError, jwt
 
@@ -48,8 +49,27 @@ async def websocket_recipe_generator(
              await websocket.send_text("У вас немає продуктів для генерації рецептів.")
              return
 
-        async for chunk in generate_recipes(products_data, include_grocery):
-            await websocket.send_text(chunk)
+        async def send_data():
+            async for chunk in generate_recipes(products_data, include_grocery):
+                await websocket.send_text(chunk)
+                
+        async def receive_disconnect():
+            try:
+                while True:
+                    await websocket.receive_text()
+            except WebSocketDisconnect:
+                pass
+
+        send_task = asyncio.create_task(send_data())
+        receive_task = asyncio.create_task(receive_disconnect())
+        
+        done, pending = await asyncio.wait(
+            [send_task, receive_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        
+        for task in pending:
+            task.cancel()
 
     except WebSocketDisconnect:
         print("Client disconnected")
@@ -57,5 +77,9 @@ async def websocket_recipe_generator(
         print(f"An error occurred: {e}")
         await websocket.send_text("\n\n**Помилка:** Не вдалося згенерувати рецепти.")
     finally:
-        await websocket.close()
+        try:
+            if websocket.application_state == WebSocketState.CONNECTED:
+                await websocket.close()
+        except RuntimeError:
+            pass
         db.close()

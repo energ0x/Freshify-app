@@ -133,7 +133,7 @@ export default function RecipesScreen() {
         {loading && !streamedText ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>Шеф-кухар Gemini думає...</Text>
+            <Text style={styles.loadingText}>ШІ кухар думає...</Text>
           </View>
         ) : recipes.length > 0 ? (
            recipes.map((recipeContent, index) => (

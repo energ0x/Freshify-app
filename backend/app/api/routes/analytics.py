@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, HTTPException, status
+import asyncio
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from starlette.websockets import WebSocketState
 from app.db.database import get_db
 from app.db.models import User, ConsumedProduct, Product
 from app.services.gemini_service import stream_diet_recommendations
@@ -117,13 +119,36 @@ async def websocket_ai_recommendations(
             for r in consumed
         ]
         
-        async for chunk in stream_diet_recommendations(consumed_data):
-            await websocket.send_text(chunk)
+        async def send_data():
+            async for chunk in stream_diet_recommendations(consumed_data):
+                await websocket.send_text(chunk)
+                
+        async def receive_disconnect():
+            try:
+                while True:
+                    await websocket.receive_text()
+            except WebSocketDisconnect:
+                pass
+
+        send_task = asyncio.create_task(send_data())
+        receive_task = asyncio.create_task(receive_disconnect())
+        
+        done, pending = await asyncio.wait(
+            [send_task, receive_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        
+        for task in pending:
+            task.cancel()
             
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:
         print(f"WebSocket Error: {e}")
     finally:
+        try:
+            if websocket.application_state == WebSocketState.CONNECTED:
+                await websocket.close()
+        except RuntimeError:
+            pass
         db.close()
-        await websocket.close()
