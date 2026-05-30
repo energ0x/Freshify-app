@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 import { getExpiryLabel, getExpiryColor } from '../utils/dateHelpers';
 
-export default function ProductCard({ item, onPress }) {
+export default function ProductCard({ item, onPress, style }) {
   const { colors: COLORS } = useThemeStore();
   const expiryColor = getExpiryColor(item.expiry_date, COLORS);
   const styles = getStyles(COLORS, expiryColor);
@@ -22,7 +22,7 @@ export default function ProductCard({ item, onPress }) {
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={1}>
       <View style={styles.iconContainer}>
          <Ionicons name={getCategoryIcon(item.category)} size={24} color={COLORS.primary} />
       </View>
@@ -52,7 +52,6 @@ const getStyles = (COLORS, expiryColor) => StyleSheet.create({
     backgroundColor: COLORS.surface,
     padding: 16,
     borderRadius: 20,
-    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,

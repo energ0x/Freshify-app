@@ -1,15 +1,23 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, LayoutAnimation, UIManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useProductStore from '../store/productStore';
 import ProductCard from '../components/ProductCard';
 import CustomButton from '../components/CustomButton';
 import { COLORS, CATEGORIES } from '../utils/constants'; 
 import { getDaysUntilExpiry } from '../utils/dateHelpers'; 
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function HomeScreen({ navigation }) {
   const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore(); 
+  const insets = useSafeAreaInsets(); 
+  const styles = getStyles(COLORS, insets); 
+  
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -53,11 +61,21 @@ export default function HomeScreen({ navigation }) {
 
   const isFilterActive = selectedCategory !== 'Всі' || sortBy !== null || search !== '';
 
+  const animateList = () => {
+    LayoutAnimation.configureNext({
+      duration: 300,
+      update: { type: 'easeInEaseOut' },
+      delete: { type: 'easeInEaseOut', property: 'scaleY' },
+      create: { type: 'easeInEaseOut', property: 'scaleY' },
+    });
+  };
+
   const handleDeleteTrigger = (item) => {
     if (pendingDelete) {
       deleteProduct(pendingDelete.id); 
       clearTimeout(deleteTimeoutRef.current);
     }
+    animateList(); 
     setPendingDelete(item);
     deleteTimeoutRef.current = setTimeout(() => {
       deleteProduct(item.id); 
@@ -67,6 +85,7 @@ export default function HomeScreen({ navigation }) {
 
   const handleUndoDelete = () => {
     clearTimeout(deleteTimeoutRef.current);
+    animateList(); 
     setPendingDelete(null);
   };
 
@@ -143,6 +162,7 @@ export default function HomeScreen({ navigation }) {
     return (
       <Swipeable
         ref={swipeableRef}
+        containerStyle={{ marginBottom: 12 }}
         renderLeftActions={renderLeftActions}
         renderRightActions={renderRightActions}
         overshootLeft={false}
@@ -152,7 +172,6 @@ export default function HomeScreen({ navigation }) {
           handleConsumeTrigger(item);
         }}
         onSwipeableRightOpen={() => {
-          swipeableRef.current?.close();
           handleDeleteTrigger(item);
         }}
       >
@@ -163,7 +182,11 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+      
       <View style={styles.header}>
+        <Text style={styles.headerTitle}>Холодильник</Text>
+
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <Ionicons name="search-outline" size={20} color={COLORS.textLight} />
@@ -199,7 +222,7 @@ export default function HomeScreen({ navigation }) {
 
       <FlatList
         data={filteredAndSortedProducts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <SwipeableProductItem item={item} />}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} />}
@@ -219,10 +242,6 @@ export default function HomeScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       )}
-
-      <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddProduct')}>
-        <Ionicons name="add" size={30} color="#fff" />
-      </TouchableOpacity>
 
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
@@ -246,8 +265,8 @@ export default function HomeScreen({ navigation }) {
         </KeyboardAvoidingView>
       </Modal>
 
-      <Modal animationType="slide" transparent={true} visible={showFilterModal} onRequestClose={() => setShowFilterModal(false)}>
-        <View style={styles.modalOverlay}>
+      <Modal animationType="fade" transparent={true} visible={showFilterModal} onRequestClose={() => setShowFilterModal(false)}>
+        <View style={styles.bottomModalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Фільтри та сортування</Text>
@@ -296,11 +315,12 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS, insets) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingTop: 16 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', paddingRight: 16 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, marginLeft: 16, marginRight: 8 },
+  header: { paddingTop: (insets.top || 20) + 10, paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 16, paddingHorizontal: 16 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, marginRight: 8 },
   searchInput: { flex: 1, paddingVertical: 10, marginLeft: 8, fontSize: 16 },
   filterButton: { padding: 10, backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
@@ -313,23 +333,23 @@ const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 100 },
   empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: 20 },
   emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight, textAlign: 'center' },
-  
+
+  // ОНОВЛЕНО: Прибрано глобальний borderRadius: 20
   swipeAction: { 
+    flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center', 
     width: 100, 
-    marginBottom: 12,
-    borderRadius: 16, 
   },
+  // ОНОВЛЕНО: Заокруглюємо тільки зовнішні кути (ліві)
   consumeAction: { 
     backgroundColor: COLORS.success, 
-    marginRight: -20,
-    paddingRight: 20,
+    borderRadius: 20, 
   },
+  // ОНОВЛЕНО: Заокруглюємо тільки зовнішні кути (праві)
   deleteAction: { 
-    backgroundColor: COLORS.danger, 
-    marginLeft: -20,
-    paddingLeft: 20,
+    backgroundColor: COLORS.danger,  
+    borderRadius: 20
   },
   swipeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
 
@@ -337,15 +357,14 @@ const styles = StyleSheet.create({
   snackbarText: { color: '#fff', fontSize: 14 },
   snackbarAction: { color: COLORS.primary, fontWeight: 'bold', fontSize: 14 },
 
-  consumeModalContent: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 24, width: '85%' },
+  consumeModalContent: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 20, width: '92%', maxWidth: 380 },
   consumeSubtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 16, textAlign: 'center' },
   consumeInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 16, fontSize: 20, textAlign: 'center', marginBottom: 24, backgroundColor: COLORS.background },
   modalButton: { flex: 1 },
 
-  fab: { position: 'absolute', right: 20, bottom: 20, backgroundColor: COLORS.primary, width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3 },
-  
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '80%', width: '100%', position: 'absolute', bottom: 0 },
+  bottomModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '80%', width: '100%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, textAlign: 'center' },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: COLORS.text, marginTop: 12, marginBottom: 10 },

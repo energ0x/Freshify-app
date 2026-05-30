@@ -1,4 +1,4 @@
-export const API_URL = 'http://172.20.10.14:8000';
+export const API_URL = 'http://192.168.0.147:8000';
 
 export const lightColors = {
   primary: '#578E5B', 

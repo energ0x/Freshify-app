@@ -35,7 +35,7 @@ const MainTabs = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-           position: 'absolute',
+          position: 'absolute',
           height: 90,
           borderTopWidth: 0,
           backgroundColor: 'transparent',
@@ -45,22 +45,32 @@ const MainTabs = () => {
           shadowOpacity: 0.1,
           shadowRadius: 4,
         },
-          tabBarBackground: () => (
-           <BlurView
-             experimentalBlurMethod="dimezisBlurView"
-             tint={theme === 'dark' ? 'systemThickMaterialDark' : 'systemThickMaterialLight'}
-             intensity={60}
-             style={{
-               ...StyleSheet.absoluteFillObject,
-               overflow: 'hidden',
-             }}
-           />
-          ),
+        tabBarBackground: () => (
+          <BlurView
+            experimentalBlurMethod="dimezisBlurView"
+            tint={theme === 'dark' ? 'systemThickMaterialDark' : 'systemThickMaterialLight'}
+            intensity={60}
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              overflow: 'hidden',
+            }}
+          />
+        ),
         tabBarIcon: ({ color, size, focused }) => {
+          // СПЕЦІАЛЬНИЙ РЕНДЕР ДЛЯ ЦЕНТРАЛЬНОЇ КНОПКИ "+"
+          if (route.name === 'AddButton') {
+            return (
+              <View style={styles.fabWrapper}>
+                <View style={[styles.fabButton, { backgroundColor: COLORS.primary }]}>
+                  <Ionicons name="add" size={36} color={COLORS.surface || '#fff'} />
+                </View>
+              </View>
+            );
+          }
+
           let iconName;
           if (route.name === 'Продукти') iconName = focused ? 'fast-food' : 'fast-food-outline';
           else if (route.name === 'Покупки') iconName = focused ? 'cart' : 'cart-outline';
-          else if (route.name === 'Рецепти') iconName = focused ? 'restaurant' : 'restaurant-outline';
           else if (route.name === 'Аналітика') iconName = focused ? 'pie-chart' : 'pie-chart-outline';
           else if (route.name === 'Параметри') iconName = focused ? 'settings' : 'settings-outline';
 
@@ -81,7 +91,18 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Продукти" component={HomeScreen} />
       <Tab.Screen name="Покупки" component={GroceryListScreen} />
-      <Tab.Screen name="Рецепти" component={RecipesScreen} />
+      
+      <Tab.Screen 
+        name="AddButton" 
+        component={View} // Пуста заглушка
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('AddProduct');
+          },
+        })}
+      />
+
       <Tab.Screen name="Аналітика" component={AnalyticsScreen} />
       <Tab.Screen name="Параметри" component={SettingsScreen} />
     </Tab.Navigator>
@@ -120,12 +141,12 @@ export default function AppNavigator() {
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator
         screenOptions={{
-            headerBackTitleVisible: false,
+          headerBackTitleVisible: false,
           headerShown: false,
-            headerShadowVisible: false,
-            animation: 'slide_from_right',
-            headerTransparent: false,
-            contentStyle: { backgroundColor: COLORS.background },
+          headerShadowVisible: false,
+          animation: 'slide_from_right',
+          headerTransparent: false,
+          contentStyle: { backgroundColor: COLORS.background },
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
           headerTitleStyle: { fontWeight: '600' }
@@ -150,6 +171,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Сканувати' }} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Деталі продукту' }} />
             <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Історія споживання' }} />
+            <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: 'Рецепти' }} />
           </>
         )}
       </Stack.Navigator>
@@ -172,4 +194,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
+
+  fabWrapper: {
+    position: 'absolute',
+    // top: -24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fabButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  }
 });
