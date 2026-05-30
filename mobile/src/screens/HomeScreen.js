@@ -13,17 +13,14 @@ export default function HomeScreen({ navigation }) {
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Фільтри та сортування
   const [selectedCategory, setSelectedCategory] = useState('Всі');
   const [sortBy, setSortBy] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [showFilterModal, setShowFilterModal] = useState(false);
 
-  // М'яке видалення (Snackbar)
   const [pendingDelete, setPendingDelete] = useState(null);
   const deleteTimeoutRef = useRef(null);
 
-  // Попап споживання
   const [consumeModalVisible, setConsumeModalVisible] = useState(false);
   const [productToConsume, setProductToConsume] = useState(null);
   const [consumeAmount, setConsumeAmount] = useState('');
@@ -73,15 +70,11 @@ export default function HomeScreen({ navigation }) {
     setPendingDelete(null);
   };
 
-  // ОНОВЛЕНА ЛОГІКА СПОЖИВАННЯ
   const handleConsumeTrigger = async (item) => {
     const qty = Number(item.quantity);
-    
-    // Якщо кількість 1 або менше - споживаємо миттєво без модалки
     if (qty <= 1) {
       await consumeProduct(item.id, qty);
     } else {
-      // Якщо більше 1 - запитуємо скільки
       setProductToConsume(item);
       setConsumeAmount(qty.toString());
       setConsumeModalVisible(true);
@@ -231,7 +224,6 @@ export default function HomeScreen({ navigation }) {
         <Ionicons name="add" size={30} color="#fff" />
       </TouchableOpacity>
 
-      {/* Модалка скільки використати */}
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.consumeModalContent}>
@@ -322,9 +314,23 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: 20 },
   emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight, textAlign: 'center' },
   
-  swipeAction: { justifyContent: 'center', alignItems: 'center', width: 90, marginBottom: 12, borderRadius: 16, height: '90%' },
-  consumeAction: { backgroundColor: COLORS.success, paddingRight: 10 },
-  deleteAction: { backgroundColor: COLORS.danger, paddingLeft: 10 },
+  swipeAction: { 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    width: 100, 
+    marginBottom: 12,
+    borderRadius: 16, 
+  },
+  consumeAction: { 
+    backgroundColor: COLORS.success, 
+    marginRight: -20,
+    paddingRight: 20,
+  },
+  deleteAction: { 
+    backgroundColor: COLORS.danger, 
+    marginLeft: -20,
+    paddingLeft: 20,
+  },
   swipeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
 
   snackbar: { position: 'absolute', bottom: 90, left: 20, right: 20, backgroundColor: '#333', borderRadius: 8, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },

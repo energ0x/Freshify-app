@@ -11,7 +11,6 @@ export default function GroceryListScreen() {
   const [newItemName, setNewItemName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  // М'яке видалення
   const [pendingDelete, setPendingDelete] = useState(null);
   const deleteTimeoutRef = useRef(null);
 
@@ -45,7 +44,6 @@ export default function GroceryListScreen() {
     }
   };
 
-  // ОНОВЛЕННЯ: Логіка для "Видалити все"
   const handleClearAll = () => {
     Alert.alert(
       'Очистити список', 
@@ -106,6 +104,7 @@ export default function GroceryListScreen() {
     return (
       <Swipeable
         ref={swipeableRef}
+        containerStyle={{ marginBottom: 10 }}
         renderLeftActions={renderLeftActions}
         renderRightActions={renderRightActions}
         overshootLeft={false}
@@ -154,7 +153,6 @@ export default function GroceryListScreen() {
           </TouchableOpacity>
         </View>
         
-        {/* Кнопки під інпутом */}
         <View style={styles.headerButtonsRow}>
           <CustomButton
             title="Додати те, що закінчується"
@@ -163,7 +161,6 @@ export default function GroceryListScreen() {
             style={styles.autoAddBtn}
           />
           
-          {/* Кнопка "Видалити все", з'являється тільки коли є товари */}
           {groceryItems.length > 0 && (
             <TouchableOpacity style={styles.clearAllBtn} onPress={handleClearAll}>
               <Ionicons name="trash" size={22} color={COLORS.danger} />
@@ -211,16 +208,29 @@ const styles = StyleSheet.create({
 
   list: { padding: 16 },
   
-  itemContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, padding: 16, borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  itemContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.surface, padding: 16, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
   checkboxContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   itemName: { fontSize: 16, marginLeft: 12, color: COLORS.text, flex: 1 },
   itemPurchased: { textDecorationLine: 'line-through', color: COLORS.textLight },
   empty: { alignItems: 'center', marginTop: 100 },
   emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight },
 
-  swipeAction: { justifyContent: 'center', alignItems: 'center', width: 90, marginBottom: 10, borderRadius: 12 },
-  buyAction: { backgroundColor: COLORS.success, paddingRight: 10 },
-  deleteAction: { backgroundColor: COLORS.danger, paddingLeft: 10 },
+  swipeAction: { 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    width: 100, 
+    borderRadius: 12 
+  },
+  buyAction: { 
+    backgroundColor: COLORS.success, 
+    marginRight: -20,
+    paddingRight: 20,
+  },
+  deleteAction: { 
+    backgroundColor: COLORS.danger, 
+    marginLeft: -20,
+    paddingLeft: 20,
+  },
   swipeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
 
   snackbar: { position: 'absolute', bottom: 30, left: 20, right: 20, backgroundColor: '#333', borderRadius: 8, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
