@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, Switch, Alert, Linking, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Switch, Alert, Linking, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import useAuthStore from '../store/authStore';
+import useThemeStore from '../store/themeStore';
 import { settingsAPI } from '../services/api';
 import CustomButton from '../components/CustomButton';
-import { COLORS, CHARITY } from '../utils/constants';
+import { CHARITY } from '../utils/constants';
 
-// Список доступних фондів для вибору
 const AVAILABLE_CHARITIES = [
-  CHARITY, // З ваших constants.js
+  CHARITY,
   { name: 'Фонд Сергія Притули', url: 'https://prytulafoundation.org' },
   { name: 'United24', url: 'https://u24.gov.ua' },
   { name: 'Госпітальєри', url: 'https://www.hospitallers.life/' }
@@ -16,18 +18,19 @@ const AVAILABLE_CHARITIES = [
 
 export default function SettingsScreen({ navigation }) {
   const { user, logout, updateProfile } = useAuthStore();
+  const { theme, toggleTheme, colors: COLORS, isSystemTheme, setSystemTheme } = useThemeStore();
+  
   const [donationSettings, setDonationSettings] = useState({ auto_donate: false });
   const [saving, setSaving] = useState(false);
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   
-  // Стани для модалки редагування профілю
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', email: '', current_password: '', new_password: '', confirmPassword: '' });
   const [editErrors, setEditErrors] = useState({});
 
-  // Стани для вибору фонду та персоналізації
   const [selectedCharity, setSelectedCharity] = useState(AVAILABLE_CHARITIES[0]);
   const [charityModalVisible, setCharityModalVisible] = useState(false);
-  const [theme, setTheme] = useState('Світла'); // Локальний стан для теми
 
   useEffect(() => {
     loadSettings();
@@ -107,95 +110,134 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'Світла' ? 'Темна' : 'Світла');
-    // Тут в майбутньому можна додати логіку зміни теми у всьому застосунку
+  const handleThemeChange = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    toggleTheme(newTheme);
   };
 
-  // Допоміжний компонент для клікабельних рядків
-  const SettingItem = ({ icon, title, value, onPress, iconColor = COLORS.primary }) => (
-    <TouchableOpacity style={styles.settingRowItem} onPress={onPress} activeOpacity={0.7}>
+  const styles = getStyles(COLORS, insets, tabBarHeight);
+
+  const SettingItem = ({ icon, title, value, onPress, iconColor = COLORS.primary, rightComponent }) => (
+    <TouchableOpacity style={styles.settingRowItem} onPress={onPress} activeOpacity={0.7} disabled={!onPress}>
       <View style={styles.settingItemLeft}>
-        <Ionicons name={icon} size={22} color={iconColor} />
+        <Ionicons name={icon} size={24} color={iconColor} />
         <Text style={styles.settingItemTitle}>{title}</Text>
       </View>
       <View style={styles.settingItemRight}>
-        {value && <Text style={styles.settingItemValue}>{value}</Text>}
-        <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} />
+        {rightComponent ? rightComponent : (
+          <>
+            {value && <Text style={styles.settingItemValue}>{value}</Text>}
+            {onPress && <Ionicons name="chevron-forward" size={20} color={COLORS.outline} />}
+          </>
+        )}
       </View>
     </TouchableOpacity>
   );
 
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.background} />
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content} 
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.headerTitle}>Параметри</Text>
         
-        {/* Секція Профілю */}
         <View style={styles.profileSection}>
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>{user?.name ? user.name.charAt(0).toUpperCase() : 'U'}</Text>
           </View>
           <Text style={styles.userName}>{user?.name || 'Користувач'}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
-          <TouchableOpacity
-            style={styles.editProfileButton}
+          <CustomButton
+            title="Редагувати профіль"
+            variant="text"
             onPress={() => setEditModalVisible(true)}
-          >
-            <Ionicons name="pencil" size={16} color={COLORS.primary} />
-            <Text style={styles.editProfileText}>Редагувати профіль</Text>
-          </TouchableOpacity>
+            style={styles.editProfileButton}
+            textStyle={styles.editProfileText}
+            icon={<Ionicons name="pencil" size={16} color={COLORS.primary} />}
+          />
         </View>
 
-        {/* НОВА СЕКЦІЯ: Персоналізація */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Персоналізація</Text>
           <View style={styles.card}>
             <SettingItem 
-              icon={theme === 'Світла' ? 'sunny' : 'moon'} 
-              title="Тема оформлення" 
-              value={theme} 
-              onPress={toggleTheme} 
+              icon={theme === 'light' ? 'sunny' : 'moon'} 
+              title="Темна тема" 
+              rightComponent={
+                <Switch
+                  value={theme === 'dark'}
+                  onValueChange={handleThemeChange}
+                  trackColor={{ false: COLORS.surfaceVariant, true: COLORS.primary }}
+                  thumbColor={COLORS.onPrimary}
+                />
+              }
+            />
+            <View style={styles.divider} />
+            <SettingItem 
+              icon="phone-portrait-outline" 
+              title="Системна тема" 
+              rightComponent={
+                <Switch
+                  value={isSystemTheme}
+                  onValueChange={setSystemTheme}
+                  trackColor={{ false: COLORS.surfaceVariant, true: COLORS.primary }}
+                  thumbColor={COLORS.onPrimary}
+                />
+              }
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Харчування</Text>
+          <View style={styles.card}>
+            <SettingItem 
+              icon="time-outline"
+              title="Історія споживання"
+              onPress={() => navigation.navigate('History')}
             />
             <View style={styles.divider} />
             <SettingItem 
               icon="restaurant-outline" 
               title="Моя дієта" 
               value="Обрати" 
-              onPress={() => navigation.navigate('Diet')} 
+              onPress={() => Alert.alert("Незабаром", "Ця функція з'явиться у наступних оновленнях.")} 
             />
             <View style={styles.divider} />
             <SettingItem 
               icon="warning-outline" 
               title="Мої алергени" 
               value="Налаштувати" 
-              onPress={() => navigation.navigate('Allergens')} 
+              onPress={() => Alert.alert("Незабаром", "Ця функція з'явиться у наступних оновленнях.")}
               iconColor={COLORS.warning}
             />
           </View>
         </View>
 
-        {/* Секція Відповідального споживання */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Відповідальне споживання</Text>
           <View style={styles.card}>
             <View style={styles.settingRow}>
               <View style={styles.settingInfo}>
-                <Ionicons name="heart" size={24} color={COLORS.danger} />
+                <Ionicons name="heart-circle-outline" size={32} color={COLORS.danger} />
                 <View style={styles.settingTextContainer}>
-                  <Text style={styles.settingTitle}>Авто-донат за зіпсовані продукти</Text>
+                  <Text style={styles.settingTitle}>Авто-донат</Text>
                   <Text style={styles.settingDesc}>
-                    Якщо ви не встигли спожити продукт, застосунок запропонує перерахувати його вартість на ЗСУ.
+                    Автоматично пропонувати донат, якщо продукт зіпсовано.
                   </Text>
                 </View>
               </View>
               <Switch
                 value={donationSettings.auto_donate}
                 onValueChange={handleToggleDonation}
-                trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                trackColor={{ false: COLORS.surfaceVariant, true: COLORS.primary }}
+                thumbColor={COLORS.onPrimary}
               />
             </View>
 
-            {/* ВІДОБРАЖАЄМО ФОНД ТІЛЬКИ ЯКЩО АВТО-ДОНАТ УВІМКНЕНО */}
             {donationSettings.auto_donate && (
               <>
                 <View style={styles.divider} />
@@ -205,7 +247,7 @@ export default function SettingsScreen({ navigation }) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.settingInfo}>
-                    <Ionicons name="globe-outline" size={24} color={COLORS.secondary} />
+                    <Ionicons name="globe-outline" size={28} color={COLORS.secondary} />
                     <View style={styles.settingTextContainer}>
                       <Text style={styles.settingTitle}>Фонд за замовчуванням</Text>
                       <Text style={[styles.settingDesc, { color: COLORS.secondary, fontWeight: '500' }]}>
@@ -213,14 +255,13 @@ export default function SettingsScreen({ navigation }) {
                       </Text>
                     </View>
                   </View>
-                  <Ionicons name="chevron-down" size={20} color={COLORS.textLight} />
+                  <Ionicons name="chevron-down" size={20} color={COLORS.outline} />
                 </TouchableOpacity>
               </>
             )}
           </View>
         </View>
 
-        {/* Секція Акаунту */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Акаунт</Text>
           <CustomButton
@@ -229,11 +270,11 @@ export default function SettingsScreen({ navigation }) {
             onPress={handleLogout}
             style={styles.logoutButton}
             textStyle={{ color: COLORS.danger }}
+            icon={<Ionicons name="log-out-outline" size={20} color={COLORS.danger} />}
           />
         </View>
       </ScrollView>
 
-      {/* МОДАЛКА: Редагування профілю (ваша існуюча) */}
       <Modal
         visible={editModalVisible}
         animationType="slide"
@@ -247,11 +288,10 @@ export default function SettingsScreen({ navigation }) {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                  <Ionicons name="close" size={28} color={COLORS.text} />
-                </TouchableOpacity>
                 <Text style={styles.modalTitle}>Редагувати профіль</Text>
-                <View style={{ width: 28 }} />
+                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                  <Ionicons name="close-circle" size={32} color={COLORS.outline} />
+                </TouchableOpacity>
               </View>
 
               <ScrollView style={styles.modalForm}>
@@ -262,7 +302,7 @@ export default function SettingsScreen({ navigation }) {
                     placeholder="Введіть ім'я"
                     value={editForm.name}
                     onChangeText={(text) => setEditForm(prev => ({ ...prev, name: text }))}
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                   {editErrors.name && <Text style={styles.errorText}>{editErrors.name}</Text>}
                 </View>
@@ -276,7 +316,7 @@ export default function SettingsScreen({ navigation }) {
                     onChangeText={(text) => setEditForm(prev => ({ ...prev, email: text }))}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                   {editErrors.email && <Text style={styles.errorText}>{editErrors.email}</Text>}
                 </View>
@@ -289,7 +329,7 @@ export default function SettingsScreen({ navigation }) {
                     value={editForm.current_password}
                     onChangeText={(text) => setEditForm(prev => ({ ...prev, current_password: text }))}
                     secureTextEntry={true}
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                   {editErrors.current_password && <Text style={styles.errorText}>{editErrors.current_password}</Text>}
                 </View>
@@ -302,7 +342,7 @@ export default function SettingsScreen({ navigation }) {
                     value={editForm.new_password}
                     onChangeText={(text) => setEditForm(prev => ({ ...prev, new_password: text }))}
                     secureTextEntry={true}
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                   {editErrors.new_password && <Text style={styles.errorText}>{editErrors.new_password}</Text>}
                 </View>
@@ -316,7 +356,7 @@ export default function SettingsScreen({ navigation }) {
                       value={editForm.confirmPassword}
                       onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
                       secureTextEntry={true}
-                      placeholderTextColor={COLORS.textLight}
+                      placeholderTextColor={COLORS.onSurfaceVariant}
                     />
                     {editErrors.confirmPassword && <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>}
                   </View>
@@ -343,7 +383,6 @@ export default function SettingsScreen({ navigation }) {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* НОВА МОДАЛКА: Вибір фонду */}
       <Modal
         visible={charityModalVisible}
         animationType="fade"
@@ -355,7 +394,7 @@ export default function SettingsScreen({ navigation }) {
             <View style={styles.charityModalHeader}>
               <Text style={styles.modalTitle}>Оберіть фонд</Text>
               <TouchableOpacity onPress={() => setCharityModalVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.text} />
+                <Ionicons name="close-circle" size={32} color={COLORS.outline} />
               </TouchableOpacity>
             </View>
             
@@ -371,16 +410,15 @@ export default function SettingsScreen({ navigation }) {
                 <View style={styles.charityOptionLeft}>
                   <Ionicons 
                     name={selectedCharity.name === charity.name ? "radio-button-on" : "radio-button-off"} 
-                    size={24} 
-                    color={selectedCharity.name === charity.name ? COLORS.primary : COLORS.textLight} 
+                    size={28} 
+                    color={selectedCharity.name === charity.name ? COLORS.primary : COLORS.outline} 
                   />
-                  <Text style={[styles.charityOptionText, selectedCharity.name === charity.name && { color: COLORS.primary, fontWeight: 'bold' }]}>
+                  <Text style={[styles.charityOptionText, selectedCharity.name === charity.name && { color: COLORS.primary, fontWeight: '700' }]}>
                     {charity.name}
                   </Text>
                 </View>
-                {/* Кнопка для переходу на сайт фонду */}
                 <TouchableOpacity onPress={() => Linking.openURL(charity.url)}>
-                  <Ionicons name="open-outline" size={20} color={COLORS.secondary} />
+                  <Ionicons name="open-outline" size={24} color={COLORS.secondary} />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -391,60 +429,260 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: 20, paddingBottom: 40 },
-  profileSection: { alignItems: 'center', marginBottom: 30, marginTop: 10 },
-  avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  avatarText: { fontSize: 36, color: '#fff', fontWeight: 'bold' },
-  userName: { fontSize: 22, fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
-  userEmail: { fontSize: 16, color: COLORS.textLight, marginBottom: 12 },
-  editProfileButton: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: `${COLORS.primary}15`,
+const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.background 
   },
-  editProfileText: { marginLeft: 6, color: COLORS.primary, fontSize: 14, fontWeight: '600' },
-  
-  section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textLight, textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 },
-  card: { backgroundColor: COLORS.surface, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2, padding: 16 },
-  
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  charityRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
-  settingInfo: { flexDirection: 'row', alignItems: 'flex-start', flex: 1, paddingRight: 16 },
-  settingTextContainer: { marginLeft: 12, flex: 1 },
-  settingTitle: { fontSize: 16, fontWeight: '500', color: COLORS.text, marginBottom: 4 },
-  settingDesc: { fontSize: 13, color: COLORS.textLight, lineHeight: 18 },
-  divider: { height: 1, backgroundColor: COLORS.border, marginVertical: 14 },
-  
-  // Стилі для нових кнопок персоналізації
-  settingRowItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 6 },
-  settingItemLeft: { flexDirection: 'row', alignItems: 'center' },
-  settingItemTitle: { fontSize: 16, fontWeight: '500', color: COLORS.text, marginLeft: 12 },
-  settingItemRight: { flexDirection: 'row', alignItems: 'center' },
-  settingItemValue: { fontSize: 14, color: COLORS.textLight, marginRight: 8 },
+  content: { 
+    paddingHorizontal: 20,
+    paddingTop: insets.top || 20,
+    paddingBottom: tabBarHeight + 40,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 24,
+  },
+  profileSection: { 
+    alignItems: 'center', 
+    marginBottom: 30, 
+    backgroundColor: COLORS.surface,
+    padding: 24,
+    borderRadius: 28,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  avatarPlaceholder: { 
+    width: 96, 
+    height: 96, 
+    borderRadius: 48, 
+    backgroundColor: COLORS.primaryContainer, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    marginBottom: 16 
+  },
+  avatarText: { 
+    fontSize: 48, 
+    color: COLORS.onPrimaryContainer, 
+    fontWeight: '600' 
+  },
+  userName: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    color: COLORS.text, 
+    marginBottom: 4 
+  },
+  userEmail: { 
+    fontSize: 16, 
+    color: COLORS.textLight, 
+    marginBottom: 16 
+  },
+  editProfileButton: {
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
+  editProfileText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  section: { 
+    marginBottom: 24 
+  },
+  sectionTitle: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: COLORS.textLight, 
+    textTransform: 'uppercase', 
+    marginBottom: 12, 
+    paddingLeft: 4 
+  },
+  card: { 
+    backgroundColor: COLORS.surface, 
+    borderRadius: 24, 
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    padding: 8,
+  },
+  settingRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    padding: 16,
+  },
+  charityRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 16,
+  },
+  settingInfo: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    flex: 1, 
+    paddingRight: 16 
+  },
+  settingTextContainer: { 
+    marginLeft: 16, 
+    flex: 1 
+  },
+  settingTitle: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: COLORS.text, 
+    marginBottom: 4 
+  },
+  settingDesc: { 
+    fontSize: 14, 
+    color: COLORS.textLight, 
+    lineHeight: 20 
+  },
+  divider: { 
+    height: 1, 
+    backgroundColor: COLORS.border, 
+    marginHorizontal: 16 
+  },
+  settingRowItem: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 16,
+  },
+  settingItemLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  settingItemTitle: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: COLORS.text, 
+    marginLeft: 16 
+  },
+  settingItemRight: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  settingItemValue: { 
+    fontSize: 16, 
+    color: COLORS.textLight, 
+    marginRight: 12 
+  },
+  logoutButton: { 
+    borderColor: COLORS.danger,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+  },
 
-  logoutButton: { borderColor: COLORS.danger, borderWidth: 1, backgroundColor: 'transparent' },
-
-  // Стилі модалки редагування профілю (без змін)
   modalContainer: { flex: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 30, maxHeight: '90%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: COLORS.text },
-  modalForm: { paddingHorizontal: 20, paddingVertical: 20 },
-  formGroup: { marginBottom: 18 },
-  formLabel: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-  input: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: COLORS.text },
-  inputError: { borderColor: COLORS.danger },
-  errorText: { color: COLORS.danger, fontSize: 12, marginTop: 6 },
-  modalActions: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 12 },
-  modalButton: { flex: 1 },
-
-  // Стилі модалки вибору фонду
-  charityModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  charityModalContent: { backgroundColor: COLORS.surface, borderRadius: 16, width: '100%', padding: 20 },
-  charityModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  charityOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  charityOptionLeft: { flexDirection: 'row', alignItems: 'center' },
-  charityOptionText: { fontSize: 16, color: COLORS.text, marginLeft: 12 }
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: insets.bottom + 30,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  modalForm: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: COLORS.surfaceVariant,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  inputError: {
+    borderColor: COLORS.danger,
+  },
+  errorText: {
+    color: COLORS.danger,
+    fontSize: 12,
+    marginTop: 6,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 16,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  modalButton: {
+    flex: 1,
+  },
+  charityModalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'flex-end', 
+  },
+  charityModalContent: { 
+    backgroundColor: COLORS.surface, 
+    borderTopLeftRadius: 28, 
+    borderTopRightRadius: 28, 
+    width: '100%', 
+    padding: 24,
+    paddingBottom: insets.bottom + 20,
+  },
+  charityModalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  charityOption: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingVertical: 16, 
+    borderBottomWidth: 1, 
+    borderBottomColor: COLORS.border 
+  },
+  charityOptionLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  charityOptionText: { 
+    fontSize: 16, 
+    color: COLORS.text, 
+    marginLeft: 16,
+    fontWeight: '500',
+  }
 });

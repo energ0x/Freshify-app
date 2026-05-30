@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useProductStore from '../store/productStore';
+import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import DatePicker from '../components/DatePicker';
-import { COLORS, CATEGORIES, UNITS } from '../utils/constants';
+import CustomPicker from '../components/CustomPicker';
+import { CATEGORIES, UNITS } from '../utils/constants';
 import { getExpiryLabel, getExpiryColor, formatDate } from '../utils/dateHelpers';
 
 export default function ProductDetailScreen({ route, navigation }) {
   const { productId } = route.params;
   const { products, deleteProduct, consumeProduct, updateProduct } = useProductStore();
+  const { colors: COLORS } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const product = products.find(p => p.id === productId);
 
@@ -40,14 +44,16 @@ export default function ProductDetailScreen({ route, navigation }) {
   }, [product]);
 
   if (!product) {
+    const styles = getStyles(COLORS, insets);
     return (
       <View style={styles.center}>
-        <Text>Продукт не знайдено</Text>
+        <Text style={{ color: COLORS.text }}>Продукт не знайдено</Text>
       </View>
     );
   }
 
   const expiryColor = getExpiryColor(product.expiry_date, COLORS);
+  const styles = getStyles(COLORS, insets, expiryColor);
 
   const handleDelete = () => {
     Alert.alert('Видалення', 'Ви впевнені, що хочете видалити цей продукт?', [
@@ -112,6 +118,9 @@ export default function ProductDetailScreen({ route, navigation }) {
     }
   };
 
+  const unitItems = UNITS.map(u => ({ label: u, value: u }));
+  const categoryItems = CATEGORIES.map(c => ({ label: c, value: c }));
+
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -119,33 +128,37 @@ export default function ProductDetailScreen({ route, navigation }) {
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{product.name}</Text>
-              <Text style={styles.category}>{product.category || 'Без категорії'}</Text>
+              <View style={styles.categoryBadge}>
+                <Text style={styles.category}>{product.category || 'Без категорії'}</Text>
+              </View>
             </View>
             <TouchableOpacity onPress={() => setEditModalVisible(true)} style={styles.editIconBtn}>
-              <Ionicons name="pencil" size={20} color={COLORS.primary} />
+              <Ionicons name="pencil" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.infoRow}>
-            <Ionicons name="scale-outline" size={24} color={COLORS.textLight} />
-            <Text style={styles.infoText}>Залишок: <Text style={styles.bold}>{product.quantity} {product.unit}</Text></Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={24} color={COLORS.textLight} />
-            <View>
-              <Text style={styles.infoText}>Придатний до: <Text style={styles.bold}>{formatDate(product.expiry_date)}</Text></Text>
-              <Text style={[styles.expiryLabel, { color: expiryColor }]}>{getExpiryLabel(product.expiry_date)}</Text>
-            </View>
+          <View style={styles.infoGrid}>
+             <View style={styles.infoCard}>
+                <Ionicons name="scale-outline" size={28} color={COLORS.primary} />
+                <Text style={styles.infoCardLabel}>Залишок</Text>
+                <Text style={styles.infoCardValue}>{product.quantity} {product.unit}</Text>
+             </View>
+             
+             <View style={[styles.infoCard, { backgroundColor: `${expiryColor}15` }]}>
+                <Ionicons name="calendar-outline" size={28} color={expiryColor} />
+                <Text style={styles.infoCardLabel}>Придатний до</Text>
+                <Text style={[styles.infoCardValue, { color: expiryColor }]}>{formatDate(product.expiry_date)}</Text>
+                <Text style={[styles.expiryLabel, { color: expiryColor }]}>{getExpiryLabel(product.expiry_date)}</Text>
+             </View>
           </View>
 
           {product.notes ? (
             <View style={styles.notesContainer}>
-              <Ionicons name="document-text-outline" size={24} color={COLORS.textLight} style={styles.notesIcon} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.notesTitle}>Нотатки:</Text>
-                <Text style={styles.notesText}>{product.notes}</Text>
+              <View style={styles.notesHeader}>
+                 <Ionicons name="document-text" size={20} color={COLORS.primary} />
+                 <Text style={styles.notesTitle}>Нотатки</Text>
               </View>
+              <Text style={styles.notesText}>{product.notes}</Text>
             </View>
           ) : null}
         </View>
@@ -156,12 +169,16 @@ export default function ProductDetailScreen({ route, navigation }) {
             onPress={handleConsume}
             loading={loading}
             style={styles.consumeButton}
+            icon={<Ionicons name="restaurant-outline" size={20} color={COLORS.onPrimary} />}
           />
           <CustomButton
             title="Видалити"
-            variant="danger"
+            variant="outline"
             onPress={handleDelete}
             disabled={loading}
+            style={styles.deleteButton}
+            textStyle={{ color: COLORS.danger }}
+            icon={<Ionicons name="trash-outline" size={20} color={COLORS.danger} />}
           />
         </View>
       </ScrollView>
@@ -179,11 +196,10 @@ export default function ProductDetailScreen({ route, navigation }) {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Редагувати</Text>
                 <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                  <Ionicons name="close" size={28} color={COLORS.text} />
+                  <Ionicons name="close-circle" size={32} color={COLORS.outline} />
                 </TouchableOpacity>
-                <Text style={styles.modalTitle}>Редагувати продукт</Text>
-                <View style={{ width: 28 }} />
               </View>
 
               <ScrollView style={styles.modalForm}>
@@ -194,7 +210,7 @@ export default function ProductDetailScreen({ route, navigation }) {
                     value={editForm.name}
                     onChangeText={(val) => setEditForm(prev => ({ ...prev, name: val }))}
                     placeholder="Наприклад: Молоко"
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                 </View>
 
@@ -206,36 +222,26 @@ export default function ProductDetailScreen({ route, navigation }) {
                       value={editForm.quantity}
                       onChangeText={(val) => setEditForm(prev => ({ ...prev, quantity: val }))}
                       keyboardType="numeric"
-                      placeholderTextColor={COLORS.textLight}
+                      placeholderTextColor={COLORS.onSurfaceVariant}
                     />
                   </View>
                   <View style={[styles.formGroup, { flex: 3 }]}>
-                    <Text style={styles.formLabel}>Одиниця</Text>
-                    <View style={styles.pickerContainer}>
-                      <Picker
-                        style={styles.picker}
-                        itemStyle={styles.pickerItem}
-                        selectedValue={editForm.unit}
-                        onValueChange={(val) => setEditForm(prev => ({ ...prev, unit: val }))}
-                      >
-                        {UNITS.map(u => <Picker.Item key={u} label={u} value={u} />)}
-                      </Picker>
-                    </View>
+                    <CustomPicker
+                      label="Одиниця"
+                      items={unitItems}
+                      selectedValue={editForm.unit}
+                      onValueChange={(val) => setEditForm(prev => ({ ...prev, unit: val }))}
+                    />
                   </View>
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Категорія</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      style={styles.picker}
-                      itemStyle={styles.pickerItem}
-                      selectedValue={editForm.category}
-                      onValueChange={(val) => setEditForm(prev => ({ ...prev, category: val }))}
-                    >
-                      {CATEGORIES.map(c => <Picker.Item key={c} label={c} value={c} />)}
-                    </Picker>
-                  </View>
+                  <CustomPicker
+                    label="Категорія"
+                    items={categoryItems}
+                    selectedValue={editForm.category}
+                    onValueChange={(val) => setEditForm(prev => ({ ...prev, category: val }))}
+                  />
                 </View>
 
                 <View style={styles.formGroup}>
@@ -252,7 +258,7 @@ export default function ProductDetailScreen({ route, navigation }) {
                     value={editForm.notes}
                     onChangeText={(val) => setEditForm(prev => ({ ...prev, notes: val }))}
                     placeholder="Важлива інформація про продукт..."
-                    placeholderTextColor={COLORS.textLight}
+                    placeholderTextColor={COLORS.onSurfaceVariant}
                     multiline={true}
                     numberOfLines={3}
                     textAlignVertical="top"
@@ -284,41 +290,184 @@ export default function ProductDetailScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 20 },
-  card: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 20, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  name: { fontSize: 24, fontWeight: 'bold', color: COLORS.text, marginBottom: 4 },
-  category: { fontSize: 16, color: COLORS.primary, marginBottom: 20, fontWeight: '500' },
-  editIconBtn: { padding: 8, backgroundColor: `${COLORS.primary}15`, borderRadius: 8 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  infoText: { fontSize: 16, color: COLORS.text, marginLeft: 12 },
-  bold: { fontWeight: '600' },
-  expiryLabel: { fontSize: 14, fontWeight: '500', marginLeft: 12, marginTop: 4 },
-  notesContainer: { flexDirection: 'row', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: COLORS.border },
-  notesIcon: { marginRight: 12, marginTop: 2 },
-  notesTitle: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 4 },
-  notesText: { fontSize: 14, color: COLORS.textLight, lineHeight: 20 },
-  actions: { gap: 12 },
-  consumeButton: { backgroundColor: COLORS.secondary },
+const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
+  container: { 
+    flex: 1, 
+    backgroundColor: COLORS.background 
+  },
+  center: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  content: { 
+    padding: 20,
+    paddingBottom: insets?.bottom + 40 || 40,
+  },
+  card: { 
+    backgroundColor: COLORS.surface, 
+    borderRadius: 24, 
+    padding: 24, 
+    marginBottom: 24, 
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  headerRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  name: { 
+    fontSize: 28, 
+    fontWeight: '700', 
+    color: COLORS.text, 
+    marginBottom: 8 
+  },
+  categoryBadge: {
+    backgroundColor: COLORS.primaryContainer,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+    alignSelf: 'flex-start',
+  },
+  category: { 
+    fontSize: 14, 
+    color: COLORS.onPrimaryContainer, 
+    fontWeight: '600' 
+  },
+  editIconBtn: { 
+    padding: 12, 
+    backgroundColor: COLORS.surfaceVariant, 
+    borderRadius: 16 
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: COLORS.surfaceVariant,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'flex-start',
+  },
+  infoCardLabel: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  infoCardValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  expiryLabel: { 
+    fontSize: 12, 
+    fontWeight: '600', 
+    marginTop: 4 
+  },
+  notesContainer: { 
+    backgroundColor: COLORS.background,
+    padding: 16,
+    borderRadius: 16,
+  },
+  notesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  notesTitle: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: COLORS.primary, 
+    marginLeft: 8,
+  },
+  notesText: { 
+    fontSize: 15, 
+    color: COLORS.text, 
+    lineHeight: 22 
+  },
+  actions: { 
+    gap: 16 
+  },
+  consumeButton: { 
+    backgroundColor: COLORS.primary,
+  },
+  deleteButton: {
+    borderColor: COLORS.danger,
+    borderWidth: 1,
+  },
 
   // Modal styles
   modalContainer: { flex: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 30, maxHeight: '90%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  modalTitle: { fontSize: 18, fontWeight: '600', color: COLORS.text },
-  modalForm: { paddingHorizontal: 20, paddingVertical: 20 },
-  formGroup: { marginBottom: 16 },
-  row: { flexDirection: 'row' },
-  formLabel: { fontSize: 14, fontWeight: '500', color: COLORS.text, marginBottom: 8 },
-  input: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 12, fontSize: 16, color: COLORS.text },
-  textArea: { minHeight: 80 },
-  pickerContainer: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, overflow: 'hidden' },
-  picker: { color: COLORS.text },
-  pickerItem: { color: COLORS.text },
-  modalActions: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: COLORS.border },
-  modalButton: { flex: 1 },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+    justifyContent: 'flex-end' 
+  },
+  modalContent: { 
+    backgroundColor: COLORS.surface, 
+    borderTopLeftRadius: 28, 
+    borderTopRightRadius: 28, 
+    paddingBottom: insets?.bottom ? insets.bottom + 30 : 30,
+    maxHeight: '90%' 
+  },
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 24, 
+    paddingVertical: 20, 
+  },
+  modalTitle: { 
+    fontSize: 22, 
+    fontWeight: '700', 
+    color: COLORS.text 
+  },
+  modalForm: { 
+    paddingHorizontal: 24, 
+    paddingTop: 8,
+  },
+  formGroup: { 
+    marginBottom: 20 
+  },
+  row: { 
+    flexDirection: 'row' 
+  },
+  formLabel: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    color: COLORS.text, 
+    marginBottom: 8 
+  },
+  input: { 
+    backgroundColor: COLORS.surfaceVariant, 
+    borderRadius: 12, 
+    paddingHorizontal: 16, 
+    paddingVertical: Platform.OS === 'ios' ? 14 : 12, 
+    fontSize: 16, 
+    color: COLORS.text 
+  },
+  textArea: { 
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  modalActions: { 
+    flexDirection: 'row', 
+    gap: 16, 
+    paddingHorizontal: 24, 
+    paddingTop: 20, 
+    borderTopWidth: 1, 
+    borderTopColor: COLORS.border 
+  },
+  modalButton: { 
+    flex: 1 
+  },
 });
