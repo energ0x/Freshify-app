@@ -23,6 +23,11 @@ import AllergensScreen from '../screens/onboarding/AllergensScreen';
 import GuideScreen from '../screens/onboarding/GuideScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import AchievementsScreen from '../screens/AchievementsScreen';
+import PremiumScreen from '../screens/PremiumScreen';
+import LeaguesScreen from '../screens/LeaguesScreen';
+import DietSettingsScreen from '../screens/DietSettingsScreen';
+import AllergensSettingsScreen from '../screens/AllergensSettingsScreen';
+import CategoriesScreen from '../screens/CategoriesScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -167,13 +172,20 @@ export default function AppNavigator() {
           </Stack.Group>
         ) : (
           <>
-            <Stack.Screen name="Main" component={MainTabs} />
+          {/* options={{ headerShown: true, title: 'Мої продукти'        цю штуку можна додати вниз і буде відступ*/}
+            <Stack.Screen name="Main" component={MainTabs}/>
             <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: 'Додати продукт' }} />
             <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Сканувати' }} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Деталі продукту' }} />
             <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Історія споживання' }} />
             <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: 'Рецепти' }} />
             <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: 'Досягнення' }} />
+            <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false, presentation: 'modal', title: 'Premium'}} />
+            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false, title: 'Leagues'}} />
+
+            <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: 'Моя дієта'}} />
+            <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: 'Мої алергени'}} />
+            <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: 'Мої категорії'}} />
           </>
         )}
       </Stack.Navigator>
