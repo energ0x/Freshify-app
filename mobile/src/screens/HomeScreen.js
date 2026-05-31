@@ -185,7 +185,7 @@ export default function HomeScreen({ navigation }) {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Холодильник</Text>
+        <Text style={styles.headerTitle}>Мої продукти</Text>
 
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
@@ -334,19 +334,16 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: 20 },
   emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight, textAlign: 'center' },
 
-  // ОНОВЛЕНО: Прибрано глобальний borderRadius: 20
   swipeAction: { 
     flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center', 
     width: 100, 
   },
-  // ОНОВЛЕНО: Заокруглюємо тільки зовнішні кути (ліві)
   consumeAction: { 
     backgroundColor: COLORS.success, 
     borderRadius: 20, 
   },
-  // ОНОВЛЕНО: Заокруглюємо тільки зовнішні кути (праві)
   deleteAction: { 
     backgroundColor: COLORS.danger,  
     borderRadius: 20
