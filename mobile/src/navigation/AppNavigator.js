@@ -22,6 +22,7 @@ import DietScreen from '../screens/onboarding/DietScreen';
 import AllergensScreen from '../screens/onboarding/AllergensScreen';
 import GuideScreen from '../screens/onboarding/GuideScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import AchievementsScreen from '../screens/AchievementsScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -94,7 +95,7 @@ const MainTabs = () => {
       
       <Tab.Screen 
         name="AddButton" 
-        component={View} // Пуста заглушка
+        component={AddProductScreen} // Пуста заглушка
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
@@ -172,6 +173,7 @@ export default function AppNavigator() {
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Деталі продукту' }} />
             <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Історія споживання' }} />
             <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: 'Рецепти' }} />
+            <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: 'Досягнення' }} />
           </>
         )}
       </Stack.Navigator>

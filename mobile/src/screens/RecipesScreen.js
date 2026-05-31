@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, TouchableOpacity, StatusBar, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
@@ -17,8 +16,9 @@ export default function RecipesScreen() {
 
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
-  const styles = getStyles(COLORS, insets, tabBarHeight);
+  
+  // ВИПРАВЛЕНО: Видалено useBottomTabBarHeight(), передаємо тільки insets
+  const styles = getStyles(COLORS, insets);
 
   const animation = useRef(new Animated.Value(0)).current;
   const wsRef = useRef(null);
@@ -32,7 +32,6 @@ export default function RecipesScreen() {
   }, []);
 
   useEffect(() => {
-    // Разделяем стрим текста на отдельные рецепты по разделителю "---"
     if (streamedText) {
       const rawRecipes = streamedText.split('---').filter(r => r.trim() !== '');
       setRecipes(rawRecipes);
@@ -153,7 +152,8 @@ export default function RecipesScreen() {
   );
 }
 
-const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
+// ВИПРАВЛЕНО: Видалено tabBarHeight з параметрів
+const getStyles = (COLORS, insets) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: COLORS.background 
@@ -198,7 +198,8 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 16, 
-    paddingBottom: tabBarHeight + 40,
+    // ВИПРАВЛЕНО: Використовуємо insets.bottom замість tabBarHeight
+    paddingBottom: (insets.bottom || 20) + 40,
   },
   center: { 
     flex: 1, 

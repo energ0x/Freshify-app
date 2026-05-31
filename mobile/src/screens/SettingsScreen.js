@@ -115,7 +115,6 @@ export default function SettingsScreen({ navigation }) {
 
   const styles = getStyles(COLORS, insets, tabBarHeight);
 
-  
   const SettingItem = ({ icon, title, value, onPress, iconBgColor, rightComponent }) => (
     <TouchableOpacity
       style={styles.settingRow}
@@ -154,14 +153,12 @@ export default function SettingsScreen({ navigation }) {
       >
         {/* ── Profile Hero Card ───────────────────────────────────────────── */}
         <View style={styles.profileCard}>
-          {/* Decorative colored banner */}
           <View style={styles.profileBanner}>
             <View style={styles.bCircle1} />
             <View style={styles.bCircle2} />
             <View style={styles.bCircle3} />
           </View>
 
-          {/* Avatar overlapping banner */}
           <View style={styles.avatarRing}>
             <View style={styles.avatar}>
               <Text style={styles.avatarInitial}>
@@ -173,7 +170,6 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.profileName}>{user?.name || 'Користувач'}</Text>
           <Text style={styles.profileEmail}>{user?.email}</Text>
 
-          {/* Quick stat chips — inspired by the screenshot's stat cards */}
           <View style={styles.statRow}>
             <View style={styles.statChip}>
               <Ionicons
@@ -203,15 +199,26 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </View>
 
-          {/* Edit profile pill button */}
-          <TouchableOpacity
-            style={styles.editPill}
-            onPress={() => setEditModalVisible(true)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="pencil-outline" size={14} color={COLORS.primary} />
-            <Text style={styles.editPillText}>Редагувати профіль</Text>
-          </TouchableOpacity>
+          {/* ДОДАНО: Ряд з кнопками Досягнення та Редагувати */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              style={styles.actionPill}
+              onPress={() => navigation.navigate('Achievements')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trophy-outline" size={15} color={COLORS.primary} />
+              <Text style={styles.actionPillText}>Досягнення</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionPill}
+              onPress={() => setEditModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="pencil-outline" size={15} color={COLORS.primary} />
+              <Text style={styles.actionPillText}>Редагувати</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* ── Персоналізація ─────────────────────────────────────────────── */}
@@ -276,7 +283,6 @@ export default function SettingsScreen({ navigation }) {
         {/* ── Відповідальне споживання ────────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Відповідальне споживання</Text>
 
-        {/* Donation card — styled like the "Waiting for hidden qualities" card */}
         <View style={styles.card}>
           <View style={styles.donateHeader}>
             <View style={styles.donateIconWrap}>
@@ -590,18 +596,24 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textLight,
   },
-  editPill: {
+  // ДОДАНО: Стилі для ряду кнопок
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 20,
+  },
+  actionPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
     backgroundColor: COLORS.primaryContainer,
-    paddingHorizontal: 22,
-    paddingVertical: 11,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 100,
   },
-  editPillText: {
+  actionPillText: {
     color: COLORS.primary,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   sectionLabel: {
