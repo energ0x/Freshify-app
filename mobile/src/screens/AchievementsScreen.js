@@ -64,7 +64,12 @@ export default function AchievementsScreen({ navigation }) {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       
       {/* Шапка з Лігою та Досвідом */}
-      <View style={styles.headerCard}>
+      {/* Шапка з Лігою та Досвідом (ТЕПЕР КЛІКАБЕЛЬНА) */}
+      <TouchableOpacity 
+        style={styles.headerCard} 
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('Leagues')}
+      >
         <View style={styles.leagueRow}>
           <View style={[styles.leagueIconBg, { backgroundColor: `${USER_STATS.leagueColor}20` }]}>
             <Ionicons name={USER_STATS.leagueIcon} size={40} color={USER_STATS.leagueColor} />
@@ -73,6 +78,8 @@ export default function AchievementsScreen({ navigation }) {
             <Text style={styles.levelText}>Рівень {USER_STATS.level}</Text>
             <Text style={styles.leagueName}>{USER_STATS.league}</Text>
           </View>
+          {/* Стрілочка, яка підказує, що можна натиснути */}
+          <Ionicons name="chevron-forward" size={24} color={COLORS.outline} />
         </View>
 
         {/* Головний прогрес бар XP */}
@@ -86,7 +93,7 @@ export default function AchievementsScreen({ navigation }) {
           </View>
           <Text style={styles.xpHint}>Залишилось {USER_STATS.nextLevelXP - USER_STATS.currentXP} XP до наступного рівня</Text>
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* Швидка статистика */}
       <View style={styles.statsRow}>
