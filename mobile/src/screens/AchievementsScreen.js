@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../utils/constants';
+import useThemeStore from '../store/themeStore';
 
 const { width } = Dimensions.get('window');
 
@@ -28,6 +28,9 @@ const ACHIEVEMENTS = [
 ];
 
 export default function AchievementsScreen({ navigation }) {
+  const { colors: COLORS, theme } = useThemeStore();
+  const styles = getStyles(COLORS, theme);
+
   const progressPercent = (USER_STATS.currentXP / USER_STATS.nextLevelXP) * 100;
 
   const renderAchievement = (item) => {
@@ -36,7 +39,7 @@ export default function AchievementsScreen({ navigation }) {
 
     return (
       <View key={item.id} style={[styles.achievementCard, !isCompleted && styles.achievementLocked]}>
-        <View style={[styles.iconContainer, { backgroundColor: isCompleted ? `${item.color}20` : '#F0F0F0' }]}>
+        <View style={[styles.iconContainer, { backgroundColor: isCompleted ? `${item.color}20` : COLORS.surfaceVariant }]}>
           <Ionicons name={item.icon} size={28} color={isCompleted ? item.color : COLORS.textLight} />
         </View>
         <View style={styles.achievementInfo}>
@@ -63,8 +66,7 @@ export default function AchievementsScreen({ navigation }) {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       
-      {/* Шапка з Лігою та Досвідом */}
-      {/* Шапка з Лігою та Досвідом (ТЕПЕР КЛІКАБЕЛЬНА) */}
+      {/* Шапка з Лігою та Досвідом (КЛІКАБЕЛЬНА) */}
       <TouchableOpacity 
         style={styles.headerCard} 
         activeOpacity={0.8}
@@ -121,7 +123,7 @@ export default function AchievementsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS, theme) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
+    shadowOpacity: theme === 'dark' ? 0.2 : 0.05,
     shadowRadius: 10,
     elevation: 3,
   },
@@ -186,7 +188,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 12,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.surfaceVariant, // Замінено для підтримки темної теми
     borderRadius: 6,
     overflow: 'hidden',
     marginBottom: 8,
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: theme === 'dark' ? 0.2 : 0.05,
     shadowRadius: 5,
     elevation: 2,
   },
@@ -254,12 +256,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: theme === 'dark' ? 0.2 : 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
   achievementLocked: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   iconContainer: {
     width: 50,
@@ -290,7 +292,7 @@ const styles = StyleSheet.create({
   miniProgressTrack: {
     flex: 1,
     height: 6,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.surfaceVariant, // Замінено для підтримки темної теми
     borderRadius: 3,
     marginRight: 8,
     overflow: 'hidden',
