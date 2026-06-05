@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Alert, Platform } from 'react-native';
+import { ScrollView, View, Text, TextInput, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -26,11 +26,21 @@ export default function AddProductScreen({ navigation, route }) {
 
   useEffect(() => {
     if (route.params?.aiResult) {
-      const { name, category, estimated_shelf_life_days } = route.params.aiResult;
+      let data = route.params.aiResult;
+      
+      if (Array.isArray(data)) {
+        if (data.length > 1) {
+          Alert.alert('Чек розпізнано', `Знайдено ${data.length} продуктів. Поки що заповнено перший, інші ви зможете додати згодом.`);
+        }
+        data = data[0] || {};
+      }
+
+      const { name, category, estimated_shelf_life_days } = data;
       const expiry = new Date();
       if (estimated_shelf_life_days) {
         expiry.setDate(expiry.getDate() + estimated_shelf_life_days);
       }
+      
       setForm(prev => ({
         ...prev,
         name: name || prev.name,
@@ -59,14 +69,27 @@ export default function AddProductScreen({ navigation, route }) {
   const categoryItems = CATEGORIES.map(c => ({ label: c, value: c }));
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <CustomButton
-        title="Сканувати камерою (AI)"
-        variant="outline"
-        onPress={() => navigation.navigate('Camera')}
-        style={styles.aiButton}
-        icon={<Ionicons name="camera-outline" size={20} color={COLORS.primary} />}
-      />
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      
+      <Text style={styles.scanLabel}>Додати за допомогою ШІ</Text>
+      <View style={styles.scanRow}>
+        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'product' })} activeOpacity={0.7}>
+          <Ionicons name="camera-outline" size={28} color={COLORS.primary} />
+          <Text style={styles.scanBtnText}>Фото</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'barcode' })} activeOpacity={0.7}>
+          <Ionicons name="barcode-outline" size={28} color={COLORS.primary} />
+          <Text style={styles.scanBtnText}>Штрихкод</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'receipt' })} activeOpacity={0.7}>
+          <Ionicons name="receipt-outline" size={28} color={COLORS.primary} />
+          <Text style={styles.scanBtnText}>Чек</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.divider} />
 
       <View style={styles.section}>
         <Text style={styles.label}>Назва продукту</Text>
@@ -141,46 +164,20 @@ export default function AddProductScreen({ navigation, route }) {
 }
 
 const getStyles = (COLORS) => StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: COLORS.background 
-  },
-  content: { 
-    padding: 20,
-    paddingBottom: 40,
-  },
-  aiButton: { 
-    marginBottom: 24, 
-    borderStyle: 'dashed',
-    borderColor: COLORS.outline,
-  },
-  section: { 
-    marginBottom: 20 
-  },
-  row: { 
-    flexDirection: 'row' 
-  },
-  label: { 
-    fontSize: 14, 
-    fontWeight: '600', 
-    color: COLORS.text, 
-    marginBottom: 8 
-  },
-  input: { 
-    backgroundColor: COLORS.surfaceVariant, 
-    borderWidth: 1, 
-    borderColor: 'transparent', 
-    borderRadius: 12, 
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
-    fontSize: 16,
-    color: COLORS.text,
-  },
-  textArea: { 
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  saveButton: { 
-    marginTop: 20,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { padding: 20, paddingBottom: 40 },
+  
+  scanLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textLight, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
+  scanRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 12 },
+  scanBtn: { flex: 1, backgroundColor: COLORS.surfaceVariant, paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: `${COLORS.primary}30` },
+  scanBtnText: { marginTop: 8, fontSize: 13, fontWeight: '600', color: COLORS.text },
+  
+  divider: { height: 1, backgroundColor: COLORS.border, marginBottom: 24, opacity: 0.5 },
+  
+  section: { marginBottom: 20 },
+  row: { flexDirection: 'row' },
+  label: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
+  input: { backgroundColor: COLORS.surfaceVariant, borderWidth: 1, borderColor: 'transparent', borderRadius: 12, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 16, color: COLORS.text },
+  textArea: { minHeight: 100, textAlignVertical: 'top' },
+  saveButton: { marginTop: 20 },
 });
