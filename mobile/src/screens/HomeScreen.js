@@ -4,10 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useProductStore from '../store/productStore';
-import useThemeStore from '../store/themeStore'; // Підключаємо тему
+import useThemeStore from '../store/themeStore'; 
 import ProductCard from '../components/ProductCard';
 import CustomButton from '../components/CustomButton';
-import { CATEGORIES } from '../utils/constants'; // Прибрали COLORS звідси
+import { CATEGORIES } from '../utils/constants'; 
 import { getDaysUntilExpiry } from '../utils/dateHelpers'; 
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -16,10 +16,9 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function HomeScreen({ navigation }) {
   const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore(); 
-  const { colors: COLORS, theme } = useThemeStore(); // Отримуємо динамічні кольори
+  const { colors: COLORS, theme } = useThemeStore(); 
   const insets = useSafeAreaInsets(); 
   
-  // Передаємо theme у стилі для точковішого налаштування
   const styles = getStyles(COLORS, insets, theme); 
   
   const [search, setSearch] = useState('');
@@ -338,7 +337,6 @@ const getStyles = (COLORS, insets, theme) => StyleSheet.create({
   activeFiltersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginTop: 10 },
   activeFiltersText: { fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' },
   
-  // Кнопка "Скинути" адаптується під тему
   resetLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme === 'dark' ? 'rgba(255, 66, 66, 0.15)' : '#FCE8E6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   resetLinkText: { fontSize: 12, color: COLORS.danger, fontWeight: '600' },
   
@@ -364,8 +362,8 @@ const getStyles = (COLORS, insets, theme) => StyleSheet.create({
   },
   swipeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
 
-  // Снекбар тепер використовує правильні кольори для темної/світлої теми
-  snackbar: { position: 'absolute', bottom: 90, left: 20, right: 20, backgroundColor: COLORS.text, borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  // ОНОВЛЕНО: Значення bottom збільшено з 90 до 130, щоб напис був вище нижнього меню навігації (Tab Bar)
+  snackbar: { position: 'absolute', bottom: 130, left: 20, right: 20, backgroundColor: COLORS.text, borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
   snackbarText: { color: COLORS.background, fontSize: 14, fontWeight: '500' },
   snackbarAction: { color: COLORS.background, fontWeight: 'bold', fontSize: 14 },
 
