@@ -3,46 +3,20 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useThemeStore from '../store/themeStore';
-import CustomButton from '../components/CustomButton';
 
 const PREMIUM_FEATURES = [
-  { 
-    id: 1, 
-    title: 'Безлімітне додавання', 
-    desc: 'Скануйте штрихкоди, чеки та фотографуйте продукти без жодних обмежень.', 
-    icon: 'infinite-outline',
-    color: '#3498DB'
-  },
-  { 
-    id: 2, 
-    title: 'ШІ-Кухар без меж', 
-    desc: 'Генеруйте персоналізовані рецепти щодня, щоб нічого не пропало.', 
-    icon: 'restaurant-outline',
-    color: '#E67E22'
-  },
-  { 
-    id: 3, 
-    title: 'Поглиблена аналітика', 
-    desc: 'Детальні графіки зекономлених коштів та вашого еко-сліду (CO₂).', 
-    icon: 'pie-chart-outline',
-    color: '#9B59B6'
-  },
-  { 
-    id: 4, 
-    title: 'Бустер Досвіду (x1.5)', 
-    desc: 'Отримуйте більше XP за кожну дію та швидше підкорюйте вищі ліги.', 
-    icon: 'star-outline',
-    color: '#F1C40F'
-  },
+  { id: 1, title: 'Безлімітне додавання', desc: 'Скануйте штрихкоди, чеки та фотографуйте продукти без жодних обмежень.', icon: 'infinite-outline', color: '#3498DB' },
+  { id: 2, title: 'ШІ-Кухар без меж', desc: 'Генеруйте персоналізовані рецепти щодня, щоб нічого не пропало.', icon: 'restaurant-outline', color: '#E67E22' },
+  { id: 3, title: 'Поглиблена аналітика', desc: 'Детальні графіки зекономлених коштів та вашого еко-сліду (CO₂).', icon: 'pie-chart-outline', color: '#9B59B6' },
+  { id: 4, title: 'Бустер Досвіду (x1.5)', desc: 'Отримуйте більше XP за кожну дію та швидше підкорюйте вищі ліги.', icon: 'star-outline', color: '#F1C40F' },
 ];
 
 export default function PremiumScreen({ navigation }) {
-  const { colors: COLORS } = useThemeStore();
+  const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
-  const [selectedPlan, setSelectedPlan] = useState('yearly'); // 'monthly' або 'yearly'
+  const [selectedPlan, setSelectedPlan] = useState('yearly');
 
   const handleSubscribe = () => {
-    // Тут у майбутньому буде інтеграція з Apple Pay / Google Pay (через RevenueCat або Expo IAP)
     Alert.alert(
       'Вітаємо у Freshify Premium! 🎉',
       'Оплата пройшла успішно. Тепер вам доступні всі можливості застосунку.',
@@ -50,22 +24,29 @@ export default function PremiumScreen({ navigation }) {
     );
   };
 
+  const isDark = theme === 'dark';
+  // Використовуємо глибокий темно-зелений для темної теми, і звичайний зелений для світлої
+  const heroBg = isDark ? COLORS.primaryContainer : COLORS.primary;
+  
+  const styles = getStyles(COLORS, insets, isDark, heroBg);
+
   return (
-    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A1A1A" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={heroBg} />
       
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Преміум Шапка */}
-        <View style={[styles.heroSection, { paddingTop: insets.top + 20 }]}>
-          <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={() => navigation.goBack()}
-          >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        
+        {/* ── ПРЕМІУМ ШАПКА (Завжди красивий зелений) ── */}
+        <View style={styles.heroSection}>
+          <View style={styles.bCircle1} />
+          <View style={styles.bCircle2} />
+          
+          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
             <Ionicons name="close" size={24} color="#FFF" />
           </TouchableOpacity>
           
           <View style={styles.diamondContainer}>
-            <Ionicons name="diamond" size={48} color="#FFD700" />
+            <Ionicons name="diamond" size={44} color="#FFD700" />
           </View>
           
           <Text style={styles.heroTitle}>Freshify Premium</Text>
@@ -74,7 +55,7 @@ export default function PremiumScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Список переваг */}
+        {/* ── ПЕРЕВАГИ ── */}
         <View style={styles.featuresSection}>
           {PREMIUM_FEATURES.map(feature => (
             <View key={feature.id} style={styles.featureRow}>
@@ -82,21 +63,19 @@ export default function PremiumScreen({ navigation }) {
                 <Ionicons name={feature.icon} size={24} color={feature.color} />
               </View>
               <View style={styles.featureTextWrap}>
-                <Text style={[styles.featureTitle, { color: COLORS.text }]}>{feature.title}</Text>
-                <Text style={[styles.featureDesc, { color: COLORS.textLight }]}>{feature.desc}</Text>
+                <Text style={styles.featureTitle}>{feature.title}</Text>
+                <Text style={styles.featureDesc}>{feature.desc}</Text>
               </View>
             </View>
           ))}
         </View>
 
-        {/* Вибір плану */}
+        {/* ── ВИБІР ПЛАНУ ── */}
         <View style={styles.plansSection}>
-          {/* Місячний план */}
           <TouchableOpacity 
             style={[
               styles.planCard, 
-              { borderColor: COLORS.border, backgroundColor: COLORS.surface },
-              selectedPlan === 'monthly' && [styles.planCardActive, { backgroundColor: `${COLORS.primary}08` }]
+              selectedPlan === 'monthly' && styles.planCardActive
             ]}
             onPress={() => setSelectedPlan('monthly')}
             activeOpacity={0.8}
@@ -105,22 +84,20 @@ export default function PremiumScreen({ navigation }) {
               <Ionicons 
                 name={selectedPlan === 'monthly' ? 'radio-button-on' : 'radio-button-off'} 
                 size={24} 
-                color={selectedPlan === 'monthly' ? COLORS.primary : COLORS.outline} 
+                color={selectedPlan === 'monthly' ? (isDark ? '#FFD700' : COLORS.primary) : COLORS.outline} 
               />
             </View>
             <View style={styles.planInfo}>
-              <Text style={[styles.planName, { color: COLORS.text }]}>На місяць</Text>
-              <Text style={[styles.planDesc, { color: COLORS.textLight }]}>Гнучкий план</Text>
+              <Text style={styles.planName}>На місяць</Text>
+              <Text style={styles.planDesc}>Гнучкий план</Text>
             </View>
-            <Text style={[styles.planPrice, { color: COLORS.text }]}>99 ₴<Text style={styles.planPeriod}> / міс</Text></Text>
+            <Text style={styles.planPrice}>99 ₴<Text style={styles.planPeriod}> / міс</Text></Text>
           </TouchableOpacity>
 
-          {/* Річний план */}
           <TouchableOpacity 
             style={[
               styles.planCard, 
               styles.planCardYearly,
-              { backgroundColor: COLORS.surface },
               selectedPlan === 'yearly' && styles.planCardActiveYearly
             ]}
             onPress={() => setSelectedPlan('yearly')}
@@ -137,24 +114,22 @@ export default function PremiumScreen({ navigation }) {
               />
             </View>
             <View style={styles.planInfo}>
-              <Text style={[styles.planName, { color: COLORS.text }]}>На рік</Text>
-              <Text style={[styles.planDesc, { color: COLORS.textLight }]}>Економія 30%</Text>
+              <Text style={styles.planName}>На рік</Text>
+              <Text style={styles.planDesc}>Економія 30%</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[styles.planPrice, { color: COLORS.text }]}>829 ₴<Text style={styles.planPeriod}> / рік</Text></Text>
+              <Text style={styles.planPrice}>829 ₴<Text style={styles.planPeriod}> / рік</Text></Text>
               <Text style={styles.planPriceDiscount}>лише 69 ₴ / міс</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Кнопка оплати */}
+        {/* ── КНОПКА ОПЛАТИ (Золота з темним текстом) ── */}
         <View style={styles.actionSection}>
-          <CustomButton 
-            title={`Оформити за ${selectedPlan === 'yearly' ? '829' : '99'} ₴`}
-            onPress={handleSubscribe}
-            style={{ borderRadius: 16, height: 56 }}
-          />
-          <Text style={[styles.footerText, { color: COLORS.textLight }]}>
+          <TouchableOpacity style={styles.subscribeBtn} onPress={handleSubscribe} activeOpacity={0.85}>
+            <Text style={styles.subscribeBtnText}>Оформити за {selectedPlan === 'yearly' ? '829' : '99'} ₴</Text>
+          </TouchableOpacity>
+          <Text style={styles.footerText}>
             Підписка автоматично продовжується. Скасувати можна будь-коли в налаштуваннях вашого акаунту. 
             Продовжуючи, ви погоджуєтеся з Умовами використання та Політикою конфіденційності.
           </Text>
@@ -164,171 +139,120 @@ export default function PremiumScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+const getStyles = (COLORS, insets, isDark, heroBg) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  scrollContent: { paddingBottom: 40, flexGrow: 1 },
+  
   heroSection: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: heroBg,
+    paddingTop: insets.top + 10,
     paddingHorizontal: 24,
     paddingBottom: 40,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     alignItems: 'center',
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
+    overflow: 'hidden',
+    shadowColor: isDark ? '#000' : COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: isDark ? 0.3 : 0.2,
+    shadowRadius: 15,
+    elevation: 4,
   },
+  bCircle1: { 
+    position: 'absolute', width: 220, height: 220, borderRadius: 110, 
+    backgroundColor: 'rgba(255,255,255,0.06)', top: -60, right: -60 
+  },
+  bCircle2: { 
+    position: 'absolute', width: 140, height: 140, borderRadius: 70, 
+    backgroundColor: 'rgba(255,255,255,0.04)', bottom: -40, left: -20 
+  },
+  
   closeButton: {
     position: 'absolute',
-    top: 50,
-    right: 20,
+    top: insets.top + 10,
+    right: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   diamondContainer: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 215, 0, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: 'rgba(255, 215, 0, 0.4)',
   },
   heroTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: '#FFD700',
-    marginBottom: 12,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   heroSubtitle: {
-    fontSize: 15,
-    color: '#E0E0E0',
+    fontSize: 14,
+    color: isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary,
     textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 20,
+    lineHeight: 20,
+    paddingHorizontal: 10,
+    opacity: 0.9,
   },
-  featuresSection: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+  
+  featuresSection: { paddingHorizontal: 24, paddingTop: 32, paddingBottom: 24 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  featureIconWrap: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  featureTextWrap: { flex: 1 },
+  featureTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
+  featureDesc: { fontSize: 13, lineHeight: 18, color: COLORS.textLight },
+  
+  plansSection: { paddingHorizontal: 24, marginBottom: 24 },
+  planCard: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, borderWidth: 2, borderColor: COLORS.border, backgroundColor: COLORS.surface, marginBottom: 16 },
+  planCardActive: { 
+    borderColor: isDark ? '#FFD700' : COLORS.primary, 
+    backgroundColor: isDark ? 'rgba(255, 215, 0, 0.05)' : `${COLORS.primary}08` 
   },
-  featureRow: {
-    flexDirection: 'row',
+  planCardYearly: { borderColor: COLORS.border, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  planCardActiveYearly: { 
+    borderColor: '#FFD700', 
+    backgroundColor: isDark ? '#262211' : '#FFFCED' 
+  },
+  badgeContainer: { position: 'absolute', top: -12, right: 20, backgroundColor: '#FFD700', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { color: '#000', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  
+  planRadio: { marginRight: 16 },
+  planInfo: { flex: 1 },
+  planName: { fontSize: 17, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
+  planDesc: { fontSize: 13, color: COLORS.textLight },
+  planPrice: { fontSize: 18, fontWeight: '800', color: COLORS.text },
+  planPeriod: { fontSize: 13, fontWeight: '500', color: COLORS.textLight },
+  planPriceDiscount: { fontSize: 11, color: isDark ? '#FFD700' : COLORS.warning, fontWeight: '600', marginTop: 2 },
+  
+  actionSection: { paddingHorizontal: 24 },
+  subscribeBtn: { 
+    backgroundColor: '#FFD700', 
+    borderRadius: 16, 
+    height: 56, 
+    justifyContent: 'center', 
     alignItems: 'center',
-    marginBottom: 24,
-  },
-  featureIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  featureTextWrap: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  featureDesc: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  plansSection: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  planCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    borderRadius: 20,
-    borderWidth: 2,
-    marginBottom: 16,
-  },
-  planCardActive: {
-    borderColor: '#34C759', // Приклад кольору primary
-  },
-  planCardYearly: {
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  planCardActiveYearly: {
-    borderColor: '#FFD700',
-    backgroundColor: '#FFFCED', // Світло-золотий фон
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: -12,
-    right: 20,
-    backgroundColor: '#FFD700',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
     shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4
   },
-  badgeText: {
-    color: '#000',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+  subscribeBtnText: {
+    color: '#133918', // Завжди темно-зелений для високої контрастності
+    fontSize: 16, 
+    fontWeight: 'bold'
   },
-  planRadio: {
-    marginRight: 16,
-  },
-  planInfo: {
-    flex: 1,
-  },
-  planName: {
-    fontSize: 17,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  planDesc: {
-    fontSize: 13,
-  },
-  planPrice: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  planPeriod: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  planPriceDiscount: {
-    fontSize: 11,
-    color: '#FF9500',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  actionSection: {
-    paddingHorizontal: 24,
-  },
-  footerText: {
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 16,
-    lineHeight: 16,
-  }
+  footerText: { fontSize: 11, textAlign: 'center', marginTop: 16, lineHeight: 16, color: COLORS.textLight },
 });

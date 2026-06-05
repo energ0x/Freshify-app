@@ -20,7 +20,6 @@ const AVAILABLE_CHARITIES = [
   { name: 'Госпітальєри', url: 'https://www.hospitallers.life/' },
 ];
 
-// Мокові дані для гейміфікації (у майбутньому братимуться зі store)
 const USER_STATS = {
   level: 12,
   currentXP: 1450,
@@ -131,7 +130,8 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
-  const styles = getStyles(COLORS, insets, tabBarHeight);
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, insets, tabBarHeight, isDark);
 
   const SettingItem = ({ icon, title, value, onPress, iconBgColor, rightComponent }) => (
     <TouchableOpacity
@@ -224,7 +224,7 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.shareBtnText}>Поділитися успіхами</Text>
         </TouchableOpacity>
 
-        {/* ── Преміум Підписка ───────────────────────────────────────────── */}
+        {/* ── Преміум Підписка (Ідеально збігається з PremiumScreen) ── */}
         <TouchableOpacity 
           style={styles.premiumCard} 
           onPress={() => navigation.navigate('Premium')}
@@ -279,7 +279,7 @@ export default function SettingsScreen({ navigation }) {
             title="Моя дієта"
             value="Обрати"
             iconBgColor="#FF6B35"
-            onPress={() => navigation.navigate('DietSettings')}
+            onPress={() => navigation.navigate('SettingsDiet')}
           />
           <View style={styles.divider} />
           <SettingItem
@@ -287,14 +287,15 @@ export default function SettingsScreen({ navigation }) {
             title="Мої алергени"
             value="Налаштувати"
             iconBgColor="#FF3B30"
-            onPress={() => navigation.navigate('AllergensSettings')}
+            onPress={() => navigation.navigate('SettingsAllergens')}
           />
+          <View style={styles.divider} />
           <SettingItem
-            icon="warning-outline"
+            icon="list-outline"
             title="Мої категорії"
             value="Налаштувати"
-            iconBgColor="#FF3B30"
-            onPress={() => navigation.navigate('Categories')}
+            iconBgColor="#9B59B6"
+            onPress={() => navigation.navigate('SettingsCategories')}
           />
         </View>
 
@@ -443,78 +444,96 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  content: { paddingHorizontal: 16, paddingTop: (insets.top || 20) + 6, paddingBottom: tabBarHeight + 40 },
+const getStyles = (COLORS, insets, tabBarHeight, isDark) => {
+  // Використовуємо глибокий темно-зелений для темної теми, і звичайний зелений для світлої
+  const premiumBg = isDark ? COLORS.primaryContainer : COLORS.primary;
+  const premiumText = isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary;
 
-  profileCard: { backgroundColor: COLORS.surface, borderRadius: 28, marginBottom: 24, alignItems: 'center', paddingBottom: 26, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
-  profileBanner: { width: '100%', height: 100, backgroundColor: COLORS.primaryContainer, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', marginBottom: -50 },
-  bCircle1: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: `${COLORS.primary}22`, top: -50, right: -20 },
-  bCircle2: { position: 'absolute', width: 90, height: 90, borderRadius: 45, backgroundColor: `${COLORS.primary}18`, bottom: -30, left: 24 },
-  bCircle3: { position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: `${COLORS.primary}14`, top: 14, left: '42%' },
-  avatarRing: { width: 104, height: 104, borderRadius: 52, borderWidth: 4, borderColor: COLORS.surface, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8 },
-  avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center' },
-  avatarInitial: { fontSize: 42, fontWeight: '800', color: COLORS.onPrimary ?? '#fff', lineHeight: 50 },
-  profileName: { fontSize: 26, fontWeight: '800', color: COLORS.text, marginTop: 14, letterSpacing: -0.5 },
-  profileEmail: { fontSize: 14, color: COLORS.textLight, marginTop: 3, marginBottom: 16 },
-  editPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.background, paddingHorizontal: 22, paddingVertical: 11, borderRadius: 100, borderWidth: 1, borderColor: `${COLORS.text}10` },
-  editPillText: { color: COLORS.text, fontSize: 14, fontWeight: '600' },
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: COLORS.background },
+    content: { paddingHorizontal: 16, paddingTop: (insets.top || 20) + 6, paddingBottom: tabBarHeight + 40 },
 
-  // СТИЛІ БЛОКУ ПРОГРЕСУ ТА КНОПКИ ПОШИРЕННЯ
-  progressCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingVertical: 16, borderRadius: 22, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
-  progressStat: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
-  progressValue: { fontSize: 16, fontWeight: '700', color: COLORS.text },
-  progressLabel: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
-  progressDivider: { width: 1, height: '80%', backgroundColor: `${COLORS.text}10`, marginHorizontal: 16 },
-  
-  shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: `${COLORS.primary}12`, paddingVertical: 14, borderRadius: 16, marginBottom: 28, gap: 8 },
-  shareBtnText: { color: COLORS.primary, fontSize: 15, fontWeight: '600' },
+    profileCard: { backgroundColor: COLORS.surface, borderRadius: 28, marginBottom: 24, alignItems: 'center', paddingBottom: 26, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
+    profileBanner: { width: '100%', height: 100, backgroundColor: COLORS.primaryContainer, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', marginBottom: -50 },
+    bCircle1: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: `${COLORS.primary}22`, top: -50, right: -20 },
+    bCircle2: { position: 'absolute', width: 90, height: 90, borderRadius: 45, backgroundColor: `${COLORS.primary}18`, bottom: -30, left: 24 },
+    bCircle3: { position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: `${COLORS.primary}14`, top: 14, left: '42%' },
+    avatarRing: { width: 104, height: 104, borderRadius: 52, borderWidth: 4, borderColor: COLORS.surface, backgroundColor: COLORS.surface, justifyContent: 'center', alignItems: 'center', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8 },
+    avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center' },
+    avatarInitial: { fontSize: 42, fontWeight: '800', color: COLORS.onPrimary ?? '#fff', lineHeight: 50 },
+    profileName: { fontSize: 26, fontWeight: '800', color: COLORS.text, marginTop: 14, letterSpacing: -0.5 },
+    profileEmail: { fontSize: 14, color: COLORS.textLight, marginTop: 3, marginBottom: 16 },
+    editPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.background, paddingHorizontal: 22, paddingVertical: 11, borderRadius: 100, borderWidth: 1, borderColor: `${COLORS.text}10` },
+    editPillText: { color: COLORS.text, fontSize: 14, fontWeight: '600' },
 
-  // СТИЛІ КАРТКИ ПРЕМІУМУ
-  premiumCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: `${COLORS.primary}`, paddingHorizontal: 18, paddingVertical: 20, borderRadius: 22, marginBottom: 28, shadowColor: '#FFD700', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-  premiumIconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#FFD70020', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  premiumTextWrap: { flex: 1 },
-  premiumTitle: { fontSize: 17, fontWeight: '800', color: '#FFD700', marginBottom: 4 },
-  premiumDesc: { fontSize: 12, color: `${COLORS.onPrimary}`, lineHeight: 16 },
+    progressCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingVertical: 16, borderRadius: 22, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+    progressStat: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
+    progressValue: { fontSize: 16, fontWeight: '700', color: COLORS.text },
+    progressLabel: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
+    progressDivider: { width: 1, height: '80%', backgroundColor: `${COLORS.text}10`, marginHorizontal: 16 },
+    
+    shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: `${COLORS.primary}12`, paddingVertical: 14, borderRadius: 16, marginBottom: 28, gap: 8 },
+    shareBtnText: { color: COLORS.primary, fontSize: 15, fontWeight: '600' },
 
-  sectionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, marginLeft: 6 },
-  card: { backgroundColor: COLORS.surface, borderRadius: 22, marginBottom: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 1 },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: `${COLORS.text}10`, marginHorizontal: 16 },
+    // СТИЛІ КАРТКИ ПРЕМІУМУ (Синхронізовані з шапкою PremiumScreen)
+    premiumCard: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      backgroundColor: premiumBg, 
+      paddingHorizontal: 18, 
+      paddingVertical: 20, 
+      borderRadius: 22, 
+      marginBottom: 28, 
+      shadowColor: isDark ? '#000' : COLORS.primary, 
+      shadowOffset: { width: 0, height: 6 }, 
+      shadowOpacity: isDark ? 0.3 : 0.2, 
+      shadowRadius: 10, 
+      elevation: 4 
+    },
+    premiumIconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255, 215, 0, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+    premiumTextWrap: { flex: 1 },
+    premiumTitle: { fontSize: 17, fontWeight: '800', color: '#FFD700', marginBottom: 4 },
+    premiumDesc: { fontSize: 12, color: premiumText, lineHeight: 16, opacity: 0.9 },
 
-  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13 },
-  settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  iconBox: { width: 34, height: 34, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  settingTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text, flex: 1 },
-  settingRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  settingValue: { fontSize: 14, color: COLORS.textLight },
+    sectionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, marginLeft: 6 },
+    card: { backgroundColor: COLORS.surface, borderRadius: 22, marginBottom: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 1 },
+    divider: { height: StyleSheet.hairlineWidth, backgroundColor: `${COLORS.text}10`, marginHorizontal: 16 },
 
-  donateHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 14 },
-  donateIconWrap: { width: 50, height: 50, borderRadius: 25, backgroundColor: `${COLORS.danger ?? '#FF2D55'}12`, justifyContent: 'center', alignItems: 'center' },
-  donateTexts: { flex: 1 },
-  donateTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
-  donateDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 17 },
-  charityChip: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 140 },
-  charityChipText: { fontSize: 13, color: COLORS.textLight, maxWidth: 110 },
+    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13 },
+    settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    iconBox: { width: 34, height: 34, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+    settingTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text, flex: 1 },
+    settingRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    settingValue: { fontSize: 14, color: COLORS.textLight },
 
-  logoutCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 13, marginBottom: 24, gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, borderWidth: 1, borderColor: '#FF3B3016' },
-  logoutText: { flex: 1, fontSize: 15, fontWeight: '600', color: '#FF3B30' },
+    donateHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 14 },
+    donateIconWrap: { width: 50, height: 50, borderRadius: 25, backgroundColor: `${COLORS.danger ?? '#FF2D55'}12`, justifyContent: 'center', alignItems: 'center' },
+    donateTexts: { flex: 1 },
+    donateTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
+    donateDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 17 },
+    charityChip: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 140 },
+    charityChipText: { fontSize: 13, color: COLORS.textLight, maxWidth: 110 },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: (insets.bottom || 0) + 30, maxHeight: '92%' },
-  charitySheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingBottom: (insets.bottom || 0) + 24 },
-  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: COLORS.outline ?? '#CCC', alignSelf: 'center', marginTop: 12, marginBottom: 4, opacity: 0.45 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 18 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-  modalForm: { paddingHorizontal: 24, paddingTop: 4 },
-  formGroup: { marginBottom: 18 },
-  formLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-  input: { backgroundColor: COLORS.surfaceVariant, borderWidth: 1.5, borderColor: 'transparent', borderRadius: 14, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 15, color: COLORS.text },
-  inputError: { borderColor: COLORS.danger ?? '#FF3B30', backgroundColor: `${COLORS.danger ?? '#FF3B30'}08` },
-  errorText: { color: COLORS.danger ?? '#FF3B30', fontSize: 12, marginTop: 5 },
-  modalActions: { flexDirection: 'row', gap: 14, paddingHorizontal: 24, paddingVertical: 18, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: `${COLORS.text}10` },
-  modalBtn: { flex: 1 },
+    logoutCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 13, marginBottom: 24, gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, borderWidth: 1, borderColor: '#FF3B3016' },
+    logoutText: { flex: 1, fontSize: 15, fontWeight: '600', color: '#FF3B30' },
 
-  charityOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: `${COLORS.text}10` },
-  charityOptionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  charityOptionText: { fontSize: 15, color: COLORS.text, marginLeft: 14, fontWeight: '500', flex: 1 },
-});
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'flex-end' },
+    modalSheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: (insets.bottom || 0) + 30, maxHeight: '92%' },
+    charitySheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingBottom: (insets.bottom || 0) + 24 },
+    modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: COLORS.outline ?? '#CCC', alignSelf: 'center', marginTop: 12, marginBottom: 4, opacity: 0.45 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 18 },
+    modalTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
+    modalForm: { paddingHorizontal: 24, paddingTop: 4 },
+    formGroup: { marginBottom: 18 },
+    formLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
+    input: { backgroundColor: COLORS.surfaceVariant, borderWidth: 1.5, borderColor: 'transparent', borderRadius: 14, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 15, color: COLORS.text },
+    inputError: { borderColor: COLORS.danger ?? '#FF3B30', backgroundColor: `${COLORS.danger ?? '#FF3B30'}08` },
+    errorText: { color: COLORS.danger ?? '#FF3B30', fontSize: 12, marginTop: 5 },
+    modalActions: { flexDirection: 'row', gap: 14, paddingHorizontal: 24, paddingVertical: 18, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: `${COLORS.text}10` },
+    modalBtn: { flex: 1 },
+
+    charityOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: `${COLORS.text}10` },
+    charityOptionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+    charityOptionText: { fontSize: 15, color: COLORS.text, marginLeft: 14, fontWeight: '500', flex: 1 },
+  });
+};
