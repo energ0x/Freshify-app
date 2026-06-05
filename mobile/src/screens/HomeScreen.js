@@ -4,9 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useProductStore from '../store/productStore';
+import useThemeStore from '../store/themeStore'; // Підключаємо тему
 import ProductCard from '../components/ProductCard';
 import CustomButton from '../components/CustomButton';
-import { COLORS, CATEGORIES } from '../utils/constants'; 
+import { CATEGORIES } from '../utils/constants'; // Прибрали COLORS звідси
 import { getDaysUntilExpiry } from '../utils/dateHelpers'; 
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -15,8 +16,11 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 export default function HomeScreen({ navigation }) {
   const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore(); 
+  const { colors: COLORS, theme } = useThemeStore(); // Отримуємо динамічні кольори
   const insets = useSafeAreaInsets(); 
-  const styles = getStyles(COLORS, insets); 
+  
+  // Передаємо theme у стилі для точковішого налаштування
+  const styles = getStyles(COLORS, insets, theme); 
   
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -182,7 +186,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.surface} />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
       
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Мої продукти</Text>
@@ -190,7 +194,13 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <Ionicons name="search-outline" size={20} color={COLORS.textLight} />
-            <TextInput style={styles.searchInput} placeholder="Пошук продуктів..." value={search} onChangeText={setSearch} />
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Пошук продуктів..." 
+              placeholderTextColor={COLORS.textLight}
+              value={search} 
+              onChangeText={setSearch} 
+            />
             {search !== '' && (
               <TouchableOpacity onPress={() => setSearch('')} style={{ marginRight: 4 }}>
                 <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
@@ -198,7 +208,7 @@ export default function HomeScreen({ navigation }) {
             )}
           </View>
           <TouchableOpacity style={[styles.filterButton, (selectedCategory !== 'Всі' || sortBy !== null) && styles.filterButtonActive]} onPress={() => setShowFilterModal(true)}>
-            <Ionicons name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"} size={24} color={selectedCategory !== 'Всі' || sortBy !== null ? '#fff' : COLORS.primary} />
+            <Ionicons name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"} size={24} color={selectedCategory !== 'Всі' || sortBy !== null ? (COLORS.onPrimary || '#fff') : COLORS.primary} />
           </TouchableOpacity>
         </View>
 
@@ -213,8 +223,8 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {products.length > 0 && (
-          <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Рецепти')}>
-            <Ionicons name="restaurant-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+          <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Рецепти')} activeOpacity={0.8}>
+            <Ionicons name="restaurant-outline" size={18} color={COLORS.onPrimary || '#fff'} style={{ marginRight: 8 }} />
             <Text style={styles.recipesIdeaText}>Що приготувати з цих продуктів?</Text>
           </TouchableOpacity>
         )}
@@ -225,7 +235,7 @@ export default function HomeScreen({ navigation }) {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <SwipeableProductItem item={item} />}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="fast-food-outline" size={64} color={COLORS.border} />
@@ -255,6 +265,7 @@ export default function HomeScreen({ navigation }) {
               value={consumeAmount}
               onChangeText={setConsumeAmount}
               autoFocus
+              placeholderTextColor={COLORS.textLight}
             />
             
             <View style={styles.modalActionsRow}>
@@ -315,21 +326,24 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
+const getStyles = (COLORS, insets, theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingTop: (insets.top || 20) + 10, paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 16, paddingHorizontal: 16 },
   searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, marginRight: 8 },
-  searchInput: { flex: 1, paddingVertical: 10, marginLeft: 8, fontSize: 16 },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, marginRight: 8, borderWidth: 1, borderColor: COLORS.border },
+  searchInput: { flex: 1, paddingVertical: Platform.OS === 'ios' ? 12 : 8, marginLeft: 8, fontSize: 16, color: COLORS.text },
   filterButton: { padding: 10, backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   activeFiltersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginTop: 10 },
   activeFiltersText: { fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' },
-  resetLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FCE8E6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  
+  // Кнопка "Скинути" адаптується під тему
+  resetLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme === 'dark' ? 'rgba(255, 66, 66, 0.15)' : '#FCE8E6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   resetLinkText: { fontSize: 12, color: COLORS.danger, fontWeight: '600' },
+  
   recipesIdeaButton: { flexDirection: 'row', backgroundColor: COLORS.primary, marginHorizontal: 16, marginTop: 12, paddingVertical: 12, borderRadius: 10, justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41 },
-  recipesIdeaText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  recipesIdeaText: { color: COLORS.onPrimary || '#fff', fontSize: 14, fontWeight: '600' },
   list: { padding: 16, paddingBottom: 100 },
   empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: 20 },
   emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight, textAlign: 'center' },
@@ -350,13 +364,14 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   },
   swipeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
 
-  snackbar: { position: 'absolute', bottom: 90, left: 20, right: 20, backgroundColor: '#333', borderRadius: 8, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
-  snackbarText: { color: '#fff', fontSize: 14 },
-  snackbarAction: { color: COLORS.primary, fontWeight: 'bold', fontSize: 14 },
+  // Снекбар тепер використовує правильні кольори для темної/світлої теми
+  snackbar: { position: 'absolute', bottom: 90, left: 20, right: 20, backgroundColor: COLORS.text, borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  snackbarText: { color: COLORS.background, fontSize: 14, fontWeight: '500' },
+  snackbarAction: { color: COLORS.background, fontWeight: 'bold', fontSize: 14 },
 
   consumeModalContent: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 20, width: '92%', maxWidth: 380 },
   consumeSubtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 16, textAlign: 'center' },
-  consumeInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 16, fontSize: 20, textAlign: 'center', marginBottom: 24, backgroundColor: COLORS.background },
+  consumeInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 16, fontSize: 20, textAlign: 'center', marginBottom: 24, backgroundColor: COLORS.background, color: COLORS.text },
   modalButton: { flex: 1 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
@@ -369,15 +384,15 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
   optionChip: { backgroundColor: COLORS.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border },
   optionChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   optionChipText: { color: COLORS.text, fontSize: 13 },
-  optionChipTextActive: { color: '#fff', fontWeight: '600' },
+  optionChipTextActive: { color: COLORS.onPrimary || '#fff', fontWeight: '600' },
   categoriesScroll: { flexDirection: 'row', marginBottom: 24 },
-  categoryChip: { backgroundColor: COLORS.background, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8, height: 36, borderWidth: 1, borderColor: COLORS.border },
+  categoryChip: { backgroundColor: COLORS.background, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8, height: 36, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center' },
   categoryChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   categoryChipText: { color: COLORS.text, fontSize: 13 },
-  categoryChipTextActive: { color: '#fff', fontWeight: '600' },
+  categoryChipTextActive: { color: COLORS.onPrimary || '#fff', fontWeight: '600' },
   modalActionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   modalResetButton: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background },
   modalResetButtonText: { color: COLORS.danger, fontSize: 15, fontWeight: '600' },
   applyButton: { flex: 2, backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  applyButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
+  applyButtonText: { color: COLORS.onPrimary || '#fff', fontSize: 16, fontWeight: 'bold' }
 });
