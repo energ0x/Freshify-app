@@ -39,6 +39,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@expo/cli": "^55.0.30",
-    "babel-preset-expo": "~11.0.0"
+    "babel-preset-expo": "~11.0.0",
+    "react-native-dotenv": "^3.4.11"
   }
 }

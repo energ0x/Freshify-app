@@ -14,9 +14,10 @@ class Settings(BaseSettings):
     mailtrap_port: int = 2525
     charity_url: str = "https://savelife.in.ua"
     charity_name: str = "Повернись живим"
+    expo_public_api_url: str = " "
 
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
         extra = "ignore"
 
 
