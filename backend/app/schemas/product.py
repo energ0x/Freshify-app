@@ -8,6 +8,10 @@ class AIProductResponse(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
     estimated_shelf_life_days: Optional[int] = None
+    calories: Optional[float] = None
+    proteins: Optional[float] = None
+    fats: Optional[float] = None
+    carbohydrates: Optional[float] = None
     error: Optional[str] = None
 
 
@@ -19,6 +23,10 @@ class ProductCreate(BaseModel):
     expiry_date: Optional[date] = None
     image_url: Optional[str] = None
     notes: Optional[str] = None
+    calories: Optional[float] = None
+    proteins: Optional[float] = None
+    fats: Optional[float] = None
+    carbohydrates: Optional[float] = None
 
 
 class ProductUpdate(BaseModel):
@@ -28,6 +36,10 @@ class ProductUpdate(BaseModel):
     unit: Optional[str] = None
     expiry_date: Optional[date] = None
     notes: Optional[str] = None
+    calories: Optional[float] = None
+    proteins: Optional[float] = None
+    fats: Optional[float] = None
+    carbohydrates: Optional[float] = None
 
 
 class ProductConsumeRequest(BaseModel):
@@ -45,6 +57,10 @@ class ProductResponse(BaseModel):
     image_url: Optional[str] = None
     notes: Optional[str] = None
     is_active: bool
+    calories: Optional[float] = None
+    proteins: Optional[float] = None
+    fats: Optional[float] = None
+    carbohydrates: Optional[float] = None
     created_at: datetime
     updated_at: datetime
 
@@ -64,4 +80,3 @@ class ConsumedProductResponse(BaseModel):
 
     class Config:
         from_attributes = True
-

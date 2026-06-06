@@ -1,6 +1,6 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, Date, Float, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, Boolean, DateTime, Date, Float, Text, ForeignKey, Integer
+from sqlalchemy.dialects.postgresql import UUID, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
@@ -13,6 +13,13 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
+    
+    # New columns
+    dietary_preference = Column(String(50), nullable=True) # e.g. vegan, vegetarian
+    allergens = Column(JSON, default=list) # List of strings like ['Milk', 'Nuts']
+    is_premium = Column(Boolean, default=False)
+    xp_points = Column(Integer, default=0)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -35,6 +42,13 @@ class Product(Base):
     image_url = Column(Text)
     notes = Column(Text)
     is_active = Column(Boolean, default=True)
+    
+    # New nutritional info
+    calories = Column(Float, nullable=True)
+    proteins = Column(Float, nullable=True)
+    fats = Column(Float, nullable=True)
+    carbohydrates = Column(Float, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

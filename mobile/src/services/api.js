@@ -1,9 +1,9 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
-import { EXPO_PUBLIC_API_URL } from '@env';
+import { API_URL } from '../utils/constants';
 
 const api = axios.create({
-  baseURL: EXPO_PUBLIC_API_URL,
+  baseURL: API_URL,
   timeout: 30000,
 });
 

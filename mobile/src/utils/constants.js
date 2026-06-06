@@ -1,3 +1,7 @@
+import { EXPO_PUBLIC_API_URL } from '@env';
+
+export const API_URL = EXPO_PUBLIC_API_URL;
+
 export const lightColors = {
   primary: '#578E5B', 
   onPrimary: '#FFFFFF',

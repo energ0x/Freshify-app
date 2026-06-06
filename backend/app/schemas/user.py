@@ -1,13 +1,24 @@
-from pydantic import BaseModel, EmailStr, validator
-from typing import Optional
+from pydantic import BaseModel, EmailStr, field_validator
+from typing import Optional, List
 from datetime import datetime
 import uuid
+from enum import Enum
+
+
+class DietaryPreference(str, Enum):
+    none = "none"
+    vegetarian = "vegetarian"
+    vegan = "vegan"
+    pescatarian = "pescatarian"
+    flexitarian = "flexitarian"
 
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
+    dietary_preference: Optional[DietaryPreference] = None
+    allergens: Optional[List[str]] = []
 
 
 class UserLogin(BaseModel):
@@ -20,8 +31,10 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     current_password: Optional[str] = None
     new_password: Optional[str] = None
+    dietary_preference: Optional[DietaryPreference] = None
+    allergens: Optional[List[str]] = None
 
-    @validator('new_password')
+    @field_validator('new_password')
     def password_match(cls, v, values, **kwargs):
         if v is not None and 'current_password' in values and values['current_password'] is None:
             raise ValueError('Для зміни паролю потрібно вказати поточний пароль')
@@ -32,10 +45,26 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     name: str
+    dietary_preference: Optional[DietaryPreference] = None
+    allergens: List[str] = []
+    is_premium: bool = False
+    xp_points: int = 0
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+    @field_validator('allergens', 'is_premium', 'xp_points', mode='before')
+    @classmethod
+    def handle_null_defaults(cls, v, info):
+        if v is None:
+            if info.field_name == 'allergens':
+                return []
+            if info.field_name == 'is_premium':
+                return False
+            if info.field_name == 'xp_points':
+                return 0
+        return v
 
 
 class TokenResponse(BaseModel):
