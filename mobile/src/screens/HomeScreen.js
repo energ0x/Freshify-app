@@ -328,21 +328,21 @@ export default function HomeScreen({ navigation }) {
 const getStyles = (COLORS, insets, theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingTop: (insets.top || 20) + 10, paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 16, paddingHorizontal: 16 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 16, paddingHorizontal: 20 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
   searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, marginRight: 8, borderWidth: 1, borderColor: COLORS.border },
   searchInput: { flex: 1, paddingVertical: Platform.OS === 'ios' ? 12 : 8, marginLeft: 8, fontSize: 16, color: COLORS.text },
   filterButton: { padding: 10, backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
   filterButtonActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  activeFiltersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginTop: 10 },
+  activeFiltersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginTop: 10 },
   activeFiltersText: { fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' },
   
   resetLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme === 'dark' ? 'rgba(255, 66, 66, 0.15)' : '#FCE8E6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   resetLinkText: { fontSize: 12, color: COLORS.danger, fontWeight: '600' },
   
-  recipesIdeaButton: { flexDirection: 'row', backgroundColor: COLORS.primary, marginHorizontal: 16, marginTop: 12, paddingVertical: 12, borderRadius: 10, justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41 },
+  recipesIdeaButton: { flexDirection: 'row', backgroundColor: COLORS.primary, marginHorizontal: 20, marginTop: 12, paddingVertical: 12, borderRadius: 10, justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41 },
   recipesIdeaText: { color: COLORS.onPrimary || '#fff', fontSize: 14, fontWeight: '600' },
-  list: { padding: 16, paddingBottom: 100 },
+  list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
   empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: 20 },
   emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight, textAlign: 'center' },
 

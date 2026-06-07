@@ -5,8 +5,6 @@ import useThemeStore from '../store/themeStore';
 
 const { width } = Dimensions.get('window');
 
-// Мокові дані для демонстрації. 
-// У майбутньому їх можна винести у Zustand (useUserStore) та оновлювати реально.
 const USER_STATS = {
   level: 12,
   currentXP: 1450,
@@ -29,7 +27,8 @@ const ACHIEVEMENTS = [
 
 export default function AchievementsScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
-  const styles = getStyles(COLORS, theme);
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, isDark);
 
   const progressPercent = (USER_STATS.currentXP / USER_STATS.nextLevelXP) * 100;
 
@@ -46,7 +45,6 @@ export default function AchievementsScreen({ navigation }) {
           <Text style={styles.achievementTitle} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.achievementDesc} numberOfLines={2}>{item.desc}</Text>
           
-          {/* Міні-прогрес бар для досягнення */}
           <View style={styles.miniProgressContainer}>
             <View style={styles.miniProgressTrack}>
               <View 
@@ -64,14 +62,9 @@ export default function AchievementsScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      {/* Шапка з Лігою та Досвідом (КЛІКАБЕЛЬНА) */}
-      <TouchableOpacity 
-        style={styles.headerCard} 
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('Leagues')}
-      >
+      <TouchableOpacity style={styles.headerCard} activeOpacity={0.8} onPress={() => navigation.navigate('Leagues')}>
         <View style={styles.leagueRow}>
           <View style={[styles.leagueIconBg, { backgroundColor: `${USER_STATS.leagueColor}20` }]}>
             <Ionicons name={USER_STATS.leagueIcon} size={40} color={USER_STATS.leagueColor} />
@@ -80,11 +73,9 @@ export default function AchievementsScreen({ navigation }) {
             <Text style={styles.levelText}>Рівень {USER_STATS.level}</Text>
             <Text style={styles.leagueName}>{USER_STATS.league}</Text>
           </View>
-          {/* Стрілочка, яка підказує, що можна натиснути */}
           <Ionicons name="chevron-forward" size={24} color={COLORS.outline} />
         </View>
 
-        {/* Головний прогрес бар XP */}
         <View style={styles.xpContainer}>
           <View style={styles.xpTextRow}>
             <Text style={styles.xpText}>Досвід (XP)</Text>
@@ -97,23 +88,21 @@ export default function AchievementsScreen({ navigation }) {
         </View>
       </TouchableOpacity>
 
-      {/* Швидка статистика */}
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
-          <Ionicons name="shield-checkmark" size={24} color={COLORS.success} />
+          <Ionicons name="shield-checkmark" size={26} color={COLORS.success} />
           <Text style={styles.statValue}>{USER_STATS.totalSaved}</Text>
           <Text style={styles.statLabel}>Врятовано{"\n"}продуктів</Text>
         </View>
         <View style={styles.statBox}>
-          <Ionicons name="heart" size={24} color={COLORS.danger} />
+          <Ionicons name="heart" size={26} color={COLORS.danger} />
           <Text style={styles.statValue}>{USER_STATS.donated} ₴</Text>
           <Text style={styles.statLabel}>Передано{"\n"}на ЗСУ</Text>
         </View>
       </View>
 
-      {/* Вітрина досягнень */}
       <View style={styles.achievementsSection}>
-        <Text style={styles.sectionTitle}>Ваші Досягнення</Text>
+        <Text style={styles.sectionLabel}>Ваші Досягнення</Text>
         <View style={styles.gridContainer}>
           {ACHIEVEMENTS.map(renderAchievement)}
         </View>
@@ -123,187 +112,73 @@ export default function AchievementsScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, theme) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+const getStyles = (COLORS, isDark) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
+  
   headerCard: {
     backgroundColor: COLORS.surface,
-    margin: 16,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: theme === 'dark' ? 0.2 : 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  leagueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  leagueIconBg: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  leagueInfo: {
-    flex: 1,
-  },
-  levelText: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 4,
-  },
-  leagueName: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  xpContainer: {
-    width: '100%',
-  },
-  xpTextRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  xpText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  xpValues: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.text,
-  },
-  progressTrack: {
-    height: 12,
-    backgroundColor: COLORS.surfaceVariant, // Замінено для підтримки темної теми
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 6,
-  },
-  xpHint: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    textAlign: 'center',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    justifyContent: 'space-between',
-  },
+  leagueRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  leagueIconBg: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  leagueInfo: { flex: 1 },
+  levelText: { fontSize: 14, color: COLORS.textLight, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+  leagueName: { fontSize: 22, fontWeight: 'bold', color: COLORS.text },
+  
+  xpContainer: { width: '100%' },
+  xpTextRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  xpText: { fontSize: 14, fontWeight: '600', color: COLORS.text },
+  xpValues: { fontSize: 14, fontWeight: 'bold', color: COLORS.text },
+  progressTrack: { height: 12, backgroundColor: COLORS.surfaceVariant, borderRadius: 6, overflow: 'hidden', marginBottom: 8 },
+  progressFill: { height: '100%', borderRadius: 6 },
+  xpHint: { fontSize: 12, color: COLORS.textLight, textAlign: 'center' },
+  
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
   statBox: {
     flex: 1,
     backgroundColor: COLORS.surface,
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 24,
     alignItems: 'center',
-    marginHorizontal: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: theme === 'dark' ? 0.2 : 0.05,
-    shadowRadius: 5,
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 8,
     elevation: 2,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  achievementsSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: 16,
-  },
-  gridContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
+  statValue: { fontSize: 22, fontWeight: 'bold', color: COLORS.text, marginTop: 8 },
+  statLabel: { fontSize: 13, color: COLORS.textLight, textAlign: 'center', marginTop: 4 },
+  
+  achievementsSection: { width: '100%' },
+  sectionLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16, marginLeft: 4 },
+  
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   achievementCard: {
-    width: (width - 40) / 2, // Дві колонки
+    width: (width - 40 - 12) / 2, // Ширина екрану - (20+20) відступи - 12 між картками / 2
     backgroundColor: COLORS.surface,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: theme === 'dark' ? 0.2 : 0.05,
-    shadowRadius: 4,
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 6,
     elevation: 2,
   },
-  achievementLocked: {
-    opacity: 0.5,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  achievementTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  achievementDesc: {
-    fontSize: 11,
-    color: COLORS.textLight,
-    lineHeight: 14,
-    height: 30, // Фіксована висота для вирівнювання сітки
-    marginBottom: 12,
-  },
-  miniProgressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  miniProgressTrack: {
-    flex: 1,
-    height: 6,
-    backgroundColor: COLORS.surfaceVariant, // Замінено для підтримки темної теми
-    borderRadius: 3,
-    marginRight: 8,
-    overflow: 'hidden',
-  },
-  miniProgressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  miniProgressText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: COLORS.textLight,
-  },
+  achievementLocked: { opacity: 0.5 },
+  iconContainer: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  achievementTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
+  achievementDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 16, height: 32, marginBottom: 12 },
+  
+  miniProgressContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  miniProgressTrack: { flex: 1, height: 6, backgroundColor: COLORS.surfaceVariant, borderRadius: 3, marginRight: 8, overflow: 'hidden' },
+  miniProgressFill: { height: '100%', borderRadius: 3 },
+  miniProgressText: { fontSize: 11, fontWeight: '600', color: COLORS.textLight },
 });
