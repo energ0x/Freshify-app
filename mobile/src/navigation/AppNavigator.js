@@ -35,44 +35,35 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // --- АНІМАЦІЙНИЙ ОБГОРТУВАЧ ДЛЯ ВКЛАДОК ---
-// Додає плавне згасання (Fade) та легкий зсув вгору (Slide) при перемиканні
+// Максимально плавне і швидке згасання (як у Telegram)
 const withTabAnimation = (WrappedComponent) => {
   return (props) => {
-    const opacity = useRef(new Animated.Value(0)).current;
-    const translateY = useRef(new Animated.Value(10)).current;
+    // Починаємо з непрозорості 0.3, щоб не було чорного "блимання", а лише легка зміна
+    const opacity = useRef(new Animated.Value(0.3)).current;
 
     useFocusEffect(
       useCallback(() => {
-        Animated.parallel([
-          Animated.timing(opacity, {
-            toValue: 1,
-            duration: 200, // Швидка та приємна анімація (200мс)
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 120, // Дуже швидка анімація
+          useNativeDriver: true,
+        }).start();
 
         return () => {
-          // Скидання значень при зміні вкладки
-          opacity.setValue(0);
-          translateY.setValue(10);
+          opacity.setValue(0.3);
         };
-      }, [opacity, translateY])
+      }, [opacity])
     );
 
+    // Ми прибрали translateY (зсув), тепер це чистий FadeIn
     return (
-      <Animated.View style={{ flex: 1, opacity, transform: [{ translateY }] }}>
+      <Animated.View style={{ flex: 1, opacity }}>
         <WrappedComponent {...props} />
       </Animated.View>
     );
   };
 };
 
-// Застосовуємо анімацію до наших екранів
 const AnimatedHomeScreen = withTabAnimation(HomeScreen);
 const AnimatedGroceryListScreen = withTabAnimation(GroceryListScreen);
 const AnimatedAnalyticsScreen = withTabAnimation(AnalyticsScreen);
@@ -123,7 +114,7 @@ const MainTabs = () => {
           if (route.name === 'Продукти') iconName = focused ? 'fast-food' : 'fast-food-outline';
           else if (route.name === 'Покупки') iconName = focused ? 'cart' : 'cart-outline';
           else if (route.name === 'Аналітика') iconName = focused ? 'pie-chart' : 'pie-chart-outline';
-          else if (route.name === 'Параметри') iconName = focused ? 'settings' : 'settings-outline';
+          else if (route.name === 'Профіль') iconName = focused ? 'person' : 'person-outline';
 
           return (
             <View style={styles.tabItemContainer}>
@@ -140,7 +131,6 @@ const MainTabs = () => {
         tabBarInactiveTintColor: COLORS.textLight,
       })}
     >
-      {/* Використовуємо анімовані версії екранів */}
       <Tab.Screen name="Продукти" component={AnimatedHomeScreen} />
       <Tab.Screen name="Покупки" component={AnimatedGroceryListScreen} />
       
@@ -156,7 +146,7 @@ const MainTabs = () => {
       />
 
       <Tab.Screen name="Аналітика" component={AnimatedAnalyticsScreen} />
-      <Tab.Screen name="Параметри" component={AnimatedSettingsScreen} />
+      <Tab.Screen name="Профіль" component={AnimatedSettingsScreen} />
     </Tab.Navigator>
   );
 };
@@ -228,7 +218,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: 'Рецепти' }} />
             <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: 'Досягнення' }} />
             <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false, ...TransitionPresets.ModalPresentationIOS }} />
-            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false, title: 'Leagues'}} />
+            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false, title: 'Ліги'}} />
             <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: 'Моя дієта'}} />
             <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: 'Мої алергени'}} />
             <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: 'Мої категорії'}} />
