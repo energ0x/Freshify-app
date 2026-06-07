@@ -1,12 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet, Platform } from 'react-native';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { View, ActivityIndicator, Text, StyleSheet, Platform, Animated } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme, useFocusEffect } from '@react-navigation/native';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BlurView } from "expo-blur";
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
+
+// Імпорти екранів
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -31,6 +33,50 @@ import CategoriesScreen from '../screens/CategoriesScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+
+// --- АНІМАЦІЙНИЙ ОБГОРТУВАЧ ДЛЯ ВКЛАДОК ---
+// Додає плавне згасання (Fade) та легкий зсув вгору (Slide) при перемиканні
+const withTabAnimation = (WrappedComponent) => {
+  return (props) => {
+    const opacity = useRef(new Animated.Value(0)).current;
+    const translateY = useRef(new Animated.Value(10)).current;
+
+    useFocusEffect(
+      useCallback(() => {
+        Animated.parallel([
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 200, // Швидка та приємна анімація (200мс)
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateY, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        return () => {
+          // Скидання значень при зміні вкладки
+          opacity.setValue(0);
+          translateY.setValue(10);
+        };
+      }, [opacity, translateY])
+    );
+
+    return (
+      <Animated.View style={{ flex: 1, opacity, transform: [{ translateY }] }}>
+        <WrappedComponent {...props} />
+      </Animated.View>
+    );
+  };
+};
+
+// Застосовуємо анімацію до наших екранів
+const AnimatedHomeScreen = withTabAnimation(HomeScreen);
+const AnimatedGroceryListScreen = withTabAnimation(GroceryListScreen);
+const AnimatedAnalyticsScreen = withTabAnimation(AnalyticsScreen);
+const AnimatedSettingsScreen = withTabAnimation(SettingsScreen);
 
 const MainTabs = () => {
   const { colors: COLORS, theme } = useThemeStore();
@@ -63,7 +109,6 @@ const MainTabs = () => {
           />
         ),
         tabBarIcon: ({ color, size, focused }) => {
-          // СПЕЦІАЛЬНИЙ РЕНДЕР ДЛЯ ЦЕНТРАЛЬНОЇ КНОПКИ "+"
           if (route.name === 'AddButton') {
             return (
               <View style={styles.fabWrapper}>
@@ -95,12 +140,13 @@ const MainTabs = () => {
         tabBarInactiveTintColor: COLORS.textLight,
       })}
     >
-      <Tab.Screen name="Продукти" component={HomeScreen} />
-      <Tab.Screen name="Покупки" component={GroceryListScreen} />
+      {/* Використовуємо анімовані версії екранів */}
+      <Tab.Screen name="Продукти" component={AnimatedHomeScreen} />
+      <Tab.Screen name="Покупки" component={AnimatedGroceryListScreen} />
       
       <Tab.Screen 
         name="AddButton" 
-        component={AddProductScreen} // Пуста заглушка
+        component={AddProductScreen} 
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
@@ -109,8 +155,8 @@ const MainTabs = () => {
         })}
       />
 
-      <Tab.Screen name="Аналітика" component={AnalyticsScreen} />
-      <Tab.Screen name="Параметри" component={SettingsScreen} />
+      <Tab.Screen name="Аналітика" component={AnimatedAnalyticsScreen} />
+      <Tab.Screen name="Параметри" component={AnimatedSettingsScreen} />
     </Tab.Navigator>
   );
 };
@@ -121,7 +167,7 @@ export default function AppNavigator() {
 
   useEffect(() => {
     initialize();
-  }, []);
+  }, [initialize]);
 
   const navigationTheme = {
     ...(theme === 'dark' ? DarkTheme : DefaultTheme),
@@ -150,9 +196,11 @@ export default function AppNavigator() {
           headerBackTitleVisible: false,
           headerShown: false,
           headerShadowVisible: false,
-          animation: 'slide_from_right',
           headerTransparent: false,
-          contentStyle: { backgroundColor: COLORS.background },
+          
+          ...TransitionPresets.SlideFromRightIOS,
+          cardStyle: { backgroundColor: COLORS.background },
+          
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
           headerTitleStyle: { fontWeight: '600' }
@@ -164,7 +212,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : needsOnboarding ? (
-          <Stack.Group screenOptions={{ headerShown: false }}>
+          <Stack.Group screenOptions={{ headerShown: false, ...TransitionPresets.SlideFromRightIOS }}>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Diet" component={DietScreen} />
             <Stack.Screen name="Allergens" component={AllergensScreen} />
@@ -172,17 +220,15 @@ export default function AppNavigator() {
           </Stack.Group>
         ) : (
           <>
-          {/* options={{ headerShown: true, title: 'Мої продукти'        цю штуку можна додати вниз і буде відступ*/}
             <Stack.Screen name="Main" component={MainTabs}/>
             <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: 'Додати продукт' }} />
-            <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Сканувати' }} />
+            <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Сканувати', ...TransitionPresets.ModalSlideFromBottomIOS }} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Деталі продукту' }} />
             <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Історія споживання' }} />
             <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: 'Рецепти' }} />
             <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: 'Досягнення' }} />
-            <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false, presentation: 'modal', title: 'Premium'}} />
+            <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false, ...TransitionPresets.ModalPresentationIOS }} />
             <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false, title: 'Leagues'}} />
-
             <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: 'Моя дієта'}} />
             <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: 'Мої алергени'}} />
             <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: 'Мої категорії'}} />
@@ -208,10 +254,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
-
   fabWrapper: {
     position: 'absolute',
-    // top: -24,
     justifyContent: 'center',
     alignItems: 'center',
   },

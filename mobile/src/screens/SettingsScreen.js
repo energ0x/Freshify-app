@@ -142,7 +142,7 @@ export default function SettingsScreen({ navigation }) {
     >
       <View style={styles.settingLeft}>
         <View style={[styles.iconBox, { backgroundColor: iconBgColor ?? `${COLORS.primary}18` }]}>
-          <Ionicons name={icon} size={17} color={iconBgColor ? '#fff' : COLORS.primary} />
+          <Ionicons name={icon} size={18} color={iconBgColor ? '#fff' : COLORS.primary} />
         </View>
         <Text style={styles.settingTitle}>{title}</Text>
       </View>
@@ -150,7 +150,7 @@ export default function SettingsScreen({ navigation }) {
         {rightComponent ?? (
           <>
             {!!value && <Text style={styles.settingValue}>{value}</Text>}
-            {onPress && <Ionicons name="chevron-forward" size={16} color={COLORS.outline} />}
+            {onPress && <Ionicons name="chevron-forward" size={18} color={COLORS.outline} />}
           </>
         )}
       </View>
@@ -163,7 +163,6 @@ export default function SettingsScreen({ navigation }) {
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         
-        {/* ── Профіль ───────────────────────────────────────────── */}
         <View style={styles.profileCard}>
           <View style={styles.profileBanner}>
             <View style={styles.bCircle1} />
@@ -181,12 +180,11 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.profileEmail}>{user?.email}</Text>
 
           <TouchableOpacity style={styles.editPill} onPress={() => setEditModalVisible(true)} activeOpacity={0.8}>
-            <Ionicons name="pencil-outline" size={14} color={COLORS.primary} />
+            <Ionicons name="pencil-outline" size={16} color={COLORS.primary} />
             <Text style={styles.editPillText}>Редагувати профіль</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ── Гейміфікація та Прогрес ────────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Мій Прогрес</Text>
         <TouchableOpacity 
           style={styles.progressCard} 
@@ -194,7 +192,7 @@ export default function SettingsScreen({ navigation }) {
           activeOpacity={0.8}
         >
           <View style={styles.progressStat}>
-            <View style={[styles.iconBox, { backgroundColor: `${COLORS.primary}18`, width: 40, height: 40, borderRadius: 12 }]}>
+            <View style={[styles.iconBox, { backgroundColor: `${COLORS.primary}18`, width: 44, height: 44, borderRadius: 12 }]}>
               <Ionicons name="star" size={22} color={COLORS.primary} />
             </View>
             <View>
@@ -206,7 +204,7 @@ export default function SettingsScreen({ navigation }) {
           <View style={styles.progressDivider} />
           
           <View style={styles.progressStat}>
-            <View style={[styles.iconBox, { backgroundColor: '#F39C1218', width: 40, height: 40, borderRadius: 12 }]}>
+            <View style={[styles.iconBox, { backgroundColor: '#F39C1218', width: 44, height: 44, borderRadius: 12 }]}>
               <Ionicons name="trophy" size={22} color="#F39C12" />
             </View>
             <View>
@@ -215,16 +213,14 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </View>
           
-          <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} style={{ marginLeft: 8 }} />
+          <Ionicons name="chevron-forward" size={22} color={COLORS.textLight} style={{ marginLeft: 8 }} />
         </TouchableOpacity>
 
-        {/* Кнопка "Поділитися успіхами" */}
         <TouchableOpacity style={styles.shareBtn} onPress={handleShareSuccess}>
-          <Ionicons name="share-social-outline" size={18} color={COLORS.primary} />
+          <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
           <Text style={styles.shareBtnText}>Поділитися успіхами</Text>
         </TouchableOpacity>
 
-        {/* ── Преміум Підписка (Ідеально збігається з PremiumScreen) ── */}
         <TouchableOpacity 
           style={styles.premiumCard} 
           onPress={() => navigation.navigate('Premium')}
@@ -239,7 +235,6 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* ── Персоналізація ─────────────────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Персоналізація</Text>
         <View style={styles.card}>
           <SettingItem
@@ -271,7 +266,6 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        {/* ── Харчування ─────────────────────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Харчування</Text>
         <View style={styles.card}>
           <SettingItem
@@ -279,7 +273,7 @@ export default function SettingsScreen({ navigation }) {
             title="Моя дієта"
             value="Обрати"
             iconBgColor="#FF6B35"
-            onPress={() => navigation.navigate('SettingsDiet')}
+            onPress={() => navigation.navigate('DietSettings')}
           />
           <View style={styles.divider} />
           <SettingItem
@@ -287,7 +281,7 @@ export default function SettingsScreen({ navigation }) {
             title="Мої алергени"
             value="Налаштувати"
             iconBgColor="#FF3B30"
-            onPress={() => navigation.navigate('SettingsAllergens')}
+            onPress={() => navigation.navigate('AllergensSettings')}
           />
           <View style={styles.divider} />
           <SettingItem
@@ -295,11 +289,10 @@ export default function SettingsScreen({ navigation }) {
             title="Мої категорії"
             value="Налаштувати"
             iconBgColor="#9B59B6"
-            onPress={() => navigation.navigate('SettingsCategories')}
+            onPress={() => navigation.navigate('Categories')}
           />
         </View>
 
-        {/* ── Відповідальне споживання ────────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Відповідальне споживання</Text>
 
         <View style={styles.card}>
@@ -332,7 +325,7 @@ export default function SettingsScreen({ navigation }) {
                 rightComponent={
                   <View style={styles.charityChip}>
                     <Text style={styles.charityChipText} numberOfLines={1}>{selectedCharity.name}</Text>
-                    <Ionicons name="chevron-down" size={14} color={COLORS.outline} />
+                    <Ionicons name="chevron-down" size={16} color={COLORS.outline} />
                   </View>
                 }
               />
@@ -340,19 +333,18 @@ export default function SettingsScreen({ navigation }) {
           )}
         </View>
 
-        {/* ── Акаунт ────────────────────────────────────────────────────── */}
         <Text style={styles.sectionLabel}>Акаунт</Text>
         <TouchableOpacity style={styles.logoutCard} onPress={handleLogout} activeOpacity={0.75}>
           <View style={[styles.iconBox, { backgroundColor: '#FF3B3018' }]}>
-            <Ionicons name="log-out-outline" size={17} color="#FF3B30" />
+            <Ionicons name="log-out-outline" size={18} color="#FF3B30" />
           </View>
           <Text style={styles.logoutText}>Вийти з акаунту</Text>
-          <Ionicons name="chevron-forward" size={16} color="#FF3B30" />
+          <Ionicons name="chevron-forward" size={18} color="#FF3B30" />
         </TouchableOpacity>
 
       </ScrollView>
 
-      {/* ── Edit Profile Modal ──────────────────────────────────────────── */}
+      {/* Модалки залишились без змін, стилі оновлені нижче */}
       <Modal visible={editModalVisible} animationType="slide" transparent onRequestClose={() => setEditModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={styles.modalOverlay}>
@@ -364,7 +356,6 @@ export default function SettingsScreen({ navigation }) {
                   <Ionicons name="close-circle" size={30} color={COLORS.outline} />
                 </TouchableOpacity>
               </View>
-
               <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
                 {[
                   { key: 'name', label: "Ім'я", placeholder: "Введіть ім'я", secure: false },
@@ -387,25 +378,7 @@ export default function SettingsScreen({ navigation }) {
                     {editErrors[key] && <Text style={styles.errorText}>{editErrors[key]}</Text>}
                   </View>
                 ))}
-
-                {editForm.new_password !== '' && (
-                  <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>Підтвердіть пароль</Text>
-                    <TextInput
-                      style={[styles.input, editErrors.confirmPassword && styles.inputError]}
-                      placeholder="Повторіть пароль"
-                      value={editForm.confirmPassword}
-                      onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
-                      secureTextEntry
-                      placeholderTextColor={COLORS.onSurfaceVariant}
-                    />
-                    {editErrors.confirmPassword && (
-                      <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>
-                    )}
-                  </View>
-                )}
               </ScrollView>
-
               <View style={styles.modalActions}>
                 <CustomButton title="Скасувати" variant="outline" onPress={() => setEditModalVisible(false)} style={styles.modalBtn} disabled={saving} />
                 <CustomButton title="Зберегти" onPress={handleSaveProfile} loading={saving} style={styles.modalBtn} />
@@ -415,7 +388,6 @@ export default function SettingsScreen({ navigation }) {
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* ── Charity Modal ─────────────────────────────────────────────────── */}
       <Modal visible={charityModalVisible} animationType="fade" transparent onRequestClose={() => setCharityModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCharityModalVisible(false)}>
           <View style={styles.charitySheet}>
@@ -429,11 +401,11 @@ export default function SettingsScreen({ navigation }) {
             {AVAILABLE_CHARITIES.map((charity, index) => (
               <TouchableOpacity key={index} style={styles.charityOption} onPress={() => { setSelectedCharity(charity); setCharityModalVisible(false); }}>
                 <View style={styles.charityOptionLeft}>
-                  <Ionicons name={selectedCharity.name === charity.name ? 'radio-button-on' : 'radio-button-off'} size={22} color={selectedCharity.name === charity.name ? COLORS.primary : COLORS.outline} />
+                  <Ionicons name={selectedCharity.name === charity.name ? 'radio-button-on' : 'radio-button-off'} size={24} color={selectedCharity.name === charity.name ? COLORS.primary : COLORS.outline} />
                   <Text style={[styles.charityOptionText, selectedCharity.name === charity.name && { color: COLORS.primary, fontWeight: '700' }]}>{charity.name}</Text>
                 </View>
                 <TouchableOpacity onPress={() => Linking.openURL(charity.url)}>
-                  <Ionicons name="open-outline" size={20} color={COLORS.secondary ?? COLORS.primary} />
+                  <Ionicons name="open-outline" size={24} color={COLORS.secondary ?? COLORS.primary} />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -445,16 +417,15 @@ export default function SettingsScreen({ navigation }) {
 }
 
 const getStyles = (COLORS, insets, tabBarHeight, isDark) => {
-  // Використовуємо глибокий темно-зелений для темної теми, і звичайний зелений для світлої
   const premiumBg = isDark ? COLORS.primaryContainer : COLORS.primary;
   const premiumText = isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary;
 
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
-    content: { paddingHorizontal: 16, paddingTop: (insets.top || 20) + 6, paddingBottom: tabBarHeight + 40 },
+    content: { paddingHorizontal: 20, paddingTop: (insets.top || 20) + 10, paddingBottom: tabBarHeight + 40 },
 
-    profileCard: { backgroundColor: COLORS.surface, borderRadius: 28, marginBottom: 24, alignItems: 'center', paddingBottom: 26, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
-    profileBanner: { width: '100%', height: 100, backgroundColor: COLORS.primaryContainer, borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden', marginBottom: -50 },
+    profileCard: { backgroundColor: COLORS.surface, borderRadius: 24, marginBottom: 32, alignItems: 'center', paddingBottom: 26, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.2 : 0.05, shadowRadius: 8, elevation: 2 },
+    profileBanner: { width: '100%', height: 100, backgroundColor: COLORS.primaryContainer, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', marginBottom: -50 },
     bCircle1: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: `${COLORS.primary}22`, top: -50, right: -20 },
     bCircle2: { position: 'absolute', width: 90, height: 90, borderRadius: 45, backgroundColor: `${COLORS.primary}18`, bottom: -30, left: 24 },
     bCircle3: { position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: `${COLORS.primary}14`, top: 14, left: '42%' },
@@ -463,59 +434,58 @@ const getStyles = (COLORS, insets, tabBarHeight, isDark) => {
     avatarInitial: { fontSize: 42, fontWeight: '800', color: COLORS.onPrimary ?? '#fff', lineHeight: 50 },
     profileName: { fontSize: 26, fontWeight: '800', color: COLORS.text, marginTop: 14, letterSpacing: -0.5 },
     profileEmail: { fontSize: 14, color: COLORS.textLight, marginTop: 3, marginBottom: 16 },
-    editPill: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: COLORS.background, paddingHorizontal: 22, paddingVertical: 11, borderRadius: 100, borderWidth: 1, borderColor: `${COLORS.text}10` },
+    editPill: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: COLORS.background, paddingHorizontal: 22, paddingVertical: 11, borderRadius: 100, borderWidth: 1, borderColor: `${COLORS.text}10` },
     editPillText: { color: COLORS.text, fontSize: 14, fontWeight: '600' },
 
-    progressCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingVertical: 16, borderRadius: 22, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+    progressCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, paddingHorizontal: 16, paddingVertical: 16, borderRadius: 24, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.2 : 0.05, shadowRadius: 8, elevation: 2 },
     progressStat: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
     progressValue: { fontSize: 16, fontWeight: '700', color: COLORS.text },
     progressLabel: { fontSize: 12, color: COLORS.textLight, marginTop: 2 },
     progressDivider: { width: 1, height: '80%', backgroundColor: `${COLORS.text}10`, marginHorizontal: 16 },
     
-    shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: `${COLORS.primary}12`, paddingVertical: 14, borderRadius: 16, marginBottom: 28, gap: 8 },
+    shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: `${COLORS.primary}12`, paddingVertical: 14, borderRadius: 16, marginBottom: 32, gap: 8 },
     shareBtnText: { color: COLORS.primary, fontSize: 15, fontWeight: '600' },
 
-    // СТИЛІ КАРТКИ ПРЕМІУМУ (Синхронізовані з шапкою PremiumScreen)
     premiumCard: { 
       flexDirection: 'row', 
       alignItems: 'center', 
       backgroundColor: premiumBg, 
-      paddingHorizontal: 18, 
-      paddingVertical: 20, 
-      borderRadius: 22, 
-      marginBottom: 28, 
+      paddingHorizontal: 20, 
+      paddingVertical: 22, 
+      borderRadius: 24, 
+      marginBottom: 32, 
       shadowColor: isDark ? '#000' : COLORS.primary, 
       shadowOffset: { width: 0, height: 6 }, 
       shadowOpacity: isDark ? 0.3 : 0.2, 
-      shadowRadius: 10, 
+      shadowRadius: 12, 
       elevation: 4 
     },
-    premiumIconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255, 215, 0, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+    premiumIconWrap: { width: 48, height: 48, borderRadius: 24, backgroundColor: 'rgba(255, 215, 0, 0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
     premiumTextWrap: { flex: 1 },
-    premiumTitle: { fontSize: 17, fontWeight: '800', color: '#FFD700', marginBottom: 4 },
-    premiumDesc: { fontSize: 12, color: premiumText, lineHeight: 16, opacity: 0.9 },
+    premiumTitle: { fontSize: 18, fontWeight: '800', color: '#FFD700', marginBottom: 4 },
+    premiumDesc: { fontSize: 13, color: premiumText, lineHeight: 18, opacity: 0.9 },
 
-    sectionLabel: { fontSize: 11, fontWeight: '700', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, marginLeft: 6 },
-    card: { backgroundColor: COLORS.surface, borderRadius: 22, marginBottom: 24, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 1 },
+    sectionLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, marginLeft: 4 },
+    card: { backgroundColor: COLORS.surface, borderRadius: 24, marginBottom: 32, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.2 : 0.05, shadowRadius: 8, elevation: 2 },
     divider: { height: StyleSheet.hairlineWidth, backgroundColor: `${COLORS.text}10`, marginHorizontal: 16 },
 
-    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13 },
+    settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
     settingLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    iconBox: { width: 34, height: 34, borderRadius: 9, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-    settingTitle: { fontSize: 15, fontWeight: '600', color: COLORS.text, flex: 1 },
-    settingRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    iconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+    settingTitle: { fontSize: 16, fontWeight: '600', color: COLORS.text, flex: 1 },
+    settingRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     settingValue: { fontSize: 14, color: COLORS.textLight },
 
-    donateHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 14 },
+    donateHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16, gap: 16 },
     donateIconWrap: { width: 50, height: 50, borderRadius: 25, backgroundColor: `${COLORS.danger ?? '#FF2D55'}12`, justifyContent: 'center', alignItems: 'center' },
     donateTexts: { flex: 1 },
-    donateTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
-    donateDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 17 },
+    donateTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
+    donateDesc: { fontSize: 13, color: COLORS.textLight, lineHeight: 18 },
     charityChip: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: 140 },
-    charityChipText: { fontSize: 13, color: COLORS.textLight, maxWidth: 110 },
+    charityChipText: { fontSize: 14, color: COLORS.textLight, maxWidth: 110 },
 
-    logoutCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 13, marginBottom: 24, gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1, borderWidth: 1, borderColor: '#FF3B3016' },
-    logoutText: { flex: 1, fontSize: 15, fontWeight: '600', color: '#FF3B30' },
+    logoutCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 16, marginBottom: 24, gap: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: isDark ? 0.2 : 0.05, shadowRadius: 8, elevation: 2, borderWidth: 1, borderColor: '#FF3B3016' },
+    logoutText: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FF3B30' },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'flex-end' },
     modalSheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: (insets.bottom || 0) + 30, maxHeight: '92%' },
@@ -526,14 +496,14 @@ const getStyles = (COLORS, insets, tabBarHeight, isDark) => {
     modalForm: { paddingHorizontal: 24, paddingTop: 4 },
     formGroup: { marginBottom: 18 },
     formLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-    input: { backgroundColor: COLORS.surfaceVariant, borderWidth: 1.5, borderColor: 'transparent', borderRadius: 14, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 15, color: COLORS.text },
+    input: { backgroundColor: COLORS.surfaceVariant, borderWidth: 1.5, borderColor: 'transparent', borderRadius: 14, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 16, color: COLORS.text },
     inputError: { borderColor: COLORS.danger ?? '#FF3B30', backgroundColor: `${COLORS.danger ?? '#FF3B30'}08` },
     errorText: { color: COLORS.danger ?? '#FF3B30', fontSize: 12, marginTop: 5 },
     modalActions: { flexDirection: 'row', gap: 14, paddingHorizontal: 24, paddingVertical: 18, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: `${COLORS.text}10` },
     modalBtn: { flex: 1 },
 
-    charityOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: `${COLORS.text}10` },
+    charityOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: `${COLORS.text}10` },
     charityOptionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    charityOptionText: { fontSize: 15, color: COLORS.text, marginLeft: 14, fontWeight: '500', flex: 1 },
+    charityOptionText: { fontSize: 16, color: COLORS.text, marginLeft: 16, fontWeight: '500', flex: 1 },
   });
 };

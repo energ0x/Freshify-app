@@ -68,9 +68,9 @@ export default function AnalyticsScreen({ navigation }) {
       
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) {
-         wsUrl = wsUrl.replace('localhost', '10.0.2.2');
+        wsUrl = wsUrl.replace('localhost', '10.0.2.2');
       } else if (Platform.OS === 'android' && wsUrl.includes('127.0.0.1')) {
-         wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
+        wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
       }
       
       const ws = new WebSocket(`${wsUrl}/analytics/ws/ai-recommendations?days=30&token=${token}`);
@@ -102,7 +102,7 @@ export default function AnalyticsScreen({ navigation }) {
 
   const rotateInterpolate = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '180deg']
+    outputRange: ['0deg', '180deg'],
   });
 
   const animatedStyle = {
@@ -129,6 +129,7 @@ export default function AnalyticsScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Аналітика</Text>
       </View>
@@ -138,8 +139,9 @@ export default function AnalyticsScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={loadingStats} onRefresh={loadStats} colors={[COLORS.primary]} />}
         showsVerticalScrollIndicator={false}
       >
+        {/* ─── Stat Cards ──────────────────────────────────────────────────── */}
         <View style={styles.statsRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('Продукти')}
@@ -148,7 +150,7 @@ export default function AnalyticsScreen({ navigation }) {
             <Text style={styles.statLabel}>Продуктів вдома</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             activeOpacity={0.7}
             onPress={() => navigation.navigate('History')}
@@ -158,6 +160,7 @@ export default function AnalyticsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* ─── Pie Chart ───────────────────────────────────────────────────── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Споживання за категоріями</Text>
           {chartData.length > 0 ? (
@@ -176,12 +179,13 @@ export default function AnalyticsScreen({ navigation }) {
           )}
         </View>
 
+        {/* ─── AI Recommendations ──────────────────────────────────────────── */}
         <View style={styles.sectionAi}>
           <View style={styles.aiHeader}>
             <Ionicons name="sparkles" size={24} color={COLORS.warning} />
             <Text style={styles.sectionTitleAi}>AI Рекомендації дієтолога</Text>
           </View>
-          
+
           <TouchableOpacity style={styles.generateButton} onPress={handleGenerateRecs}>
             <Animated.View style={animatedStyle}>
               <Ionicons name={loadingAi ? "close" : "sparkles-outline"} size={24} color={COLORS.onPrimary} />
@@ -201,16 +205,18 @@ export default function AnalyticsScreen({ navigation }) {
 }
 
 const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: COLORS.background 
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
-  center: { 
-    flex: 1, 
-    justifyContent: 'center', 
+  center: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background 
+    backgroundColor: COLORS.background,
   },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -227,76 +233,85 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
   },
+
+  // ─── Scroll content ────────────────────────────────────────────────────────
   scrollContent: {
     padding: 20,
     paddingBottom: tabBarHeight + 40,
   },
-  loadingText: { 
-    marginTop: 16, 
-    color: COLORS.textLight 
+  loadingText: {
+    marginTop: 16,
+    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
   },
-  statsRow: { 
-    flexDirection: 'row', 
+
+  // ─── Stat cards ────────────────────────────────────────────────────────────
+  statsRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
     gap: 12,
   },
-  statCard: { 
-    flex: 1, 
-    backgroundColor: COLORS.surfaceVariant, 
-    padding: 20, 
-    borderRadius: 24, 
-    alignItems: 'center', 
+  statCard: {
+    flex: 1,
+    backgroundColor: COLORS.surfaceVariant,
+    padding: 20,
+    borderRadius: 24,
+    alignItems: 'center',
   },
-  statValue: { 
-    fontSize: 32, 
-    fontWeight: '800', 
-    color: COLORS.primary 
+  statValue: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.primary,
   },
-  statLabel: { 
-    fontSize: 13, 
-    color: COLORS.text, 
-    marginTop: 8, 
+  statLabel: {
+    fontSize: 13,
+    color: COLORS.text,
+    marginTop: 8,
     textAlign: 'center',
-    fontWeight: '500'
+    fontWeight: '500',
   },
-  section: { 
-    backgroundColor: COLORS.surface, 
-    marginBottom: 24, 
-    borderRadius: 24, 
-    padding: 20, 
+
+  // ─── Section card ──────────────────────────────────────────────────────────
+  section: {
+    backgroundColor: COLORS.surface,
+    marginBottom: 20,
+    borderRadius: 24,
+    padding: 20,
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
   },
-  sectionTitle: { 
-    fontSize: 18, 
-    fontWeight: '700', 
-    color: COLORS.text, 
-    marginBottom: 16 
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 16,
   },
-  emptyText: { 
-    textAlign: 'center', 
-    color: COLORS.textLight, 
-    paddingVertical: 30 
+  emptyText: {
+    textAlign: 'center',
+    color: COLORS.onSurfaceVariant,
+    paddingVertical: 30,
   },
+
+  // ─── AI section ────────────────────────────────────────────────────────────
   sectionAi: {
     backgroundColor: COLORS.primaryContainer,
     borderRadius: 24,
     padding: 20,
   },
-  aiHeader: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 16, 
-    gap: 8 
+  aiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
   },
   sectionTitleAi: {
-    fontSize: 18, 
-    fontWeight: '700', 
-    color: COLORS.onPrimaryContainer, 
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.onPrimaryContainer,
   },
   generateButton: {
     flexDirection: 'row',

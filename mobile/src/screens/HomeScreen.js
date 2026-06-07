@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, LayoutAnimation, UIManager } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, LayoutAnimation, UIManager, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore'; 
 import ProductCard from '../components/ProductCard';
@@ -18,8 +19,9 @@ export default function HomeScreen({ navigation }) {
   const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore(); 
   const { colors: COLORS, theme } = useThemeStore(); 
   const insets = useSafeAreaInsets(); 
+  const tabBarHeight = useBottomTabBarHeight();
   
-  const styles = getStyles(COLORS, insets, theme); 
+  const styles = getStyles(COLORS, insets, theme, tabBarHeight); 
   
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -148,19 +150,35 @@ export default function HomeScreen({ navigation }) {
   const SwipeableProductItem = ({ item }) => {
     const swipeableRef = useRef(null);
 
-    const renderLeftActions = () => (
-      <View style={[styles.swipeAction, styles.consumeAction]}>
-        <Ionicons name="restaurant" size={24} color="#fff" />
-        <Text style={styles.swipeText}>Використати</Text>
-      </View>
-    );
+    // Анімована лівий свайп — узгоджено з GroceryListScreen
+    const renderLeftActions = (progress, dragX) => {
+      const opacity = dragX.interpolate({
+        inputRange: [0, 20],
+        outputRange: [0, 1],
+        extrapolate: 'clamp',
+      });
+      return (
+        <Animated.View style={[styles.swipeAction, styles.consumeAction, { opacity }]}>
+          <Ionicons name="restaurant" size={24} color={COLORS.onPrimaryContainer} />
+          <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>Використати</Text>
+        </Animated.View>
+      );
+    };
 
-    const renderRightActions = () => (
-      <View style={[styles.swipeAction, styles.deleteAction]}>
-        <Ionicons name="trash" size={24} color="#fff" />
-        <Text style={styles.swipeText}>Видалити</Text>
-      </View>
-    );
+    // Анімований правий свайп — узгоджено з GroceryListScreen
+    const renderRightActions = (progress, dragX) => {
+      const opacity = dragX.interpolate({
+        inputRange: [-20, 0],
+        outputRange: [1, 0],
+        extrapolate: 'clamp',
+      });
+      return (
+        <Animated.View style={[styles.swipeAction, styles.deleteAction, { opacity }]}>
+          <Ionicons name="trash" size={24} color={COLORS.onErrorContainer} />
+          <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>Видалити</Text>
+        </Animated.View>
+      );
+    };
 
     return (
       <Swipeable
@@ -192,28 +210,37 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
-            <Ionicons name="search-outline" size={20} color={COLORS.textLight} />
+            <Ionicons name="search-outline" size={20} color={COLORS.onSurfaceVariant} />
             <TextInput 
               style={styles.searchInput} 
               placeholder="Пошук продуктів..." 
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={COLORS.onSurfaceVariant}
               value={search} 
               onChangeText={setSearch} 
             />
             {search !== '' && (
               <TouchableOpacity onPress={() => setSearch('')} style={{ marginRight: 4 }}>
-                <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
+                <Ionicons name="close-circle" size={18} color={COLORS.onSurfaceVariant} />
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity style={[styles.filterButton, (selectedCategory !== 'Всі' || sortBy !== null) && styles.filterButtonActive]} onPress={() => setShowFilterModal(true)}>
-            <Ionicons name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"} size={24} color={selectedCategory !== 'Всі' || sortBy !== null ? (COLORS.onPrimary || '#fff') : COLORS.primary} />
+          <TouchableOpacity
+            style={[styles.filterButton, (selectedCategory !== 'Всі' || sortBy !== null) && styles.filterButtonActive]}
+            onPress={() => setShowFilterModal(true)}
+          >
+            <Ionicons
+              name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"}
+              size={24}
+              color={selectedCategory !== 'Всі' || sortBy !== null ? COLORS.onPrimary : COLORS.primary}
+            />
           </TouchableOpacity>
         </View>
 
         {isFilterActive && (
           <View style={styles.activeFiltersRow}>
-            <Text style={styles.activeFiltersText}>Застосовано фільтри {sortBy ? `(сортування${renderSortArrow(sortBy)})` : ''}</Text>
+            <Text style={styles.activeFiltersText}>
+              Застосовано фільтри {sortBy ? `(сортування${renderSortArrow(sortBy)})` : ''}
+            </Text>
             <TouchableOpacity style={styles.resetLink} onPress={resetFilters}>
               <Ionicons name="refresh-outline" size={14} color={COLORS.danger} style={{ marginRight: 4 }} />
               <Text style={styles.resetLinkText}>Скинути все</Text>
@@ -223,7 +250,7 @@ export default function HomeScreen({ navigation }) {
 
         {products.length > 0 && (
           <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Рецепти')} activeOpacity={0.8}>
-            <Ionicons name="restaurant-outline" size={18} color={COLORS.onPrimary || '#fff'} style={{ marginRight: 8 }} />
+            <Ionicons name="restaurant-outline" size={18} color={COLORS.onPrimary} style={{ marginRight: 8 }} />
             <Text style={styles.recipesIdeaText}>Що приготувати з цих продуктів?</Text>
           </TouchableOpacity>
         )}
@@ -237,8 +264,11 @@ export default function HomeScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="fast-food-outline" size={64} color={COLORS.border} />
-            <Text style={styles.emptyText}>Нічого не знайдено</Text>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="fast-food-outline" size={48} color={COLORS.primary} />
+            </View>
+            <Text style={styles.emptyTitle}>Список порожній</Text>
+            <Text style={styles.emptyText}>Додайте продукти, які є у вас вдома</Text>
           </View>
         }
       />
@@ -264,7 +294,7 @@ export default function HomeScreen({ navigation }) {
               value={consumeAmount}
               onChangeText={setConsumeAmount}
               autoFocus
-              placeholderTextColor={COLORS.textLight}
+              placeholderTextColor={COLORS.onSurfaceVariant}
             />
             
             <View style={styles.modalActionsRow}>
@@ -325,72 +355,335 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets, theme) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingTop: (insets.top || 20) + 10, paddingBottom: 12, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 16, paddingHorizontal: 16 },
-  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
-  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background, borderRadius: 10, paddingHorizontal: 12, marginRight: 8, borderWidth: 1, borderColor: COLORS.border },
-  searchInput: { flex: 1, paddingVertical: Platform.OS === 'ios' ? 12 : 8, marginLeft: 8, fontSize: 16, color: COLORS.text },
-  filterButton: { padding: 10, backgroundColor: COLORS.background, borderRadius: 10, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center', alignItems: 'center' },
-  filterButtonActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  activeFiltersRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginTop: 10 },
-  activeFiltersText: { fontSize: 12, color: COLORS.textLight, fontStyle: 'italic' },
-  
-  resetLink: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme === 'dark' ? 'rgba(255, 66, 66, 0.15)' : '#FCE8E6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  resetLinkText: { fontSize: 12, color: COLORS.danger, fontWeight: '600' },
-  
-  recipesIdeaButton: { flexDirection: 'row', backgroundColor: COLORS.primary, marginHorizontal: 16, marginTop: 12, paddingVertical: 12, borderRadius: 10, justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 1.41 },
-  recipesIdeaText: { color: COLORS.onPrimary || '#fff', fontSize: 14, fontWeight: '600' },
-  list: { padding: 16, paddingBottom: 100 },
-  empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: 20 },
-  emptyText: { marginTop: 16, fontSize: 16, color: COLORS.textLight, textAlign: 'center' },
-
-  swipeAction: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    width: 100, 
+const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
   },
-  consumeAction: { 
-    backgroundColor: COLORS.success, 
-    borderRadius: 20, 
+
+  // ─── Header ────────────────────────────────────────────────────────────────
+  header: {
+    paddingTop: insets.top || 20,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.surface,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
-  deleteAction: { 
-    backgroundColor: COLORS.danger,  
-    borderRadius: 20
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 16,
   },
-  swipeText: { color: '#fff', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
+    marginLeft: 8,
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  filterButton: {
+    width: 48,
+    height: 48,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  activeFiltersRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  activeFiltersText: {
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    fontStyle: 'italic',
+  },
+  resetLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme === 'dark' ? 'rgba(255, 66, 66, 0.15)' : '#FCE8E6',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  resetLinkText: {
+    fontSize: 12,
+    color: COLORS.danger,
+    fontWeight: '600',
+  },
+  recipesIdeaButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primary,
+    marginTop: 12,
+    paddingVertical: 12,
+    borderRadius: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  recipesIdeaText: {
+    color: COLORS.onPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
 
-  // ОНОВЛЕНО: Значення bottom збільшено з 90 до 130, щоб напис був вище нижнього меню навігації (Tab Bar)
-  snackbar: { position: 'absolute', bottom: 130, left: 20, right: 20, backgroundColor: COLORS.text, borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4 },
-  snackbarText: { color: COLORS.background, fontSize: 14, fontWeight: '500' },
-  snackbarAction: { color: COLORS.background, fontWeight: 'bold', fontSize: 14 },
+  // ─── List ──────────────────────────────────────────────────────────────────
+  list: {
+    padding: 20,
+    paddingBottom: tabBarHeight + 40,
+  },
 
-  consumeModalContent: { backgroundColor: COLORS.surface, borderRadius: 16, padding: 20, width: '92%', maxWidth: 380 },
-  consumeSubtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 16, textAlign: 'center' },
-  consumeInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: 16, fontSize: 20, textAlign: 'center', marginBottom: 24, backgroundColor: COLORS.background, color: COLORS.text },
-  modalButton: { flex: 1 },
+  // ─── Empty state ───────────────────────────────────────────────────────────
+  empty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 60,
+    paddingHorizontal: 32,
+  },
+  emptyIconContainer: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: COLORS.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  bottomModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, maxHeight: '80%', width: '100%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, textAlign: 'center' },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: COLORS.text, marginTop: 12, marginBottom: 10 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
-  optionChip: { backgroundColor: COLORS.background, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: COLORS.border },
-  optionChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  optionChipText: { color: COLORS.text, fontSize: 13 },
-  optionChipTextActive: { color: COLORS.onPrimary || '#fff', fontWeight: '600' },
-  categoriesScroll: { flexDirection: 'row', marginBottom: 24 },
-  categoryChip: { backgroundColor: COLORS.background, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginRight: 8, height: 36, borderWidth: 1, borderColor: COLORS.border, justifyContent: 'center' },
-  categoryChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  categoryChipText: { color: COLORS.text, fontSize: 13 },
-  categoryChipTextActive: { color: COLORS.onPrimary || '#fff', fontWeight: '600' },
-  modalActionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  modalResetButton: { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.background },
-  modalResetButtonText: { color: COLORS.danger, fontSize: 15, fontWeight: '600' },
-  applyButton: { flex: 2, backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  applyButtonText: { color: COLORS.onPrimary || '#fff', fontSize: 16, fontWeight: 'bold' }
+  // ─── Swipe actions ─────────────────────────────────────────────────────────
+  swipeAction: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 90,
+    borderRadius: 16,
+  },
+  consumeAction: {
+    backgroundColor: COLORS.primaryContainer,
+    marginRight: -20,
+    paddingRight: 20,
+  },
+  deleteAction: {
+    backgroundColor: COLORS.errorContainer,
+    marginLeft: -20,
+    paddingLeft: 20,
+  },
+  swipeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+
+  // ─── Snackbar ──────────────────────────────────────────────────────────────
+  snackbar: {
+    position: 'absolute',
+    bottom: tabBarHeight + 80,
+    left: 20,
+    right: 20,
+    backgroundColor: COLORS.text,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  snackbarText: {
+    color: COLORS.background,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  snackbarAction: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+
+  // ─── Consume modal ─────────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  consumeModalContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 24,
+    padding: 24,
+    width: '92%',
+    maxWidth: 380,
+  },
+  consumeSubtitle: {
+    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  consumeInput: {
+    borderWidth: 1,
+    borderColor: COLORS.outline,
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 20,
+    textAlign: 'center',
+    marginBottom: 24,
+    backgroundColor: COLORS.background,
+    color: COLORS.text,
+  },
+  modalButton: {
+    flex: 1,
+  },
+
+  // ─── Filter modal ──────────────────────────────────────────────────────────
+  bottomModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '80%',
+    width: '100%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.text,
+    textAlign: 'center',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  optionChip: {
+    backgroundColor: COLORS.surfaceVariant,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  optionChipActive: {
+    backgroundColor: COLORS.primary,
+  },
+  optionChipText: {
+    color: COLORS.text,
+    fontSize: 13,
+  },
+  optionChipTextActive: {
+    color: COLORS.onPrimary,
+    fontWeight: '600',
+  },
+  categoriesScroll: {
+    flexDirection: 'row',
+    marginBottom: 24,
+  },
+  categoryChip: {
+    backgroundColor: COLORS.surfaceVariant,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    height: 36,
+    justifyContent: 'center',
+  },
+  categoryChipActive: {
+    backgroundColor: COLORS.primary,
+  },
+  categoryChipText: {
+    color: COLORS.text,
+    fontSize: 13,
+  },
+  categoryChipTextActive: {
+    color: COLORS.onPrimary,
+    fontWeight: '600',
+  },
+  modalActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalResetButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.outline,
+    backgroundColor: COLORS.background,
+  },
+  modalResetButtonText: {
+    color: COLORS.danger,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  applyButton: {
+    flex: 2,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applyButtonText: {
+    color: COLORS.onPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
