@@ -252,7 +252,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     backgroundColor: COLORS.surfaceVariant,
     borderRadius: 100,
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
     fontSize: 16,
     color: COLORS.text,
     marginRight: 12,

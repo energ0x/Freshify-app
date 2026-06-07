@@ -30,6 +30,7 @@ import LeaguesScreen from '../screens/LeaguesScreen';
 import DietSettingsScreen from '../screens/DietSettingsScreen';
 import AllergensSettingsScreen from '../screens/AllergensSettingsScreen';
 import CategoriesScreen from '../screens/CategoriesScreen';
+import DailyTasksScreen from '../screens/DailyTasksScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -222,6 +223,7 @@ export default function AppNavigator() {
             <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: 'Моя дієта'}} />
             <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: 'Мої алергени'}} />
             <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: 'Мої категорії'}} />
+            <Stack.Screen name="DailyTasks" component={DailyTasksScreen} options={{ headerShown: true, title: 'Завдання'}} />
           </>
         )}
       </Stack.Navigator>
