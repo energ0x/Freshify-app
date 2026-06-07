@@ -1,79 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
+import useAuthStore from '../store/authStore';
 
-const PREDEFINED_ALLERGENS = [
-  { id: 'lactose', title: 'Лактоза 🥛', desc: 'Молоко, сир, вершкове масло' },
-  { id: 'nuts', title: 'Горіхи 🥜', desc: 'Волоські горіхи, мигдаль, фундук, арахіс' },
-  { id: 'eggs', title: 'Яйця 🥚', desc: 'Курячі, перепелині яйця' },
-  { id: 'soy', title: 'Соя 🌱', desc: 'Соєвий соус, тофу, соєве молоко' },
-  { id: 'seafood', title: 'Морепродукти 🦐', desc: 'Риба, креветки, мідії, кальмари' },
+const INITIAL_ALLERGENS = [
+  'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
 ];
 
-export default function AllergensScreen({ navigation }) {
-  // Тут у майбутньому ви будете підтягувати збережені алергени зі store або API
-  const [selectedAllergens, setSelectedAllergens] = useState([]);
-  const [customAllergens, setCustomAllergens] = useState([]);
-  const [newAllergen, setNewAllergen] = useState('');
+export default function AllergensSettingsScreen({ navigation }) {
+  const { user, updateProfile } = useAuthStore();
+  const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
+  const [selected, setSelected] = useState([]);
+  const [customInput, setCustomInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const toggleAllergen = (id) => {
-    if (selectedAllergens.includes(id)) {
-      setSelectedAllergens(selectedAllergens.filter(a => a !== id));
+  useEffect(() => {
+    if (user?.allergens) {
+      // Відновлюємо емодзі для відображення в UI
+      const mappedSelected = user.allergens.map(backendAllergen => {
+        const found = INITIAL_ALLERGENS.find(
+          ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() === backendAllergen
+        );
+        return found || backendAllergen;
+      });
+
+      const remoteAllergens = mappedSelected.filter(a => !INITIAL_ALLERGENS.includes(a));
+      setAllergens([...INITIAL_ALLERGENS, ...remoteAllergens]);
+      setSelected(mappedSelected);
+    }
+  }, [user]);
+
+  const toggleAllergen = (item) => {
+    if (selected.includes(item)) {
+      setSelected(selected.filter(i => i !== item));
     } else {
-      setSelectedAllergens([...selectedAllergens, id]);
+      setSelected([...selected, item]);
     }
   };
 
-  const handleAddCustom = () => {
-    const trimmed = newAllergen.trim();
-    if (trimmed && !customAllergens.find(a => a.title.toLowerCase() === trimmed.toLowerCase())) {
-      const newId = `custom_${Date.now()}`;
-      setCustomAllergens([...customAllergens, { id: newId, title: trimmed, desc: 'Власний алерген' }]);
-      setSelectedAllergens([...selectedAllergens, newId]); 
-      setNewAllergen('');
+  const addCustomAllergen = () => {
+    const text = customInput.trim();
+    if (!text) return;
+    if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
+      return Alert.alert('Увага', 'Цей алерген уже є у списку');
     }
+    setAllergens([...allergens, text]);
+    setSelected([...selected, text]);
+    setCustomInput('');
   };
 
-  const handleDeleteCustom = (id) => {
-    setCustomAllergens(customAllergens.filter(a => a.id !== id));
-    setSelectedAllergens(selectedAllergens.filter(a => a !== id));
-  };
-
-  const handleSave = () => {
-    // Логіка збереження на бекенд або у Zustand
-    Alert.alert('Успіх', 'Налаштування алергенів збережено.', [
-      { text: 'ОК', onPress: () => navigation.goBack() }
-    ]);
-  };
-
-  const renderItem = (item, isCustom = false) => {
-    const isSelected = selectedAllergens.includes(item.id);
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={[styles.card, isSelected && styles.selectedCard]}
-        onPress={() => toggleAllergen(item.id)}
-        activeOpacity={0.7}
-      >
-        <Ionicons 
-          name={isSelected ? "checkmark-circle" : "ellipse-outline"} 
-          size={24} 
-          color={isSelected ? (COLORS.danger || '#FF3B30') : (COLORS.border || '#cbd5e1')} 
-          style={styles.radioIcon}
-        />
-        <View style={styles.textContainer}>
-          <Text style={[styles.itemTitle, isSelected && styles.selectedItemTitle]}>{item.title}</Text>
-          <Text style={styles.itemDesc}>{item.desc}</Text>
-        </View>
-        {isCustom && (
-          <TouchableOpacity onPress={() => handleDeleteCustom(item.id)} style={styles.deleteBtn}>
-            <Ionicons name="trash-outline" size={22} color={COLORS.danger || '#FF3B30'} />
-          </TouchableOpacity>
-        )}
-      </TouchableOpacity>
-    );
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
+      const res = await updateProfile({ allergens: cleanedAllergens });
+      if (res.success) {
+        Alert.alert('Успіх', 'Налаштування алергенів збережено.', [
+          { text: 'ОК', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('Помилка', res.error || 'Не вдалося зберегти налаштування.');
+      }
+    } catch (error) {
+      Alert.alert('Помилка', 'Не вдалося зберегти налаштування.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,23 +81,37 @@ export default function AllergensScreen({ navigation }) {
         <TextInput
           style={styles.input}
           placeholder="Додати власний алерген..."
-          value={newAllergen}
-          onChangeText={setNewAllergen}
-          onSubmitEditing={handleAddCustom}
+          value={customInput}
+          onChangeText={setCustomInput}
+          onSubmitEditing={addCustomAllergen}
           placeholderTextColor={COLORS.textLight}
         />
-        <TouchableOpacity style={[styles.addButton, { backgroundColor: COLORS.danger || '#FF3B30' }]} onPress={handleAddCustom}>
+        <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
           <Ionicons name="add" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {PREDEFINED_ALLERGENS.map(a => renderItem(a))}
-        {customAllergens.map(a => renderItem(a, true))}
+        <View style={styles.grid}>
+          {allergens.map((item) => {
+            const isSelected = selected.includes(item);
+            return (
+              <TouchableOpacity
+                key={item}
+                style={[styles.chip, isSelected && styles.chipSelected]}
+                onPress={() => toggleAllergen(item)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{item}</Text>
+                {isSelected && <Ionicons name="close-circle" size={16} color="#fff" style={{marginLeft: 6}} />}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <CustomButton title="Зберегти" onPress={handleSave} />
+        <CustomButton title="Зберегти" onPress={handleSave} loading={loading} />
       </View>
     </KeyboardAvoidingView>
   );
@@ -110,22 +119,28 @@ export default function AllergensScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: 20, paddingTop: 20 },
-  subtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 20, lineHeight: 20 },
+  subtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 20, lineHeight: 20, textAlign: 'center' },
   
   inputContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   input: { flex: 1, backgroundColor: COLORS.surface || '#fff', borderWidth: 1, borderColor: COLORS.border || '#e0e0e0', borderRadius: 12, padding: 14, fontSize: 15, marginRight: 10, color: COLORS.text },
-  addButton: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  addButton: { backgroundColor: COLORS.primary, width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
 
   scrollContainer: { paddingBottom: 20 },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface || '#fff', borderWidth: 1, borderColor: COLORS.border || '#e0e0e0', borderRadius: 16, padding: 16, marginBottom: 12 },
-  selectedCard: { borderColor: COLORS.danger || '#FF3B30', backgroundColor: ((COLORS.danger || '#FF3B30') + '10') },
-  
-  radioIcon: { marginRight: 14 },
-  textContainer: { flex: 1 },
-  itemTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
-  selectedItemTitle: { color: COLORS.danger || '#FF3B30' },
-  itemDesc: { fontSize: 13, color: COLORS.textLight },
-  deleteBtn: { padding: 8, marginLeft: 8 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface || '#fff',
+    borderWidth: 1,
+    borderColor: COLORS.border || '#e2e8f0',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    margin: 6,
+  },
+  chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  chipText: { fontSize: 15, fontWeight: '600', color: COLORS.text },
+  chipTextSelected: { color: '#fff' },
   
   footer: { paddingVertical: 20, paddingBottom: 40 },
 });

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
+import { authAPI } from '../../services/api';
 
 const INITIAL_ALLERGENS = [
   'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
@@ -13,6 +14,7 @@ export default function AllergensScreen({ navigation }) {
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const toggleAllergen = (item) => {
     if (selected.includes(item)) {
@@ -32,6 +34,21 @@ export default function AllergensScreen({ navigation }) {
     setSelected([...selected, text]);
     setCustomInput('');
     setShowCustomInput(false);
+  };
+
+  const handleNext = async () => {
+    setLoading(true);
+    try {
+      // Видаляємо емодзі для збереження в БД
+      const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
+      await authAPI.updateMe({ allergens: cleanedAllergens });
+      navigation.navigate('Guide');
+    } catch (error) {
+      Alert.alert('Помилка', 'Не вдалося зберегти алергени. Спробуйте ще раз.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,7 +99,11 @@ export default function AllergensScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <CustomButton title={selected.length > 0 ? `Продовжити)` : "Немає алергій"} onPress={() => navigation.navigate('Guide')} />
+        <CustomButton
+          title={selected.length > 0 ? `Продовжити` : "Немає алергій"}
+          onPress={handleNext}
+          loading={loading}
+        />
       </View>
     </View>
   );

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
+import { authAPI } from '../../services/api';
 
 const DIETS = [
   { id: 'none', title: 'Всеїдний (Ніяких дієт)', desc: 'Харчуюся без виключення категорій їжі' },
@@ -13,11 +14,19 @@ const DIETS = [
 
 export default function DietScreen({ navigation }) {
   const [selectedDiet, setSelectedDiet] = useState('none');
+  const [loading, setLoading] = useState(false);
 
-  const handleNext = () => {
-    // Тут в майбутньому можна зберігати обрану дієту в базу або стейт:
-    // console.log('Обрана дієта:', selectedDiet);
-    navigation.navigate('Allergens');
+  const handleNext = async () => {
+    setLoading(true);
+    try {
+      await authAPI.updateMe({ dietary_preference: selectedDiet });
+      navigation.navigate('Allergens');
+    } catch (error) {
+      Alert.alert('Помилка', 'Не вдалося зберегти ваші вподобання. Спробуйте ще раз.');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -48,7 +57,7 @@ export default function DietScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <CustomButton title="Далі" onPress={handleNext} />
+        <CustomButton title="Далі" onPress={handleNext} loading={loading} />
       </View>
     </View>
   );

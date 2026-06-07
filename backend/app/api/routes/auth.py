@@ -11,7 +11,14 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
 def register(data: UserCreate, db: Session = Depends(get_db)):
-    user = register_user(db, data.email, data.password, data.name)
+    user = register_user(
+        db,
+        data.email,
+        data.password,
+        data.name,
+        data.dietary_preference,
+        data.allergens
+    )
     token = create_access_token({"sub": str(user.id)})
     return TokenResponse(access_token=token, user=UserResponse.model_validate(user))
 
