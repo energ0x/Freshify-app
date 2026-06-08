@@ -1,27 +1,29 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/authStore';
 import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
 
 export default function RegisterScreen({ navigation }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { register, isLoading } = useAuthStore();
 
   const handleRegister = async () => {
-    if (!email || !password) return Alert.alert('Помилка', 'Введіть обов\'язкові дані');
+    if (!email || !password) return Alert.alert(t('common.error'), t('register.errorRequired'));
     const res = await register(email, password, name);
-    if (!res.success) Alert.alert('Помилка', res.error);
+    if (!res.success) Alert.alert(t('common.error'), res.error);
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Створити акаунт</Text>
+      <Text style={styles.title}>{t('register.title')}</Text>
       <TextInput
         style={styles.input}
-        placeholder="Email *"
+        placeholder={t('register.emailPlaceholder')}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -29,13 +31,13 @@ export default function RegisterScreen({ navigation }) {
       />
       <TextInput
         style={styles.input}
-        placeholder="Пароль *"
+        placeholder={t('register.passwordPlaceholder')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      <CustomButton title="Зареєструватися" onPress={handleRegister} loading={isLoading} style={styles.button} />
-      <CustomButton title="Вже є акаунт? Увійти" variant="outline" onPress={() => navigation.goBack()} disabled={isLoading} />
+      <CustomButton title={t('register.btnRegister')} onPress={handleRegister} loading={isLoading} style={styles.button} />
+      <CustomButton title={t('register.btnAlreadyHave')} variant="outline" onPress={() => navigation.goBack()} disabled={isLoading} />
     </View>
   );
 }

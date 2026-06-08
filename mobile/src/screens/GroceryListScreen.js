@@ -162,30 +162,38 @@ export default function GroceryListScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Список покупок</Text>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Що потрібно купити?"
-            placeholderTextColor={COLORS.onSurfaceVariant}
-            value={newItemName}
-            onChangeText={setNewItemName}
-            onSubmitEditing={handleAddItem}
-          />
-          <TouchableOpacity
-            style={[styles.addButton, !newItemName.trim() && styles.addButtonDisabled]}
-            onPress={handleAddItem}
-            disabled={!newItemName.trim()}
-          >
-            <Ionicons
-              name="add"
-              size={28}
-              color={!newItemName.trim() ? COLORS.onSurfaceVariant : COLORS.onPrimaryContainer}
-            />
-          </TouchableOpacity>
-        </View>
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="add-outline" size={20} color={COLORS.onSurfaceVariant} />
+              <TextInput
+                style={styles.input}
+                placeholder="Що потрібно купити?"
+                placeholderTextColor={COLORS.onSurfaceVariant}
+                value={newItemName}
+                onChangeText={setNewItemName}
+                onSubmitEditing={handleAddItem}
+              />
+              {newItemName !== '' && (
+                <TouchableOpacity onPress={() => setNewItemName('')} style={{ marginRight: 4 }}>
+                  <Ionicons name="close-circle" size={18} color={COLORS.onSurfaceVariant} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity
+              style={[styles.addButton, !newItemName.trim() && styles.addButtonDisabled]}
+              onPress={handleAddItem}
+              disabled={!newItemName.trim()}
+            >
+              <Ionicons
+                name="add"
+                size={28}
+                color={!newItemName.trim() ? COLORS.onSurfaceVariant : COLORS.onPrimaryContainer}
+              />
+            </TouchableOpacity>
+          </View>
 
         <TouchableOpacity style={styles.autoAddBtn} onPress={handleAddLowStock}>
-          <Ionicons name="sync-outline" size={18} color={COLORS.onPrimaryContainer} style={{ marginRight: 8 }} />
+          <Ionicons name="sync-outline" size={18} color={COLORS.onPrimary} style={{ marginRight: 8 }} />
           <Text style={styles.autoAddText}>Додати те, що закінчується</Text>
         </TouchableOpacity>
       </View>
@@ -246,16 +254,22 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 100,
+    paddingHorizontal: 16,
   },
   input: {
     flex: 1,
-    backgroundColor: COLORS.surfaceVariant,
-    borderRadius: 100,
-    paddingHorizontal: 20,
     paddingVertical: Platform.OS === 'ios' ? 14 : 10,
+    marginLeft: 8,
     fontSize: 16,
     color: COLORS.text,
-    marginRight: 12,
   },
   addButton: {
     backgroundColor: COLORS.primaryContainer,
@@ -270,7 +284,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   },
   autoAddBtn: {
     flexDirection: 'row',
-    backgroundColor: COLORS.primaryContainer,
+    backgroundColor: COLORS.primary,
     marginTop: 12,
     paddingVertical: 12,
     borderRadius: 100,
@@ -278,7 +292,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     alignItems: 'center',
   },
   autoAddText: {
-    color: COLORS.onPrimaryContainer,
+    color: COLORS.onPrimary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -296,11 +310,11 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 16,
-    elevation: 1,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowRadius: 3,
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -374,9 +388,9 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   // ─── Snackbar ──────────────────────────────────────────────────────────────
   snackbar: {
     position: 'absolute',
+    bottom: tabBarHeight + 80,
     left: 20,
     right: 20,
-    bottom: tabBarHeight + 80,
     backgroundColor: COLORS.text,
     borderRadius: 12,
     padding: 16,

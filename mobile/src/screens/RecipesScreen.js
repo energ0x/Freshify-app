@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, TouchableOpacity, StatusBar, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
@@ -9,6 +10,7 @@ import CustomButton from '../components/CustomButton';
 import RecipeCard from '../components/RecipeCard';
 
 export default function RecipesScreen() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
   const [streamedText, setStreamedText] = useState('');
@@ -17,7 +19,6 @@ export default function RecipesScreen() {
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
   
-  // ВИПРАВЛЕНО: Видалено useBottomTabBarHeight(), передаємо тільки insets
   const styles = getStyles(COLORS, insets);
 
   const animation = useRef(new Animated.Value(0)).current;
@@ -103,10 +104,10 @@ export default function RecipesScreen() {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Рецепти від AI</Text>
+        <Text style={styles.headerTitle}>{t('recipes.title')}</Text>
         <View style={styles.controls}>
           <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Врахувати список покупок</Text>
+            <Text style={styles.switchLabel}>{t('recipes.includeGrocery')}</Text>
             <Switch
               value={includeGrocery}
               onValueChange={setIncludeGrocery}
@@ -115,7 +116,7 @@ export default function RecipesScreen() {
             />
           </View>
           <CustomButton
-            title={loading ? "Скасувати" : "Згенерувати рецепти"}
+            title={loading ? t('recipes.cancelBtn') : t('recipes.generateBtn')}
             onPress={handleGenerateRecipes}
             loading={loading && !streamedText}
             style={styles.generateBtn}
@@ -132,7 +133,7 @@ export default function RecipesScreen() {
         {loading && !streamedText ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={COLORS.primary} />
-            <Text style={styles.loadingText}>ШІ кухар думає...</Text>
+            <Text style={styles.loadingText}>{t('recipes.loading')}</Text>
           </View>
         ) : recipes.length > 0 ? (
            recipes.map((recipeContent, index) => (
@@ -143,8 +144,8 @@ export default function RecipesScreen() {
             <View style={styles.emptyIconContainer}>
               <Ionicons name="restaurant-outline" size={48} color={COLORS.primary} />
             </View>
-            <Text style={styles.emptyTitle}>Згенеруйте рецепти</Text>
-            <Text style={styles.emptyText}>Натисніть кнопку, щоб отримати ідеї страв на основі продуктів у вашому холодильнику</Text>
+            <Text style={styles.emptyTitle}>{t('recipes.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('recipes.emptyText')}</Text>
           </View>
         )}
       </ScrollView>
@@ -152,90 +153,19 @@ export default function RecipesScreen() {
   );
 }
 
-// ВИПРАВЛЕНО: Видалено tabBarHeight з параметрів
 const getStyles = (COLORS, insets) => StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: COLORS.background 
-  },
-  header: {
-    paddingTop: insets.top || 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.surface,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.text,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  controls: { 
-    paddingHorizontal: 20, 
-  },
-  switchContainer: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: 16,
-    backgroundColor: COLORS.surfaceVariant,
-    padding: 16,
-    borderRadius: 16,
-  },
-  switchLabel: { 
-    fontSize: 16, 
-    color: COLORS.text,
-    fontWeight: '500',
-  },
-  generateBtn: { 
-    borderRadius: 100,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 16, 
-    // ВИПРАВЛЕНО: Використовуємо insets.bottom замість tabBarHeight
-    paddingBottom: (insets.bottom || 20) + 40,
-  },
-  center: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center',
-  },
-  loadingText: { 
-    marginTop: 16, 
-    color: COLORS.textLight, 
-    fontSize: 16 
-  },
-  empty: { 
-    flex: 1,
-    alignItems: 'center', 
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: COLORS.primaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  emptyText: { 
-    fontSize: 16, 
-    color: COLORS.textLight, 
-    textAlign: 'center',
-    lineHeight: 24,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: { paddingTop: insets.top || 20, paddingBottom: 16, backgroundColor: COLORS.surface, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, paddingHorizontal: 20, marginBottom: 16 },
+  controls: { paddingHorizontal: 20 },
+  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, backgroundColor: COLORS.surfaceVariant, padding: 16, borderRadius: 16 },
+  switchLabel: { fontSize: 16, color: COLORS.text, fontWeight: '500' },
+  generateBtn: { borderRadius: 100 },
+  scrollContent: { flexGrow: 1, padding: 16, paddingBottom: (insets.bottom || 20) + 40 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 16, color: COLORS.textLight, fontSize: 16 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  emptyIconContainer: { width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.primaryContainer, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  emptyTitle: { fontSize: 20, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
+  emptyText: { fontSize: 16, color: COLORS.textLight, textAlign: 'center', lineHeight: 24 },
 });

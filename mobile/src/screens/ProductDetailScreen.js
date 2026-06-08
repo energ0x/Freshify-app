@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -11,6 +12,7 @@ import { CATEGORIES, UNITS } from '../utils/constants';
 import { getExpiryLabel, getExpiryColor, formatDate } from '../utils/dateHelpers';
 
 export default function ProductDetailScreen({ route, navigation }) {
+  const { t } = useTranslation();
   const { productId } = route.params;
   const { products, deleteProduct, consumeProduct, updateProduct } = useProductStore();
   const { colors: COLORS } = useThemeStore();
@@ -47,7 +49,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     const styles = getStyles(COLORS, insets);
     return (
       <View style={styles.center}>
-        <Text style={{ color: COLORS.text }}>Продукт не знайдено</Text>
+        <Text style={{ color: COLORS.text }}>{t('productDetail.notFound')}</Text>
       </View>
     );
   }
@@ -56,15 +58,15 @@ export default function ProductDetailScreen({ route, navigation }) {
   const styles = getStyles(COLORS, insets, expiryColor);
 
   const handleDelete = () => {
-    Alert.alert('Видалення', 'Ви впевнені, що хочете видалити цей продукт?', [
-      { text: 'Скасувати', style: 'cancel' },
+    Alert.alert(t('productDetail.deleteConfirmTitle'), t('productDetail.deleteConfirmMsg'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Видалити',
+        text: t('productDetail.deleteBtn'),
         style: 'destructive',
         onPress: async () => {
           const res = await deleteProduct(product.id);
           if (res.success) navigation.goBack();
-          else Alert.alert('Помилка', res.error);
+          else Alert.alert(t('common.error'), res.error);
         }
       }
     ]);
@@ -73,22 +75,22 @@ export default function ProductDetailScreen({ route, navigation }) {
   const handleConsume = async () => {
     const amountToConsume = product.quantity >= 1 ? 1 : product.quantity;
 
-    Alert.alert('Споживання', `Використати ${amountToConsume} ${product.unit}?`, [
-      { text: 'Скасувати', style: 'cancel' },
+    Alert.alert(t('productDetail.consumeConfirmTitle'), t('productDetail.consumeConfirmMsg', { amount: amountToConsume, unit: product.unit }), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Так',
+        text: t('common.yes'),
         onPress: async () => {
           setLoading(true);
           const res = await consumeProduct(product.id, amountToConsume);
           setLoading(false);
 
           if (res.success) {
-            Alert.alert('Успіх', 'Продукт додано до аналітики споживання');
+            Alert.alert(t('common.success'), t('productDetail.consumeSuccessMsg'));
             if (product.quantity - amountToConsume <= 0) {
               navigation.goBack();
             }
           } else {
-            Alert.alert('Помилка', res.error);
+            Alert.alert(t('common.error'), res.error);
           }
         }
       }
@@ -96,7 +98,7 @@ export default function ProductDetailScreen({ route, navigation }) {
   };
 
   const handleSaveEdit = async () => {
-    if (!editForm.name) return Alert.alert('Помилка', 'Введіть назву продукту');
+    if (!editForm.name) return Alert.alert(t('common.error'), t('productDetail.nameRequired'));
 
     setSaving(true);
     const updateData = {
@@ -114,7 +116,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     if (res.success) {
       setEditModalVisible(false);
     } else {
-      Alert.alert('Помилка', res.error || 'Не вдалося оновити продукт');
+      Alert.alert(t('common.error'), res.error || t('productDetail.updateError'));
     }
   };
 
@@ -129,7 +131,7 @@ export default function ProductDetailScreen({ route, navigation }) {
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{product.name}</Text>
               <View style={styles.categoryBadge}>
-                <Text style={styles.category}>{product.category || 'Без категорії'}</Text>
+                <Text style={styles.category}>{product.category || t('productDetail.noCategory')}</Text>
               </View>
             </View>
             <TouchableOpacity onPress={() => setEditModalVisible(true)} style={styles.editIconBtn}>
@@ -140,13 +142,13 @@ export default function ProductDetailScreen({ route, navigation }) {
           <View style={styles.infoGrid}>
              <View style={styles.infoCard}>
                 <Ionicons name="scale-outline" size={28} color={COLORS.primary} />
-                <Text style={styles.infoCardLabel}>Залишок</Text>
+                <Text style={styles.infoCardLabel}>{t('productDetail.quantity')}</Text>
                 <Text style={styles.infoCardValue}>{product.quantity} {product.unit}</Text>
              </View>
              
              <View style={[styles.infoCard, { backgroundColor: `${expiryColor}15` }]}>
                 <Ionicons name="calendar-outline" size={28} color={expiryColor} />
-                <Text style={styles.infoCardLabel}>Придатний до</Text>
+                <Text style={styles.infoCardLabel}>{t('productDetail.expires')}</Text>
                 <Text style={[styles.infoCardValue, { color: expiryColor }]}>{formatDate(product.expiry_date)}</Text>
                 <Text style={[styles.expiryLabel, { color: expiryColor }]}>{getExpiryLabel(product.expiry_date)}</Text>
              </View>
@@ -156,7 +158,7 @@ export default function ProductDetailScreen({ route, navigation }) {
             <View style={styles.notesContainer}>
               <View style={styles.notesHeader}>
                  <Ionicons name="document-text" size={20} color={COLORS.primary} />
-                 <Text style={styles.notesTitle}>Нотатки</Text>
+                 <Text style={styles.notesTitle}>{t('productDetail.notes')}</Text>
               </View>
               <Text style={styles.notesText}>{product.notes}</Text>
             </View>
@@ -165,14 +167,14 @@ export default function ProductDetailScreen({ route, navigation }) {
 
         <View style={styles.actions}>
           <CustomButton
-            title="Спожити продукт"
+            title={t('productDetail.consumeBtn')}
             onPress={handleConsume}
             loading={loading}
             style={styles.consumeButton}
             icon={<Ionicons name="restaurant-outline" size={20} color={COLORS.onPrimary} />}
           />
           <CustomButton
-            title="Видалити"
+            title={t('productDetail.deleteBtn')}
             variant="outline"
             onPress={handleDelete}
             disabled={loading}
@@ -196,7 +198,7 @@ export default function ProductDetailScreen({ route, navigation }) {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Редагувати</Text>
+                <Text style={styles.modalTitle}>{t('productDetail.editTitle')}</Text>
                 <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                   <Ionicons name="close-circle" size={32} color={COLORS.outline} />
                 </TouchableOpacity>
@@ -204,19 +206,19 @@ export default function ProductDetailScreen({ route, navigation }) {
 
               <ScrollView style={styles.modalForm}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>Назва продукту</Text>
+                  <Text style={styles.formLabel}>{t('productDetail.nameLabel')}</Text>
                   <TextInput
                     style={styles.input}
                     value={editForm.name}
                     onChangeText={(val) => setEditForm(prev => ({ ...prev, name: val }))}
-                    placeholder="Наприклад: Молоко"
+                    placeholder={t('productDetail.namePlaceholder')}
                     placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                 </View>
 
                 <View style={styles.row}>
                   <View style={[styles.formGroup, { flex: 2, marginRight: 10 }]}>
-                    <Text style={styles.formLabel}>Кількість</Text>
+                    <Text style={styles.formLabel}>{t('productDetail.qtyLabel')}</Text>
                     <TextInput
                       style={styles.input}
                       value={editForm.quantity}
@@ -227,7 +229,7 @@ export default function ProductDetailScreen({ route, navigation }) {
                   </View>
                   <View style={[styles.formGroup, { flex: 3 }]}>
                     <CustomPicker
-                      label="Одиниця"
+                      label={t('productDetail.unitLabel')}
                       items={unitItems}
                       selectedValue={editForm.unit}
                       onValueChange={(val) => setEditForm(prev => ({ ...prev, unit: val }))}
@@ -237,7 +239,7 @@ export default function ProductDetailScreen({ route, navigation }) {
 
                 <View style={styles.formGroup}>
                   <CustomPicker
-                    label="Категорія"
+                    label={t('productDetail.categoryLabel')}
                     items={categoryItems}
                     selectedValue={editForm.category}
                     onValueChange={(val) => setEditForm(prev => ({ ...prev, category: val }))}
@@ -252,12 +254,12 @@ export default function ProductDetailScreen({ route, navigation }) {
                 </View>
                 
                 <View style={[styles.formGroup, {marginBottom: 30}]}>
-                  <Text style={styles.formLabel}>Нотатки</Text>
+                  <Text style={styles.formLabel}>{t('productDetail.notesLabel')}</Text>
                   <TextInput
                     style={[styles.input, styles.textArea]}
                     value={editForm.notes}
                     onChangeText={(val) => setEditForm(prev => ({ ...prev, notes: val }))}
-                    placeholder="Важлива інформація про продукт..."
+                    placeholder={t('productDetail.notesPlaceholder')}
                     placeholderTextColor={COLORS.onSurfaceVariant}
                     multiline={true}
                     numberOfLines={3}
@@ -269,14 +271,14 @@ export default function ProductDetailScreen({ route, navigation }) {
 
               <View style={styles.modalActions}>
                 <CustomButton
-                  title="Скасувати"
+                  title={t('common.cancel')}
                   variant="outline"
                   onPress={() => setEditModalVisible(false)}
                   style={styles.modalButton}
                   disabled={saving}
                 />
                 <CustomButton
-                  title="Зберегти"
+                  title={t('common.save')}
                   onPress={handleSaveEdit}
                   loading={saving}
                   style={styles.modalButton}
@@ -291,183 +293,38 @@ export default function ProductDetailScreen({ route, navigation }) {
 }
 
 const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: COLORS.background 
-  },
-  center: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    backgroundColor: COLORS.background,
-  },
-  content: { 
-    padding: 20,
-    paddingBottom: insets?.bottom + 40 || 40,
-  },
-  card: { 
-    backgroundColor: COLORS.surface, 
-    borderRadius: 24, 
-    padding: 24, 
-    marginBottom: 24, 
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-  },
-  headerRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'flex-start',
-    marginBottom: 24,
-  },
-  name: { 
-    fontSize: 28, 
-    fontWeight: '700', 
-    color: COLORS.text, 
-    marginBottom: 8 
-  },
-  categoryBadge: {
-    backgroundColor: COLORS.primaryContainer,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    alignSelf: 'flex-start',
-  },
-  category: { 
-    fontSize: 14, 
-    color: COLORS.onPrimaryContainer, 
-    fontWeight: '600' 
-  },
-  editIconBtn: { 
-    padding: 12, 
-    backgroundColor: COLORS.surfaceVariant, 
-    borderRadius: 16 
-  },
-  infoGrid: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
-  infoCard: {
-    flex: 1,
-    backgroundColor: COLORS.surfaceVariant,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'flex-start',
-  },
-  infoCardLabel: {
-    fontSize: 12,
-    color: COLORS.textLight,
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  infoCardValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  expiryLabel: { 
-    fontSize: 12, 
-    fontWeight: '600', 
-    marginTop: 4 
-  },
-  notesContainer: { 
-    backgroundColor: COLORS.background,
-    padding: 16,
-    borderRadius: 16,
-  },
-  notesHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  notesTitle: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: COLORS.primary, 
-    marginLeft: 8,
-  },
-  notesText: { 
-    fontSize: 15, 
-    color: COLORS.text, 
-    lineHeight: 22 
-  },
-  actions: { 
-    gap: 16 
-  },
-  consumeButton: { 
-    backgroundColor: COLORS.primary,
-  },
-  deleteButton: {
-    borderColor: COLORS.danger,
-    borderWidth: 1,
-  },
-
-  // Modal styles
+  container: { flex: 1, backgroundColor: COLORS.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
+  content: { padding: 20, paddingBottom: insets?.bottom + 40 || 40 },
+  card: { backgroundColor: COLORS.surface, borderRadius: 24, padding: 24, marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
+  name: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 8 },
+  categoryBadge: { backgroundColor: COLORS.primaryContainer, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, alignSelf: 'flex-start' },
+  category: { fontSize: 14, color: COLORS.onPrimaryContainer, fontWeight: '600' },
+  editIconBtn: { padding: 12, backgroundColor: COLORS.surfaceVariant, borderRadius: 16 },
+  infoGrid: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+  infoCard: { flex: 1, backgroundColor: COLORS.surfaceVariant, padding: 16, borderRadius: 16, alignItems: 'flex-start' },
+  infoCardLabel: { fontSize: 12, color: COLORS.textLight, marginTop: 8, marginBottom: 4 },
+  infoCardValue: { fontSize: 18, fontWeight: '700', color: COLORS.text },
+  expiryLabel: { fontSize: 12, fontWeight: '600', marginTop: 4 },
+  notesContainer: { backgroundColor: COLORS.background, padding: 16, borderRadius: 16 },
+  notesHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  notesTitle: { fontSize: 16, fontWeight: '600', color: COLORS.primary, marginLeft: 8 },
+  notesText: { fontSize: 15, color: COLORS.text, lineHeight: 22 },
+  actions: { gap: 16 },
+  consumeButton: { backgroundColor: COLORS.primary },
+  deleteButton: { borderColor: COLORS.danger, borderWidth: 1 },
   modalContainer: { flex: 1 },
-  modalOverlay: { 
-    flex: 1, 
-    backgroundColor: 'rgba(0, 0, 0, 0.4)', 
-    justifyContent: 'flex-end' 
-  },
-  modalContent: { 
-    backgroundColor: COLORS.surface, 
-    borderTopLeftRadius: 28, 
-    borderTopRightRadius: 28, 
-    paddingBottom: insets?.bottom ? insets.bottom + 30 : 30,
-    maxHeight: '90%' 
-  },
-  modalHeader: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 24, 
-    paddingVertical: 20, 
-  },
-  modalTitle: { 
-    fontSize: 22, 
-    fontWeight: '700', 
-    color: COLORS.text 
-  },
-  modalForm: { 
-    paddingHorizontal: 24, 
-    paddingTop: 8,
-  },
-  formGroup: { 
-    marginBottom: 20 
-  },
-  row: { 
-    flexDirection: 'row' 
-  },
-  formLabel: { 
-    fontSize: 14, 
-    fontWeight: '600', 
-    color: COLORS.text, 
-    marginBottom: 8 
-  },
-  input: { 
-    backgroundColor: COLORS.surfaceVariant, 
-    borderRadius: 12, 
-    paddingHorizontal: 16, 
-    paddingVertical: Platform.OS === 'ios' ? 14 : 12, 
-    fontSize: 16, 
-    color: COLORS.text 
-  },
-  textArea: { 
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  modalActions: { 
-    flexDirection: 'row', 
-    gap: 16, 
-    paddingHorizontal: 24, 
-    paddingTop: 20, 
-    borderTopWidth: 1, 
-    borderTopColor: COLORS.border 
-  },
-  modalButton: { 
-    flex: 1 
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: insets?.bottom ? insets.bottom + 30 : 30, maxHeight: '90%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 20 },
+  modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.text },
+  modalForm: { paddingHorizontal: 24, paddingTop: 8 },
+  formGroup: { marginBottom: 20 },
+  row: { flexDirection: 'row' },
+  formLabel: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
+  input: { backgroundColor: COLORS.surfaceVariant, borderRadius: 12, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 16, color: COLORS.text },
+  textArea: { minHeight: 100, textAlignVertical: 'top' },
+  modalActions: { flexDirection: 'row', gap: 16, paddingHorizontal: 24, paddingTop: 20, borderTopWidth: 1, borderTopColor: COLORS.border },
+  modalButton: { flex: 1 },
 });
