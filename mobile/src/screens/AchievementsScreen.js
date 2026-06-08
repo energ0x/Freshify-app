@@ -2,19 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
+import useAuthStore from '../store/authStore';
 
 const { width } = Dimensions.get('window');
 
-const USER_STATS = {
-  level: 12,
-  currentXP: 1450,
-  nextLevelXP: 2000,
-  league: 'Майстри Свіжості',
-  leagueIcon: 'ribbon',
-  leagueColor: '#3498DB',
-  totalSaved: 45,
-  donated: 150,
-};
+// Дані про ліги та рівні, можна винести в константи, якщо використовуються в кількох місцях
+const ROADMAP_DATA = [
+  { id: '1', level: 1, title: 'Зелені Паростки', icon: 'leaf', color: '#2ECC71' },
+  { id: '4', level: 101, title: 'Майстри Свіжості', icon: 'ribbon', color: '#3498DB' },
+  { id: '6', level: 201, title: 'Еко-Герої', icon: 'planet', color: '#F1C40F' },
+];
 
 const ACHIEVEMENTS = [
   { id: '1', title: 'Чистий холодильник', desc: 'Використайте 10 продуктів', icon: 'leaf', progress: 10, total: 10, completed: true, color: '#2ECC71' },
@@ -25,12 +22,24 @@ const ACHIEVEMENTS = [
   { id: '6', title: 'Кулінарна магія', desc: 'Зготуйте страву з 5+ інгредієнтів', icon: 'restaurant', progress: 0, total: 1, completed: false, color: '#E67E22' },
 ];
 
+// Мокові дані для статистики, які в майбутньому будуть приходити з API
+const OTHER_STATS = {
+  totalSaved: 45,
+  donated: 150,
+};
+
 export default function AchievementsScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
+  const { user } = useAuthStore();
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark);
 
-  const progressPercent = (USER_STATS.currentXP / USER_STATS.nextLevelXP) * 100;
+  const currentXP = user?.xp_points || 0;
+  const currentLevel = Math.floor(currentXP / 100) + 1;
+  const nextLevelXP = (Math.floor(currentXP / 100) + 1) * 100;
+  const progressPercent = (currentXP % 100);
+
+  const currentLeague = ROADMAP_DATA.slice().reverse().find(l => currentLevel >= l.level) || ROADMAP_DATA[0];
 
   const renderAchievement = (item) => {
     const isCompleted = item.progress >= item.total;
@@ -66,12 +75,12 @@ export default function AchievementsScreen({ navigation }) {
       
       <TouchableOpacity style={styles.headerCard} activeOpacity={0.8} onPress={() => navigation.navigate('Leagues')}>
         <View style={styles.leagueRow}>
-          <View style={[styles.leagueIconBg, { backgroundColor: `${USER_STATS.leagueColor}20` }]}>
-            <Ionicons name={USER_STATS.leagueIcon} size={40} color={USER_STATS.leagueColor} />
+          <View style={[styles.leagueIconBg, { backgroundColor: `${currentLeague.color}20` }]}>
+            <Ionicons name={currentLeague.icon} size={40} color={currentLeague.color} />
           </View>
           <View style={styles.leagueInfo}>
-            <Text style={styles.levelText}>Рівень {USER_STATS.level}</Text>
-            <Text style={styles.leagueName}>{USER_STATS.league}</Text>
+            <Text style={styles.levelText}>Рівень {currentLevel}</Text>
+            <Text style={styles.leagueName}>{currentLeague.title}</Text>
           </View>
           <Ionicons name="chevron-forward" size={24} color={COLORS.outline} />
         </View>
@@ -79,24 +88,24 @@ export default function AchievementsScreen({ navigation }) {
         <View style={styles.xpContainer}>
           <View style={styles.xpTextRow}>
             <Text style={styles.xpText}>Досвід (XP)</Text>
-            <Text style={styles.xpValues}>{USER_STATS.currentXP} / {USER_STATS.nextLevelXP}</Text>
+            <Text style={styles.xpValues}>{currentXP} / {nextLevelXP}</Text>
           </View>
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: USER_STATS.leagueColor }]} />
+            <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: currentLeague.color }]} />
           </View>
-          <Text style={styles.xpHint}>Залишилось {USER_STATS.nextLevelXP - USER_STATS.currentXP} XP до наступного рівня</Text>
+          <Text style={styles.xpHint}>Залишилось {nextLevelXP - currentXP} XP до наступного рівня</Text>
         </View>
       </TouchableOpacity>
 
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
           <Ionicons name="shield-checkmark" size={26} color={COLORS.success} />
-          <Text style={styles.statValue}>{USER_STATS.totalSaved}</Text>
+          <Text style={styles.statValue}>{OTHER_STATS.totalSaved}</Text>
           <Text style={styles.statLabel}>Врятовано{"\n"}продуктів</Text>
         </View>
         <View style={styles.statBox}>
           <Ionicons name="heart" size={26} color={COLORS.danger} />
-          <Text style={styles.statValue}>{USER_STATS.donated} ₴</Text>
+          <Text style={styles.statValue}>{OTHER_STATS.donated} ₴</Text>
           <Text style={styles.statLabel}>Передано{"\n"}на ЗСУ</Text>
         </View>
       </View>

@@ -21,8 +21,6 @@ const AVAILABLE_CHARITIES = [
 ];
 
 const USER_STATS = {
-  level: 12,
-  currentXP: 1450,
   achievementsUnlocked: 2,
   totalAchievements: 6
 };
@@ -120,10 +118,12 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
+  const level = user ? Math.floor((user.xp_points || 0) / 100) + 1 : 1;
+
   const handleShareSuccess = async () => {
     try {
       await Share.share({
-        message: `Я вже досяг(ла) ${USER_STATS.level} рівня у Freshify, рятую продукти від смітника та зменшую свій еко-слід! Приєднуйся до мене 🌱`,
+        message: `Я вже досяг(ла) ${level} рівня у Freshify, рятую продукти від смітника та зменшую свій еко-слід! Приєднуйся до мене 🌱`,
       });
     } catch (error) {
       console.log('Помилка при спробі поділитися', error);
@@ -196,8 +196,8 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="star" size={22} color={COLORS.primary} />
             </View>
             <View>
-              <Text style={styles.progressValue}>{USER_STATS.currentXP} XP</Text>
-              <Text style={styles.progressLabel}>Рівень {USER_STATS.level}</Text>
+              <Text style={styles.progressValue}>{user?.xp_points || 0} XP</Text>
+              <Text style={styles.progressLabel}>Рівень {level}</Text>
             </View>
           </View>
           

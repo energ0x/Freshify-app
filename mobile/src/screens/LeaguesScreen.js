@@ -3,12 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'r
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useThemeStore from '../store/themeStore';
-
-// Мокові дані вашого прогресу (ті самі, що і на екрані досягнень)
-const USER_STATS = {
-  level: 12,
-  currentXP: 1450,
-};
+import useAuthStore from '../store/authStore';
 
 // Роадмеп (Карта розвитку)
 const ROADMAP_DATA = [
@@ -23,12 +18,16 @@ const ROADMAP_DATA = [
 
 export default function LeaguesScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
+  const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
 
+  const currentXP = user?.xp_points || 0;
+  const currentLevel = Math.floor(currentXP / 100) + 1;
+
   // Знаходимо індекс поточного рівня користувача
   const currentLevelIndex = ROADMAP_DATA.reduce((acc, curr, index) => {
-    if (USER_STATS.level >= curr.level) return index;
+    if (currentLevel >= curr.level) return index;
     return acc;
   }, 0);
 
@@ -43,7 +42,7 @@ export default function LeaguesScreen({ navigation }) {
   };
 
   const renderItem = ({ item, index }) => {
-    const isUnlocked = USER_STATS.level >= item.level;
+    const isUnlocked = currentLevel >= item.level;
     const isLast = index === ROADMAP_DATA.length - 1;
 
     return (
@@ -107,11 +106,11 @@ export default function LeaguesScreen({ navigation }) {
         <View style={styles.myStatsRow}>
           <View style={styles.statPill}>
             <Ionicons name="star" size={16} color="#F1C40F" />
-            <Text style={[styles.statPillText, { color: COLORS.text }]}>{USER_STATS.currentXP} XP</Text>
+            <Text style={[styles.statPillText, { color: COLORS.text }]}>{currentXP} XP</Text>
           </View>
           <View style={styles.statPill}>
             <Ionicons name="trending-up" size={16} color={COLORS.primary} />
-            <Text style={[styles.statPillText, { color: COLORS.text }]}>Ваш рівень: {USER_STATS.level}</Text>
+            <Text style={[styles.statPillText, { color: COLORS.text }]}>Ваш рівень: {currentLevel}</Text>
           </View>
         </View>
       </View>
