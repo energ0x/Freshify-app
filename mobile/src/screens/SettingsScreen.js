@@ -7,6 +7,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 import { settingsAPI } from '../services/api';
@@ -22,6 +24,11 @@ const AVAILABLE_CHARITIES = [
   { name: 'Госпітальєри', url: 'https://www.hospitallers.life/' },
 ];
 
+const LANGUAGES = [
+  { code: 'uk', name: 'Українська 🇺🇦' },
+  { code: 'en', name: 'English 🇬🇧' }
+];
+
 const USER_STATS = {
   level: 12,
   currentXP: 1450,
@@ -30,6 +37,7 @@ const USER_STATS = {
 };
 
 export default function SettingsScreen({ navigation }) {
+  const { t, i18n } = useTranslation();
   const { user, logout, updateProfile } = useAuthStore();
   const { theme, toggleTheme, colors: COLORS, isSystemTheme, setSystemTheme } = useThemeStore();
 
@@ -45,6 +53,11 @@ export default function SettingsScreen({ navigation }) {
   const [editErrors, setEditErrors] = useState({});
   const [selectedCharity, setSelectedCharity] = useState(AVAILABLE_CHARITIES[0]);
   const [charityModalVisible, setCharityModalVisible] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
+
+  // Визначаємо поточну мову
+  const currentLangCode = i18n.language?.startsWith('uk') ? 'uk' : 'en';
+  const currentLangName = LANGUAGES.find(l => l.code === currentLangCode)?.name || 'English 🇬🇧';
 
   useEffect(() => {
     loadSettings();
@@ -74,21 +87,27 @@ export default function SettingsScreen({ navigation }) {
       await settingsAPI.updateDonation({ auto_donate: value });
     } catch {
       setDonationSettings(prev => ({ ...prev, auto_donate: !value }));
-      Alert.alert('Помилка', 'Не вдалося зберегти налаштування');
+      Alert.alert(t('common.error'), t('settings.settingsSaveError'));
     }
+  };
+
+  const handleLanguageChange = async (code) => {
+    await AsyncStorage.setItem('app_language', code);
+    i18n.changeLanguage(code);
+    setLanguageModalVisible(false);
   };
 
   const validateEditForm = () => {
     const errors = {};
-    if (editForm.name.trim().length < 2) errors.name = "Ім'я повинно мати мінімум 2 символи";
-    if (!editForm.email.trim()) errors.email = 'Email не може бути пустим';
-    if (!editForm.email.includes('@')) errors.email = 'Невалідний email';
+    if (editForm.name.trim().length < 2) errors.name = t('validation.nameShort');
+    if (!editForm.email.trim()) errors.email = t('validation.emailEmpty');
+    if (!editForm.email.includes('@')) errors.email = t('validation.emailInvalid');
     if (editForm.new_password && editForm.new_password.length < 6)
-      errors.new_password = 'Пароль повинен мати мінімум 6 символів';
+      errors.new_password = t('validation.passShort');
     if (editForm.new_password && !editForm.current_password)
-      errors.current_password = 'Введіть поточний пароль';
+      errors.current_password = t('validation.currentPassReq');
     if (editForm.new_password !== editForm.confirmPassword)
-      errors.confirmPassword = 'Паролі не збігаються';
+      errors.confirmPassword = t('validation.passMismatch');
     setEditErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -107,28 +126,28 @@ export default function SettingsScreen({ navigation }) {
     const res = await updateProfile(updateData);
     setSaving(false);
     if (res.success) {
-      Alert.alert('Успіх', 'Профіль оновлено');
+      Alert.alert(t('common.success'), t('settings.profileUpdated'));
       setEditForm(prev => ({ ...prev, current_password: '', new_password: '', confirmPassword: '' }));
       setEditModalVisible(false);
     } else {
-      Alert.alert('Помилка', res.error || 'Не вдалося оновити профіль');
+      Alert.alert(t('common.error'), res.error || t('settings.profileUpdateError'));
     }
   };
 
   const handleLogout = () => {
-    Alert.alert('Вихід', 'Ви впевнені, що хочете вийти з акаунту?', [
-      { text: 'Скасувати', style: 'cancel' },
-      { text: 'Вийти', style: 'destructive', onPress: logout },
+    Alert.alert(t('settings.logoutConfirmTitle'), t('settings.logoutConfirmMsg'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.logoutAction'), style: 'destructive', onPress: logout },
     ]);
   };
 
   const handleShareSuccess = async () => {
     try {
       await Share.share({
-        message: `Я вже досяг(ла) ${USER_STATS.level} рівня у Freshify, рятую продукти від смітника та зменшую свій еко-слід! Приєднуйся до мене 🌱`,
+        message: t('settings.shareMessage', { level: USER_STATS.level }),
       });
     } catch (error) {
-      console.log('Помилка при спробі поділитися', error);
+      console.log('Share error', error);
     }
   };
 
@@ -165,6 +184,7 @@ export default function SettingsScreen({ navigation }) {
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         
+        {/* ── Профіль ───────────────────────────────────────────── */}
         <View style={styles.profileCard}>
           <View style={styles.profileBanner}>
             <View style={styles.bCircle1} />
@@ -178,16 +198,17 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </View>
 
-          <Text style={styles.profileName}>{user?.name || 'Користувач'}</Text>
+          <Text style={styles.profileName}>{user?.name || 'User'}</Text>
           <Text style={styles.profileEmail}>{user?.email}</Text>
 
           <TouchableOpacity style={styles.editPill} onPress={() => setEditModalVisible(true)} activeOpacity={0.8}>
             <Ionicons name="pencil-outline" size={16} color={COLORS.primary} />
-            <Text style={styles.editPillText}>Редагувати профіль</Text>
+            <Text style={styles.editPillText}>{t('settings.editProfile')}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionLabel}>Мій Прогрес</Text>
+        {/* ── Мій Прогрес ────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>{t('settings.myProgress')}</Text>
 
         <DailyTasksWidget navigation={navigation} isClosable={false} />
         
@@ -201,8 +222,8 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="star" size={22} color={COLORS.primary} />
             </View>
             <View>
-              <Text style={styles.progressValue}>{USER_STATS.currentXP} XP</Text>
-              <Text style={styles.progressLabel}>Рівень {USER_STATS.level}</Text>
+              <Text style={styles.progressValue}>{USER_STATS.currentXP} {t('settings.xp')}</Text>
+              <Text style={styles.progressLabel}>{t('settings.level')} {USER_STATS.level}</Text>
             </View>
           </View>
           
@@ -214,7 +235,7 @@ export default function SettingsScreen({ navigation }) {
             </View>
             <View>
               <Text style={styles.progressValue}>{USER_STATS.achievementsUnlocked} / {USER_STATS.totalAchievements}</Text>
-              <Text style={styles.progressLabel}>Досягнень</Text>
+              <Text style={styles.progressLabel}>{t('settings.achievements')}</Text>
             </View>
           </View>
           
@@ -223,10 +244,10 @@ export default function SettingsScreen({ navigation }) {
 
         <TouchableOpacity style={styles.shareBtn} onPress={handleShareSuccess}>
           <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
-          <Text style={styles.shareBtnText}>Поділитися успіхами</Text>
+          <Text style={styles.shareBtnText}>{t('settings.shareSuccess')}</Text>
         </TouchableOpacity>
 
-
+        {/* ── Преміум ── */}
         <TouchableOpacity 
           style={styles.premiumCard} 
           onPress={() => navigation.navigate('Premium')}
@@ -236,16 +257,30 @@ export default function SettingsScreen({ navigation }) {
             <Ionicons name="diamond" size={26} color="#FFD700" />
           </View>
           <View style={styles.premiumTextWrap}>
-            <Text style={styles.premiumTitle}>Freshify Premium</Text>
-            <Text style={styles.premiumDesc}>Безлімітні рецепти, розумне сканування та розширена аналітика</Text>
+            <Text style={styles.premiumTitle}>{t('settings.premiumTitle')}</Text>
+            <Text style={styles.premiumDesc}>{t('settings.premiumDesc')}</Text>
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.sectionLabel}>Персоналізація</Text>
+        {/* ── Персоналізація ─────────────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>{t('settings.personalization')}</Text>
         <View style={styles.card}>
           <SettingItem
+            icon="language-outline"
+            title={t('settings.language')}
+            iconBgColor="#3498DB"
+            onPress={() => setLanguageModalVisible(true)}
+            rightComponent={
+              <View style={styles.charityChip}>
+                <Text style={styles.charityChipText} numberOfLines={1}>{currentLangName}</Text>
+                <Ionicons name="chevron-down" size={16} color={COLORS.outline} />
+              </View>
+            }
+          />
+          <View style={styles.divider} />
+          <SettingItem
             icon={theme === 'light' ? 'sunny' : 'moon'}
-            title="Темна тема"
+            title={t('settings.darkTheme')}
             iconBgColor={theme === 'light' ? '#FF9500' : '#5A5DE8'}
             rightComponent={
               <Switch
@@ -259,7 +294,7 @@ export default function SettingsScreen({ navigation }) {
           <View style={styles.divider} />
           <SettingItem
             icon="phone-portrait-outline"
-            title="Системна тема"
+            title={t('settings.systemTheme')}
             iconBgColor="#5856D6"
             rightComponent={
               <Switch
@@ -272,34 +307,36 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        <Text style={styles.sectionLabel}>Харчування</Text>
+        {/* ── Харчування ─────────────────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>{t('settings.nutrition')}</Text>
         <View style={styles.card}>
           <SettingItem
             icon="restaurant-outline"
-            title="Моя дієта"
-            value="Обрати"
+            title={t('settings.myDiet')}
+            value={t('settings.choose')}
             iconBgColor="#FF6B35"
             onPress={() => navigation.navigate('DietSettings')}
           />
           <View style={styles.divider} />
           <SettingItem
             icon="warning-outline"
-            title="Мої алергени"
-            value="Налаштувати"
+            title={t('settings.myAllergens')}
+            value={t('settings.configure')}
             iconBgColor="#FF3B30"
             onPress={() => navigation.navigate('AllergensSettings')}
           />
           <View style={styles.divider} />
           <SettingItem
             icon="list-outline"
-            title="Мої категорії"
-            value="Налаштувати"
+            title={t('settings.myCategories')}
+            value={t('settings.configure')}
             iconBgColor="#9B59B6"
             onPress={() => navigation.navigate('Categories')}
           />
         </View>
 
-        <Text style={styles.sectionLabel}>Відповідальне споживання</Text>
+        {/* ── Відповідальне споживання ────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>{t('settings.responsibleConsumption')}</Text>
 
         <View style={styles.card}>
           <View style={styles.donateHeader}>
@@ -307,9 +344,9 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="heart-circle-outline" size={30} color={COLORS.danger ?? '#FF2D55'} />
             </View>
             <View style={styles.donateTexts}>
-              <Text style={styles.donateTitle}>Авто-донат</Text>
+              <Text style={styles.donateTitle}>{t('settings.autoDonate')}</Text>
               <Text style={styles.donateDesc}>
-                Автоматично пропонувати донат,{'\n'}якщо продукт зіпсовано.
+                {t('settings.autoDonateDesc')}
               </Text>
             </View>
             <Switch
@@ -325,7 +362,7 @@ export default function SettingsScreen({ navigation }) {
               <View style={styles.divider} />
               <SettingItem
                 icon="globe-outline"
-                title="Фонд за замовчуванням"
+                title={t('settings.defaultFund')}
                 iconBgColor="#007AFF"
                 onPress={() => setCharityModalVisible(true)}
                 rightComponent={
@@ -339,35 +376,59 @@ export default function SettingsScreen({ navigation }) {
           )}
         </View>
 
-        <Text style={styles.sectionLabel}>Акаунт</Text>
+        {/* ── Акаунт ────────────────────────────────────────────────────── */}
+        <Text style={styles.sectionLabel}>{t('settings.account')}</Text>
         <TouchableOpacity style={styles.logoutCard} onPress={handleLogout} activeOpacity={0.75}>
           <View style={[styles.iconBox, { backgroundColor: '#FF3B3018' }]}>
             <Ionicons name="log-out-outline" size={18} color="#FF3B30" />
           </View>
-          <Text style={styles.logoutText}>Вийти з акаунту</Text>
+          <Text style={styles.logoutText}>{t('settings.logout')}</Text>
           <Ionicons name="chevron-forward" size={18} color="#FF3B30" />
         </TouchableOpacity>
 
       </ScrollView>
 
-      {/* Модалки залишились без змін, стилі оновлені нижче */}
+      {/* ── Модалка: Зміна мови ── */}
+      <Modal visible={languageModalVisible} animationType="fade" transparent onRequestClose={() => setLanguageModalVisible(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setLanguageModalVisible(false)}>
+          <View style={styles.charitySheet}>
+            <View style={styles.modalHandle} />
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t('settings.chooseLanguageTitle')}</Text>
+              <TouchableOpacity onPress={() => setLanguageModalVisible(false)}>
+                <Ionicons name="close-circle" size={30} color={COLORS.outline} />
+              </TouchableOpacity>
+            </View>
+            {LANGUAGES.map((lang) => (
+              <TouchableOpacity key={lang.code} style={styles.charityOption} onPress={() => handleLanguageChange(lang.code)}>
+                <View style={styles.charityOptionLeft}>
+                  <Ionicons name={currentLangCode === lang.code ? 'radio-button-on' : 'radio-button-off'} size={24} color={currentLangCode === lang.code ? COLORS.primary : COLORS.outline} />
+                  <Text style={[styles.charityOptionText, currentLangCode === lang.code && { color: COLORS.primary, fontWeight: '700' }]}>{lang.name}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ── Edit Profile Modal ── */}
       <Modal visible={editModalVisible} animationType="slide" transparent onRequestClose={() => setEditModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalSheet}>
               <View style={styles.modalHandle} />
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Редагувати профіль</Text>
+                <Text style={styles.modalTitle}>{t('settings.editProfileTitle')}</Text>
                 <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                   <Ionicons name="close-circle" size={30} color={COLORS.outline} />
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
                 {[
-                  { key: 'name', label: "Ім'я", placeholder: "Введіть ім'я", secure: false },
-                  { key: 'email', label: 'Email', placeholder: 'Введіть email', secure: false, keyboard: 'email-address' },
-                  { key: 'current_password', label: 'Поточний пароль', placeholder: 'Введіть поточний пароль', secure: true },
-                  { key: 'new_password', label: 'Новий пароль (опціонально)', placeholder: 'Залишите пустим, щоб не змінювати', secure: true },
+                  { key: 'name', label: t('settings.nameLabel'), placeholder: t('settings.namePlaceholder'), secure: false },
+                  { key: 'email', label: t('settings.emailLabel'), placeholder: t('settings.emailPlaceholder'), secure: false, keyboard: 'email-address' },
+                  { key: 'current_password', label: t('settings.currentPasswordLabel'), placeholder: t('settings.currentPasswordPlaceholder'), secure: true },
+                  { key: 'new_password', label: t('settings.newPasswordLabel'), placeholder: t('settings.newPasswordPlaceholder'), secure: true },
                 ].map(({ key, label, placeholder, secure, keyboard }) => (
                   <View key={key} style={styles.formGroup}>
                     <Text style={styles.formLabel}>{label}</Text>
@@ -384,22 +445,40 @@ export default function SettingsScreen({ navigation }) {
                     {editErrors[key] && <Text style={styles.errorText}>{editErrors[key]}</Text>}
                   </View>
                 ))}
+
+                {editForm.new_password !== '' && (
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>{t('settings.confirmPasswordLabel')}</Text>
+                    <TextInput
+                      style={[styles.input, editErrors.confirmPassword && styles.inputError]}
+                      placeholder={t('settings.confirmPasswordPlaceholder')}
+                      value={editForm.confirmPassword}
+                      onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
+                      secureTextEntry
+                      placeholderTextColor={COLORS.onSurfaceVariant}
+                    />
+                    {editErrors.confirmPassword && (
+                      <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>
+                    )}
+                  </View>
+                )}
               </ScrollView>
               <View style={styles.modalActions}>
-                <CustomButton title="Скасувати" variant="outline" onPress={() => setEditModalVisible(false)} style={styles.modalBtn} disabled={saving} />
-                <CustomButton title="Зберегти" onPress={handleSaveProfile} loading={saving} style={styles.modalBtn} />
+                <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setEditModalVisible(false)} style={styles.modalBtn} disabled={saving} />
+                <CustomButton title={t('common.save')} onPress={handleSaveProfile} loading={saving} style={styles.modalBtn} />
               </View>
             </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* ── Charity Modal ── */}
       <Modal visible={charityModalVisible} animationType="fade" transparent onRequestClose={() => setCharityModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCharityModalVisible(false)}>
           <View style={styles.charitySheet}>
             <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Оберіть фонд</Text>
+              <Text style={styles.modalTitle}>{t('settings.chooseFundTitle')}</Text>
               <TouchableOpacity onPress={() => setCharityModalVisible(false)}>
                 <Ionicons name="close-circle" size={30} color={COLORS.outline} />
               </TouchableOpacity>

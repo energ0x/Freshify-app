@@ -10,7 +10,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#2ECC71"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.freshify.app",
@@ -34,11 +36,20 @@
       ]
     },
     "plugins": [
-      ["expo-camera", { "cameraPermission": "Allow Freshify to access your camera" }],
-      ["expo-notifications", {
-        "icon": "./src/assets/icon.png",
-        "color": "#2ECC71"
-      }]
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Freshify to access your camera"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./src/assets/icon.png",
+          "color": "#2ECC71"
+        }
+      ],
+      "expo-localization"
     ]
   }
 }

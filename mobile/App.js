@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AppNavigator from './src/navigation/AppNavigator';
 import useThemeStore from './src/store/themeStore';
+import './src/locales/i18n';
 
 export default function App() {
   const { initializeTheme, theme } = useThemeStore();
