@@ -4,8 +4,16 @@ from datetime import date, timedelta
 from typing import Optional, List
 from fastapi import HTTPException, status
 import uuid
-from app.db.models import Product, ConsumedProduct
+from app.db.models import Product, ConsumedProduct, User
 from app.schemas.product import ProductCreate, ProductUpdate
+
+
+def add_xp(db: Session, user_id: uuid.UUID, amount: int):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        if user.xp_points is None:
+            user.xp_points = 0
+        user.xp_points += amount
 
 
 def get_products(
@@ -42,6 +50,10 @@ def get_product(db: Session, product_id: uuid.UUID, user_id: uuid.UUID) -> Produ
 def create_product(db: Session, data: ProductCreate, user_id: uuid.UUID) -> Product:
     product = Product(**data.model_dump(), user_id=user_id)
     db.add(product)
+    
+    # Додаємо XP за додавання продукту (наприклад, 10 XP)
+    add_xp(db, user_id, 10)
+    
     db.commit()
     db.refresh(product)
     return product
@@ -77,6 +89,10 @@ def consume_product(db: Session, product_id: uuid.UUID, quantity: float, user_id
     )
     db.add(consumed)
     product.quantity -= quantity
+    
+    # Додаємо XP за споживання продукту (наприклад, 20 XP, оскільки ми врятували його від псування)
+    add_xp(db, user_id, 20)
+    
     db.commit()
     db.refresh(product)
     return product
@@ -111,4 +127,3 @@ def get_consumed_products(db: Session, user_id: uuid.UUID, limit: int = 100) -> 
     return db.query(ConsumedProduct).filter(
         ConsumedProduct.user_id == user_id
     ).order_by(ConsumedProduct.consumed_at.desc()).limit(limit).all()
-

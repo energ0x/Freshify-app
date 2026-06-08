@@ -30,8 +30,6 @@ const LANGUAGES = [
 ];
 
 const USER_STATS = {
-  level: 12,
-  currentXP: 1450,
   achievementsUnlocked: 2,
   totalAchievements: 6
 };
@@ -141,10 +139,12 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
+  const level = user ? Math.floor((user.xp_points || 0) / 100) + 1 : 1;
+
   const handleShareSuccess = async () => {
     try {
       await Share.share({
-        message: t('settings.shareMessage', { level: USER_STATS.level }),
+        message: t('settings.shareMessage', { level: level }),
       });
     } catch (error) {
       console.log('Share error', error);
@@ -222,8 +222,8 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="star" size={22} color={COLORS.primary} />
             </View>
             <View>
-              <Text style={styles.progressValue}>{USER_STATS.currentXP} {t('settings.xp')}</Text>
-              <Text style={styles.progressLabel}>{t('settings.level')} {USER_STATS.level}</Text>
+              <Text style={styles.progressValue}>{user?.xp_points || 0} {t('settings.xp')}</Text>
+              <Text style={styles.progressLabel}>{t('settings.level')} {level}</Text>
             </View>
           </View>
           
