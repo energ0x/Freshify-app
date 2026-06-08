@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet, Platform, Animated } from 'react-native';
+import { View, ActivityIndicator, Text, StyleSheet, Platform, Animated, Easing } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme, useFocusEffect } from '@react-navigation/native';
 import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -35,40 +35,132 @@ import DailyTasksScreen from '../screens/DailyTasksScreen';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// --- АНІМАЦІЙНИЙ ОБГОРТУВАЧ ДЛЯ ВКЛАДОК ---
-// Максимально плавне і швидке згасання (як у Telegram)
+// ─────────────────────────────────────────────────────────────────────────────
+// Тривалість анімації по платформах.
+//
+// iOS:     160 мс — трохи довша, відповідає плавній iOS-естетиці
+// Android: 100 мс — коротша, щоб навіть 1-2 кадри затримки JS-потоку
+//          були непомітні (нічого невидимого краще, ніж затемнений кадр)
+// ─────────────────────────────────────────────────────────────────────────────
+const TAB_FADE_DURATION = Platform.select({ ios: 160, android: 100, default: 130 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// withTabAnimation — HOC для плавного fade-in при переключенні вкладок.
+//
+// Чому попередній код мигав на Android:
+//   1. `new Animated.Value(0.3)` — екран рендерився видимим (30% opacity)
+//      ще до того, як анімація починалась → видимий "тьмяний" кадр.
+//   2. `opacity.setValue(0.3)` у cleanup — при виході з вкладки opacity
+//      стрибала до 0.3, що теж давало мигання.
+//
+// Рішення:
+//   • Стартуємо з opacity = 0 (повністю невидимий).
+//   • У useFocusEffect синхронно скидаємо до 0, потім анімуємо до 1.
+//   • У cleanup тільки зупиняємо анімацію — opacity лишається 1.
+//     React Navigation сам ховає вкладку через display:none, тому
+//     opacity:1 на схованій вкладці не призводить до артефактів.
+//   • useNativeDriver: true — анімація крутиться на UI-потоці без JS-bridge.
+//   • React.memo — запобігає зайвим ре-рендерам при навігації.
+// ─────────────────────────────────────────────────────────────────────────────
 const withTabAnimation = (WrappedComponent) => {
-  return (props) => {
-    // Починаємо з непрозорості 0.3, щоб не було чорного "блимання", а лише легка зміна
-    const opacity = useRef(new Animated.Value(0.3)).current;
+  const AnimatedScreen = React.memo((props) => {
+    // Починаємо з 0 — екран невидимий при першому маунті.
+    // Будь-яка затримка JS-потоку буде виглядати як "ще не появився",
+    // а не як "мигнув і зник".
+    const opacity = useRef(new Animated.Value(0)).current;
+    const animRef = useRef(null);
 
     useFocusEffect(
       useCallback(() => {
-        Animated.timing(opacity, {
+        // Скасовуємо попередню анімацію, якщо юзер швидко перемикає вкладки
+        if (animRef.current) {
+          animRef.current.stop();
+          animRef.current = null;
+        }
+
+        // Синхронний скид до 0 — відбувається до того,
+        // як React Native малює наступний кадр
+        opacity.setValue(0);
+
+        // Плавна появa з Easing.out(Easing.ease) —
+        // швидкий старт, плавне завершення, як у нативних iOS-переходах
+        animRef.current = Animated.timing(opacity, {
           toValue: 1,
-          duration: 120, // Дуже швидка анімація
-          useNativeDriver: true,
-        }).start();
+          duration: TAB_FADE_DURATION,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true, // UI-потік, без JS-bridge
+        });
+
+        animRef.current.start(({ finished }) => {
+          if (finished) animRef.current = null;
+        });
 
         return () => {
-          opacity.setValue(0.3);
+          // Тільки зупиняємо анімацію — НЕ скидаємо opacity.
+          // Якщо скинути до 0.3 (як було раніше), вкладка мигає при
+          // поверненні, бо стає видимою на 30% до початку анімації.
+          if (animRef.current) {
+            animRef.current.stop();
+            animRef.current = null;
+          }
         };
-      }, [opacity])
+      }, []) // opacity і animRef — стабільні рефи, залежностей немає
     );
 
-    // Ми прибрали translateY (зсув), тепер це чистий FadeIn
     return (
-      <Animated.View style={{ flex: 1, opacity }}>
+      // renderToHardwareTextureAndroid: анімація opacity виконується
+      // через апаратний шар на Android — усуває "дьоргання" при первому показі
+      <Animated.View
+        style={{ flex: 1, opacity }}
+        renderToHardwareTextureAndroid
+      >
         <WrappedComponent {...props} />
       </Animated.View>
     );
-  };
+  });
+
+  AnimatedScreen.displayName = `Animated(${WrappedComponent.displayName || WrappedComponent.name || 'Screen'})`;
+  return AnimatedScreen;
 };
 
 const AnimatedHomeScreen = withTabAnimation(HomeScreen);
 const AnimatedGroceryListScreen = withTabAnimation(GroceryListScreen);
 const AnimatedAnalyticsScreen = withTabAnimation(AnalyticsScreen);
 const AnimatedSettingsScreen = withTabAnimation(SettingsScreen);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TabBarBackground — різний для iOS та Android.
+//
+// BlurView на Android викликає дорогу GPU-операцію кожен кадр і є
+// основною причиною лагів при рендерингу. Натомість використовуємо
+// звичайний View з напівпрозорим фоном, який виглядає майже так само.
+// ─────────────────────────────────────────────────────────────────────────────
+const TabBarBackground = ({ theme }) => {
+  if (Platform.OS === 'android') {
+    return (
+      <View
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            backgroundColor: theme === 'dark'
+              ? 'rgba(20, 20, 22, 0.97)'
+              : 'rgba(252, 252, 252, 0.97)',
+          },
+        ]}
+      />
+    );
+  }
+
+  // iOS: нативний blur без experimentalBlurMethod (він не потрібен
+  // і може спричиняти проблеми на деяких пристроях)
+  return (
+    <BlurView
+      tint={theme === 'dark' ? 'systemThickMaterialDark' : 'systemThickMaterialLight'}
+      intensity={60}
+      style={{ ...StyleSheet.absoluteFillObject, overflow: 'hidden' }}
+    />
+  );
+};
 
 const MainTabs = () => {
   const { colors: COLORS, theme } = useThemeStore();
@@ -83,24 +175,16 @@ const MainTabs = () => {
           height: 90,
           borderTopWidth: 0,
           backgroundColor: 'transparent',
-          elevation: 10,
+          // Прибираємо elevation на Android — воно взаємодіє з BlurView/
+          // кастомним фоном і може давати артефакти рендерингу
+          elevation: Platform.OS === 'android' ? 0 : 0,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOpacity: 0.08,
+          shadowRadius: 6,
         },
-        tabBarBackground: () => (
-          <BlurView
-            experimentalBlurMethod="dimezisBlurView"
-            tint={theme === 'dark' ? 'systemThickMaterialDark' : 'systemThickMaterialLight'}
-            intensity={60}
-            style={{
-              ...StyleSheet.absoluteFillObject,
-              overflow: 'hidden',
-            }}
-          />
-        ),
-        tabBarIcon: ({ color, size, focused }) => {
+        tabBarBackground: () => <TabBarBackground theme={theme} />,
+        tabBarIcon: ({ size, focused }) => {
           if (route.name === 'AddButton') {
             return (
               <View style={styles.fabWrapper}>
@@ -115,12 +199,16 @@ const MainTabs = () => {
           if (route.name === 'Продукти') iconName = focused ? 'fast-food' : 'fast-food-outline';
           else if (route.name === 'Покупки') iconName = focused ? 'cart' : 'cart-outline';
           else if (route.name === 'Аналітика') iconName = focused ? 'pie-chart' : 'pie-chart-outline';
-          else if (route.name === 'Профіль') iconName = focused ? 'person' : 'person-outline';
+          else if (route.name === 'Параметри') iconName = focused ? 'settings' : 'settings-outline';
 
           return (
             <View style={styles.tabItemContainer}>
               <View style={[styles.iconPill, focused && { backgroundColor: COLORS.primary }]}>
-                <Ionicons name={iconName} size={size} color={focused ? COLORS.primaryContainer : COLORS.textLight} />
+                <Ionicons
+                  name={iconName}
+                  size={size}
+                  color={focused ? COLORS.primaryContainer : COLORS.textLight}
+                />
               </View>
               <Text style={[styles.tabLabel, { color: focused ? COLORS.primary : COLORS.textLight }]}>
                 {route.name}
@@ -134,10 +222,10 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Продукти" component={AnimatedHomeScreen} />
       <Tab.Screen name="Покупки" component={AnimatedGroceryListScreen} />
-      
-      <Tab.Screen 
-        name="AddButton" 
-        component={AddProductScreen} 
+
+      <Tab.Screen
+        name="AddButton"
+        component={AddProductScreen}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
@@ -147,7 +235,7 @@ const MainTabs = () => {
       />
 
       <Tab.Screen name="Аналітика" component={AnimatedAnalyticsScreen} />
-      <Tab.Screen name="Профіль" component={AnimatedSettingsScreen} />
+      <Tab.Screen name="Параметри" component={AnimatedSettingsScreen} />
     </Tab.Navigator>
   );
 };
@@ -188,13 +276,13 @@ export default function AppNavigator() {
           headerShown: false,
           headerShadowVisible: false,
           headerTransparent: false,
-          
+
           ...TransitionPresets.SlideFromRightIOS,
           cardStyle: { backgroundColor: COLORS.background },
-          
+
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
-          headerTitleStyle: { fontWeight: '600' }
+          headerTitleStyle: { fontWeight: '600' },
         }}
       >
         {!isAuthenticated ? (
@@ -211,7 +299,7 @@ export default function AppNavigator() {
           </Stack.Group>
         ) : (
           <>
-            <Stack.Screen name="Main" component={MainTabs}/>
+            <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: 'Додати продукт' }} />
             <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Сканувати', ...TransitionPresets.ModalSlideFromBottomIOS }} />
             <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Деталі продукту' }} />
@@ -219,11 +307,11 @@ export default function AppNavigator() {
             <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: 'Рецепти' }} />
             <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: 'Досягнення' }} />
             <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false, ...TransitionPresets.ModalPresentationIOS }} />
-            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false, title: 'Ліги'}} />
-            <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: 'Моя дієта'}} />
-            <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: 'Мої алергени'}} />
-            <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: 'Мої категорії'}} />
-            <Stack.Screen name="DailyTasks" component={DailyTasksScreen} options={{ headerShown: true, title: 'Завдання'}} />
+            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false, title: 'Ліги' }} />
+            <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: 'Моя дієта' }} />
+            <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: 'Мої алергени' }} />
+            <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: 'Мої категорії' }} />
+            <Stack.Screen name="DailyTasks" component={DailyTasksScreen} options={{ headerShown: true, title: 'Завдання' }} />
           </>
         )}
       </Stack.Navigator>
@@ -262,5 +350,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
-  }
+  },
 });
