@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,7 +21,7 @@ const OTHER_STATS = {
 
 export default function AchievementsScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
-  const { user } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark);
 
@@ -29,20 +29,22 @@ export default function AchievementsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
-    React.useCallback(() => {
-      const fetchAchievements = async () => {
+    useCallback(() => {
+      const fetchData = async () => {
+        setLoading(true);
         try {
-          setLoading(true);
+          // Оновлюємо і користувача (для XP) і ачівки
+          await refreshUser();
           const response = await achievementsAPI.get();
           setAchievements(response.data);
         } catch (error) {
-          console.error("Failed to fetch achievements", error);
+          console.error("Failed to fetch data", error);
         } finally {
           setLoading(false);
         }
       };
-      fetchAchievements();
-    }, [])
+      fetchData();
+    }, [refreshUser])
   );
 
   const currentXP = user?.xp_points || 0;

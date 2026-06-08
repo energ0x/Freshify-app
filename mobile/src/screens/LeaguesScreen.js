@@ -1,7 +1,8 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import useThemeStore from '../store/themeStore';
 import useAuthStore from '../store/authStore';
 
@@ -18,9 +19,15 @@ const ROADMAP_DATA = [
 
 export default function LeaguesScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
-  const { user } = useAuthStore();
+  const { user, refreshUser } = useAuthStore();
   const insets = useSafeAreaInsets();
   const flatListRef = useRef(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser();
+    }, [])
+  );
 
   const currentXP = user?.xp_points || 0;
   const currentLevel = Math.floor(currentXP / 100) + 1;

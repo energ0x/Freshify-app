@@ -12,7 +12,7 @@ ACHIEVEMENT_DEFINITIONS = [
         "icon": "leaf",
         "total": 10,
         "color": "#2ECC71",
-        "xp_reward": 50,
+        "xp_reward": 200,
         "check_progress": lambda db, user_id: db.query(ConsumedProduct).filter(ConsumedProduct.user_id == user_id).count()
     },
     {
@@ -22,7 +22,7 @@ ACHIEVEMENT_DEFINITIONS = [
         "icon": "heart",
         "total": 1,
         "color": "#E74C3C",
-        "xp_reward": 50,
+        "xp_reward": 200,
         "check_progress": lambda db, user_id: 1 if db.query(DonationSettings).filter(DonationSettings.user_id == user_id, DonationSettings.auto_donate == True).first() else 0
     },
     # We will stub the rest for now as their logic depends on future features
@@ -33,7 +33,7 @@ ACHIEVEMENT_DEFINITIONS = [
         "icon": "camera",
         "total": 5,
         "color": "#3498DB",
-        "xp_reward": 50,
+        "xp_reward": 200,
         "check_progress": lambda db, user_id: 0
     },
     {
@@ -43,7 +43,7 @@ ACHIEVEMENT_DEFINITIONS = [
         "icon": "barcode",
         "total": 20,
         "color": "#9B59B6",
-        "xp_reward": 50,
+        "xp_reward": 200,
         "check_progress": lambda db, user_id: 0
     },
     {
@@ -53,7 +53,7 @@ ACHIEVEMENT_DEFINITIONS = [
         "icon": "scale",
         "total": 7,
         "color": "#F1C40F",
-        "xp_reward": 50,
+        "xp_reward": 200,
         "check_progress": lambda db, user_id: 0
     },
     {
@@ -63,14 +63,15 @@ ACHIEVEMENT_DEFINITIONS = [
         "icon": "restaurant",
         "total": 1,
         "color": "#E67E22",
-        "xp_reward": 50,
+        "xp_reward": 200,
         "check_progress": lambda db, user_id: 0
     },
 ]
 
 def init_achievements(db: Session):
     for a_def in ACHIEVEMENT_DEFINITIONS:
-        if not db.query(Achievement).filter(Achievement.id == a_def["id"]).first():
+        achievement = db.query(Achievement).filter(Achievement.id == a_def["id"]).first()
+        if not achievement:
             db.add(Achievement(
                 id=a_def["id"],
                 name=a_def["title"],
@@ -78,6 +79,10 @@ def init_achievements(db: Session):
                 icon=a_def["icon"],
                 xp_reward=a_def["xp_reward"]
             ))
+        else:
+            # Оновлюємо існуючу ачівку, якщо змінилась винагорода
+            if achievement.xp_reward != a_def["xp_reward"]:
+                achievement.xp_reward = a_def["xp_reward"]
     db.commit()
 
 

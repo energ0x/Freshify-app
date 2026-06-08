@@ -28,6 +28,17 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
+  refreshUser: async () => {
+    try {
+      if (get().isAuthenticated) {
+        const response = await authAPI.getMe();
+        set({ user: response.data });
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data", error);
+    }
+  },
+
   register: async (email, password, name) => {
     set({ isLoading: true });
     try {
