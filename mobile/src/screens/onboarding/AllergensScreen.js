@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
-import { authAPI } from '../../services/api';
+import useAuthStore from '../../store/authStore';
 
 const INITIAL_ALLERGENS = [
   'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
 ];
 
 export default function AllergensScreen({ navigation }) {
+  const { updateProfile } = useAuthStore();
   const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
@@ -38,16 +39,16 @@ export default function AllergensScreen({ navigation }) {
 
   const handleNext = async () => {
     setLoading(true);
-    try {
-      // Видаляємо емодзі для збереження в БД
-      const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
-      await authAPI.updateMe({ allergens: cleanedAllergens });
+    // Видаляємо емодзі для збереження в БД
+    const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
+    
+    const res = await updateProfile({ allergens: cleanedAllergens });
+    setLoading(false);
+
+    if (res.success) {
       navigation.navigate('Guide');
-    } catch (error) {
-      Alert.alert('Помилка', 'Не вдалося зберегти алергени. Спробуйте ще раз.');
-      console.error(error);
-    } finally {
-      setLoading(false);
+    } else {
+      Alert.alert('Помилка', res.error || 'Не вдалося зберегти алергени. Спробуйте ще раз.');
     }
   };
 

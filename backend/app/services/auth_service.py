@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 from app.db.models import User
 from app.core.config import get_settings
 from app.schemas.user import UserUpdate, DietaryPreference
+from app.services.category_service import create_initial_categories_for_user
 
 settings = get_settings()
 
@@ -52,6 +53,10 @@ def register_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+    
+    # Create a personal set of default categories for the new user
+    create_initial_categories_for_user(db, user.id)
+    
     return user
 
 

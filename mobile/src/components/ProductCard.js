@@ -8,9 +8,11 @@ export default function ProductCard({ item, onPress, style }) {
   const { colors: COLORS } = useThemeStore();
   const expiryColor = getExpiryColor(item.expiry_date, COLORS);
   const styles = getStyles(COLORS, expiryColor);
+  
+  const categoryName = item.category_obj?.name;
 
-  const getCategoryIcon = (category) => {
-    switch (category) {
+  const getCategoryIcon = (categoryName) => {
+    switch (categoryName) {
       case 'Молочні продукти': return 'water-outline';
       case "М'ясо та риба": return 'fish-outline';
       case 'Овочі': return 'leaf-outline';
@@ -24,12 +26,12 @@ export default function ProductCard({ item, onPress, style }) {
   return (
     <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={1}>
       <View style={styles.iconContainer}>
-         <Ionicons name={getCategoryIcon(item.category)} size={24} color={COLORS.primary} />
+         <Ionicons name={getCategoryIcon(categoryName)} size={24} color={COLORS.primary} />
       </View>
       <View style={styles.mainInfo}>
         <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.subtext}>
-          {item.category || 'Інше'}
+          {categoryName || 'Інше'}
         </Text>
       </View>
       <View style={styles.rightSection}>

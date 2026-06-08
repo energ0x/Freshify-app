@@ -4,31 +4,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ДОДАНО
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import useProductStore from '../store/productStore';
-import useThemeStore from '../store/themeStore'; 
+import useThemeStore from '../store/themeStore';
 import ProductCard from '../components/ProductCard';
 import CustomButton from '../components/CustomButton';
-import DailyTasksWidget from '../components/DailyTasksWidget'; // ДОДАНО
-import { CATEGORIES } from '../utils/constants'; 
-import { getDaysUntilExpiry } from '../utils/dateHelpers'; 
+import DailyTasksWidget from '../components/DailyTasksWidget';
+import { useCategories } from '../hooks/useCategories';
+import { getDaysUntilExpiry } from '../utils/dateHelpers';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export default function HomeScreen({ navigation }) {
-  const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore(); 
-  const { colors: COLORS, theme } = useThemeStore(); 
-  const insets = useSafeAreaInsets(); 
+  const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore();
+  const { colors: COLORS, theme } = useThemeStore();
+  const { categories } = useCategories();
+  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   
-  const styles = getStyles(COLORS, insets, theme, tabBarHeight); 
+  const styles = getStyles(COLORS, insets, theme, tabBarHeight);
   
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  const [selectedCategory, setSelectedCategory] = useState('Всі');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [sortBy, setSortBy] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -40,12 +41,11 @@ export default function HomeScreen({ navigation }) {
   const [productToConsume, setProductToConsume] = useState(null);
   const [consumeAmount, setConsumeAmount] = useState('');
 
-  // Стан для відображення віджета
   const [showDailyWidget, setShowDailyWidget] = useState(false);
 
   const loadData = useCallback(async () => {
     setRefreshing(true);
-    await fetchProducts(); 
+    await fetchProducts();
     setRefreshing(false);
   }, [fetchProducts]);
 
@@ -54,14 +54,13 @@ export default function HomeScreen({ navigation }) {
     checkWidgetVisibility();
   }, [loadData]);
 
-  // Перевіряємо, чи закривали віджет сьогодні
   const checkWidgetVisibility = async () => {
     try {
       const closedDate = await AsyncStorage.getItem('daily_widget_closed_date');
-      const today = new Date().toISOString().split('T')[0]; // Отримуємо рядок YYYY-MM-DD
+      const today = new Date().toISOString().split('T')[0];
       
       if (closedDate !== today) {
-        setShowDailyWidget(true); // Якщо сьогодні не закривали - показуємо
+        setShowDailyWidget(true);
       }
     } catch (e) {
       console.log('Помилка перевірки віджета', e);
@@ -69,9 +68,8 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
-  // Обробник закриття віджета
   const handleCloseWidget = async () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); // Анімовано ховаємо
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setShowDailyWidget(false);
     
     try {
@@ -92,13 +90,13 @@ export default function HomeScreen({ navigation }) {
   };
 
   const resetFilters = () => {
-    setSelectedCategory('Всі');
+    setSelectedCategoryId(null);
     setSortBy(null);
     setSortDirection('asc');
     setSearch('');
   };
 
-  const isFilterActive = selectedCategory !== 'Всі' || sortBy !== null || search !== '';
+  const isFilterActive = selectedCategoryId !== null || sortBy !== null || search !== '';
 
   const animateList = () => {
     LayoutAnimation.configureNext({
@@ -111,20 +109,20 @@ export default function HomeScreen({ navigation }) {
 
   const handleDeleteTrigger = (item) => {
     if (pendingDelete) {
-      deleteProduct(pendingDelete.id); 
+      deleteProduct(pendingDelete.id);
       clearTimeout(deleteTimeoutRef.current);
     }
-    animateList(); 
+    animateList();
     setPendingDelete(item);
     deleteTimeoutRef.current = setTimeout(() => {
-      deleteProduct(item.id); 
+      deleteProduct(item.id);
       setPendingDelete(null);
     }, 4000);
   };
 
   const handleUndoDelete = () => {
     clearTimeout(deleteTimeoutRef.current);
-    animateList(); 
+    animateList();
     setPendingDelete(null);
   };
 
@@ -148,17 +146,17 @@ export default function HomeScreen({ navigation }) {
       return Alert.alert('Увага', 'Ви не можете використати більше, ніж є в наявності');
     }
 
-    await consumeProduct(productToConsume.id, amount); 
+    await consumeProduct(productToConsume.id, amount);
     setConsumeModalVisible(false);
     setProductToConsume(null);
     setConsumeAmount('');
   };
 
   const filteredAndSortedProducts = products
-    .filter(p => p.id !== pendingDelete?.id) 
+    .filter(p => p.id !== pendingDelete?.id)
     .filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = selectedCategory === 'Всі' || p.category === selectedCategory;
+      const matchesCategory = selectedCategoryId === null || p.category_id === selectedCategoryId;
       return matchesSearch && matchesCategory;
     })
     .sort((a, b) => {
@@ -167,8 +165,8 @@ export default function HomeScreen({ navigation }) {
       if (sortBy === 'alphabet') {
         comparison = a.name.localeCompare(b.name, 'uk-UA');
       } else if (sortBy === 'expiry') {
-        const daysA = getDaysUntilExpiry(a.expiry_date || a.expiry) ?? 9999; 
-        const daysB = getDaysUntilExpiry(b.expiry_date || b.expiry) ?? 9999; 
+        const daysA = getDaysUntilExpiry(a.expiry_date || a.expiry) ?? 9999;
+        const daysB = getDaysUntilExpiry(b.expiry_date || b.expiry) ?? 9999;
         comparison = daysA - daysB;
       } else if (sortBy === 'quantity') {
         comparison = (a.quantity || 0) - (b.quantity || 0);
@@ -257,13 +255,13 @@ export default function HomeScreen({ navigation }) {
             )}
           </View>
           <TouchableOpacity
-            style={[styles.filterButton, (selectedCategory !== 'Всі' || sortBy !== null) && styles.filterButtonActive]}
+            style={[styles.filterButton, isFilterActive && styles.filterButtonActive]}
             onPress={() => setShowFilterModal(true)}
           >
             <Ionicons
-              name={selectedCategory !== 'Всі' || sortBy !== null ? "options" : "options-outline"}
+              name={isFilterActive ? "options" : "options-outline"}
               size={24}
-              color={selectedCategory !== 'Всі' || sortBy !== null ? COLORS.onPrimary : COLORS.primary}
+              color={isFilterActive ? COLORS.onPrimary : COLORS.primary}
             />
           </TouchableOpacity>
         </View>
@@ -293,7 +291,6 @@ export default function HomeScreen({ navigation }) {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <SwipeableProductItem item={item} />}
         contentContainerStyle={styles.list}
-        // Відображаємо віджет лише якщо він ще не був закритий сьогодні
         ListHeaderComponent={
           showDailyWidget ? (
             <DailyTasksWidget 
@@ -372,12 +369,12 @@ export default function HomeScreen({ navigation }) {
 
             <Text style={styles.sectionTitle}>Категорія</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
-              <TouchableOpacity style={[styles.categoryChip, selectedCategory === 'Всі' && styles.categoryChipActive]} onPress={() => setSelectedCategory('Всі')}>
-                <Text style={[styles.categoryChipText, selectedCategory === 'Всі' && styles.categoryChipTextActive]}>Всі</Text>
+              <TouchableOpacity style={[styles.categoryChip, selectedCategoryId === null && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(null)}>
+                <Text style={[styles.categoryChipText, selectedCategoryId === null && styles.categoryChipTextActive]}>Всі</Text>
               </TouchableOpacity>
-              {CATEGORIES.map(category => ( 
-                <TouchableOpacity key={category} style={[styles.categoryChip, selectedCategory === category && styles.categoryChipActive]} onPress={() => setSelectedCategory(category)}>
-                  <Text style={[styles.categoryChipText, selectedCategory === category && styles.categoryChipTextActive]}>{category}</Text>
+              {categories.map(category => (
+                <TouchableOpacity key={category.id} style={[styles.categoryChip, selectedCategoryId === category.id && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(category.id)}>
+                  <Text style={[styles.categoryChipText, selectedCategoryId === category.id && styles.categoryChipTextActive]}>{category.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>

@@ -8,14 +8,16 @@ import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import DatePicker from '../components/DatePicker';
 import CustomPicker from '../components/CustomPicker';
-import { CATEGORIES, UNITS } from '../utils/constants';
+import { UNITS } from '../utils/constants';
 import { getExpiryLabel, getExpiryColor, formatDate } from '../utils/dateHelpers';
+import { useCategories } from '../hooks/useCategories';
 
 export default function ProductDetailScreen({ route, navigation }) {
   const { t } = useTranslation();
   const { productId } = route.params;
   const { products, deleteProduct, consumeProduct, updateProduct } = useProductStore();
   const { colors: COLORS } = useThemeStore();
+  const { categories } = useCategories();
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -25,7 +27,7 @@ export default function ProductDetailScreen({ route, navigation }) {
 
   const [editForm, setEditForm] = useState({
     name: '',
-    category: CATEGORIES[0],
+    category_id: null,
     quantity: '1',
     unit: UNITS[0],
     expiry_date: new Date(),
@@ -36,14 +38,14 @@ export default function ProductDetailScreen({ route, navigation }) {
     if (product) {
       setEditForm({
         name: product.name || '',
-        category: product.category || CATEGORIES[0],
+        category_id: product.category_id || (categories.length > 0 ? categories[0].id : null),
         quantity: product.quantity ? product.quantity.toString() : '1',
         unit: product.unit || UNITS[0],
         expiry_date: product.expiry_date ? new Date(product.expiry_date) : new Date(),
         notes: product.notes || '',
       });
     }
-  }, [product]);
+  }, [product, categories]);
 
   if (!product) {
     const styles = getStyles(COLORS, insets);
@@ -103,7 +105,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     setSaving(true);
     const updateData = {
       name: editForm.name,
-      category: editForm.category,
+      category_id: editForm.category_id,
       quantity: parseFloat(editForm.quantity),
       unit: editForm.unit,
       expiry_date: editForm.expiry_date.toISOString().split('T')[0],
@@ -121,7 +123,9 @@ export default function ProductDetailScreen({ route, navigation }) {
   };
 
   const unitItems = UNITS.map(u => ({ label: u, value: u }));
-  const categoryItems = CATEGORIES.map(c => ({ label: c, value: c }));
+  const categoryItems = categories.map(c => ({ label: c.name, value: c.id }));
+  
+  const categoryName = product.category_obj?.name;
 
   return (
     <>
@@ -131,7 +135,7 @@ export default function ProductDetailScreen({ route, navigation }) {
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{product.name}</Text>
               <View style={styles.categoryBadge}>
-                <Text style={styles.category}>{product.category || t('productDetail.noCategory')}</Text>
+                <Text style={styles.category}>{categoryName || t('productDetail.noCategory')}</Text>
               </View>
             </View>
             <TouchableOpacity onPress={() => setEditModalVisible(true)} style={styles.editIconBtn}>
@@ -241,8 +245,8 @@ export default function ProductDetailScreen({ route, navigation }) {
                   <CustomPicker
                     label={t('productDetail.categoryLabel')}
                     items={categoryItems}
-                    selectedValue={editForm.category}
-                    onValueChange={(val) => setEditForm(prev => ({ ...prev, category: val }))}
+                    selectedValue={editForm.category_id}
+                    onValueChange={(val) => setEditForm(prev => ({ ...prev, category_id: val }))}
                   />
                 </View>
 

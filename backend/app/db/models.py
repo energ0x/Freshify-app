@@ -27,12 +27,26 @@ class User(Base):
     grocery_items = relationship("GroceryItem", back_populates="user", cascade="all, delete-orphan")
     donation_settings = relationship("DonationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
+    categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(100), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+
+    user = relationship("User", back_populates="categories")
+    products = relationship("Product", back_populates="category_obj")
+    consumed_products = relationship("ConsumedProduct", back_populates="category_obj")
+    grocery_items = relationship("GroceryItem", back_populates="category_obj")
 
 
 class Achievement(Base):
     __tablename__ = "achievements"
 
-    id = Column(String(50), primary_key=True, index=True)  # e.g., "first_product_added"
+    id = Column(String(50), primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=False)
     icon = Column(String(50), nullable=False)
@@ -58,7 +72,7 @@ class Product(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(255), nullable=False)
-    category = Column(String(100))
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     quantity = Column(Float, default=1.0)
     unit = Column(String(50), default="шт")
     expiry_date = Column(Date)
@@ -75,6 +89,7 @@ class Product(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     owner = relationship("User", back_populates="products")
+    category_obj = relationship("Category", back_populates="products")
     consumed_records = relationship("ConsumedProduct", back_populates="product")
 
 
@@ -85,13 +100,14 @@ class ConsumedProduct(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
     product_name = Column(String(255), nullable=False)
-    category = Column(String(100))
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     quantity = Column(Float)
     unit = Column(String(50))
     consumed_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="consumed_products")
     product = relationship("Product", back_populates="consumed_records")
+    category_obj = relationship("Category", back_populates="consumed_products")
 
 
 class GroceryItem(Base):
@@ -100,7 +116,7 @@ class GroceryItem(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(255), nullable=False)
-    category = Column(String(100))
+    category_id = Column(UUID(as_uuid=True), ForeignKey("categories.id"), nullable=True)
     quantity = Column(Float, default=1.0)
     unit = Column(String(50), default="шт")
     is_purchased = Column(Boolean, default=False)
@@ -109,6 +125,7 @@ class GroceryItem(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", back_populates="grocery_items")
+    category_obj = relationship("Category", back_populates="grocery_items")
 
 
 class DonationSettings(Base):

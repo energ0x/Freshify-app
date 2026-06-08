@@ -41,7 +41,12 @@ async def websocket_recipe_generator(
 
         products = get_products(db, user.id)
         products_data = [
-            {"name": p.name, "category": p.category, "quantity": p.quantity, "unit": p.unit}
+            {
+                "name": p.name,
+                "category": p.category_obj.name if p.category_obj else "Інше",
+                "quantity": p.quantity,
+                "unit": p.unit,
+            }
             for p in products
         ]
 

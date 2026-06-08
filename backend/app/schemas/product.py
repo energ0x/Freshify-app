@@ -7,6 +7,8 @@ import uuid
 class AIProductResponse(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
+    category_id: Optional[uuid.UUID] = None
+    category_suggestion: Optional[str] = None # Нове поле
     estimated_shelf_life_days: Optional[int] = None
     calories: Optional[float] = None
     proteins: Optional[float] = None
@@ -15,9 +17,17 @@ class AIProductResponse(BaseModel):
     error: Optional[str] = None
 
 
+class CategoryResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class ProductCreate(BaseModel):
     name: str
-    category: Optional[str] = None
+    category_id: Optional[uuid.UUID] = None
     quantity: float = 1.0
     unit: str = "шт"
     expiry_date: Optional[date] = None
@@ -31,7 +41,7 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: Optional[str] = None
-    category: Optional[str] = None
+    category_id: Optional[uuid.UUID] = None
     quantity: Optional[float] = None
     unit: Optional[str] = None
     expiry_date: Optional[date] = None
@@ -50,7 +60,8 @@ class ProductResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     name: str
-    category: Optional[str] = None
+    category_id: Optional[uuid.UUID] = None
+    category_obj: Optional[CategoryResponse] = None
     quantity: float
     unit: str
     expiry_date: Optional[date] = None
@@ -73,7 +84,8 @@ class ConsumedProductResponse(BaseModel):
     user_id: uuid.UUID
     product_id: Optional[uuid.UUID] = None
     product_name: str
-    category: Optional[str] = None
+    category_id: Optional[uuid.UUID] = None
+    category_obj: Optional[CategoryResponse] = None
     quantity: float
     unit: str
     consumed_at: datetime

@@ -35,6 +35,14 @@ export const authAPI = {
   updateMe: (data) => api.put('/auth/me', data),
 };
 
+// Categories
+export const categoriesAPI = {
+  list: () => api.get('/categories'),
+  create: (data) => api.post('/categories', data),
+  update: (id, data) => api.put(`/categories/${id}`, data),
+  delete: (id) => api.delete(`/categories/${id}`),
+};
+
 // Products
 export const productsAPI = {
   list: (params) => api.get('/products', { params }),

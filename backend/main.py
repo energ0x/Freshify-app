@@ -6,13 +6,13 @@ from app.db.database import engine, Base, SessionLocal
 # щоб SQLAlchemy знала, які саме таблиці треба створити
 import app.db.models 
 
-from app.api.routes import auth, products, ai_vision, recipes, grocery, analytics, achievements, settings as settings_router
+from app.api.routes import auth, products, ai_vision, recipes, grocery, analytics, achievements, settings as settings_router, categories
 from app.services.achievement_service import init_achievements
 
 # Тепер база побачить моделі і успішно створить таблицю users (і всі інші)
 Base.metadata.create_all(bind=engine)
 
-# Ініціалізуємо базові досягнення
+# Ініціалізуємо базові дані
 db = SessionLocal()
 try:
     init_achievements(db)
@@ -37,6 +37,7 @@ app.include_router(grocery.router)
 app.include_router(analytics.router)
 app.include_router(settings_router.router)
 app.include_router(achievements.router)
+app.include_router(categories.router)
 
 
 @app.get("/health")

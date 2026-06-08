@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import * as SecureStore from 'expo-secure-store';
+import { useFocusEffect } from '@react-navigation/native';
 import { analyticsAPI } from '../services/api';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
@@ -39,14 +40,18 @@ export default function AnalyticsScreen({ navigation }) {
     }
   }, []);
 
-  useEffect(() => {
-    loadStats();
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, [loadStats]);
+  // Використовуємо useFocusEffect замість useEffect для перезавантаження даних
+  // щоразу, коли екран стає активним (наприклад, після повернення з вкладки продуктів)
+  useFocusEffect(
+    useCallback(() => {
+      loadStats();
+      return () => {
+        if (wsRef.current) {
+          wsRef.current.close();
+        }
+      };
+    }, [loadStats])
+  );
 
   const handleGenerateRecs = async () => {
     if (loadingAi) {

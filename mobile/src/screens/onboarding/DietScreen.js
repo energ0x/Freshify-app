@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
-import { authAPI } from '../../services/api';
+import useAuthStore from '../../store/authStore';
 
 const DIETS = [
   { id: 'none', title: 'Всеїдний (Ніяких дієт)', desc: 'Харчуюся без виключення категорій їжі' },
@@ -13,19 +13,19 @@ const DIETS = [
 ];
 
 export default function DietScreen({ navigation }) {
+  const { updateProfile } = useAuthStore();
   const [selectedDiet, setSelectedDiet] = useState('none');
   const [loading, setLoading] = useState(false);
 
   const handleNext = async () => {
     setLoading(true);
-    try {
-      await authAPI.updateMe({ dietary_preference: selectedDiet });
+    const res = await updateProfile({ dietary_preference: selectedDiet });
+    setLoading(false);
+    
+    if (res.success) {
       navigation.navigate('Allergens');
-    } catch (error) {
-      Alert.alert('Помилка', 'Не вдалося зберегти ваші вподобання. Спробуйте ще раз.');
-      console.error(error);
-    } finally {
-      setLoading(false);
+    } else {
+      Alert.alert('Помилка', res.error || 'Не вдалося зберегти ваші вподобання. Спробуйте ще раз.');
     }
   };
 

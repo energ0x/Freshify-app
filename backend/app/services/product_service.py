@@ -1,10 +1,10 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from datetime import date, timedelta
 from typing import Optional, List
 from fastapi import HTTPException, status
 import uuid
-from app.db.models import Product, ConsumedProduct, User
+from app.db.models import Product, ConsumedProduct, User, Category
 from app.schemas.product import ProductCreate, ProductUpdate
 
 
@@ -19,15 +19,15 @@ def add_xp(db: Session, user_id: uuid.UUID, amount: int):
 def get_products(
     db: Session,
     user_id: uuid.UUID,
-    category: Optional[str] = None,
+    category_id: Optional[uuid.UUID] = None,
     sort_by: str = "created_at",
     sort_order: str = "desc",
 ) -> List[Product]:
-    query = db.query(Product).filter(
+    query = db.query(Product).options(joinedload(Product.category_obj)).filter(
         and_(Product.user_id == user_id, Product.is_active == True, Product.quantity > 0)
     )
-    if category:
-        query = query.filter(Product.category == category)
+    if category_id:
+        query = query.filter(Product.category_id == category_id)
 
     sort_col = getattr(Product, sort_by, Product.created_at)
     if sort_order == "asc":
@@ -39,7 +39,7 @@ def get_products(
 
 
 def get_product(db: Session, product_id: uuid.UUID, user_id: uuid.UUID) -> Product:
-    product = db.query(Product).filter(
+    product = db.query(Product).options(joinedload(Product.category_obj)).filter(
         and_(Product.id == product_id, Product.user_id == user_id, Product.is_active == True)
     ).first()
     if not product:
@@ -48,7 +48,8 @@ def get_product(db: Session, product_id: uuid.UUID, user_id: uuid.UUID) -> Produ
 
 
 def create_product(db: Session, data: ProductCreate, user_id: uuid.UUID) -> Product:
-    product = Product(**data.model_dump(), user_id=user_id)
+    product_data = data.model_dump()
+    product = Product(**product_data, user_id=user_id)
     db.add(product)
     
     # Додаємо XP за додавання продукту (наприклад, 10 XP)
@@ -56,6 +57,7 @@ def create_product(db: Session, data: ProductCreate, user_id: uuid.UUID) -> Prod
     
     db.commit()
     db.refresh(product)
+    db.refresh(product, attribute_names=['category_obj'])
     return product
 
 
@@ -65,6 +67,7 @@ def update_product(db: Session, product_id: uuid.UUID, data: ProductUpdate, user
         setattr(product, field, value)
     db.commit()
     db.refresh(product)
+    db.refresh(product, attribute_names=['category_obj'])
     return product
 
 
@@ -83,7 +86,7 @@ def consume_product(db: Session, product_id: uuid.UUID, quantity: float, user_id
         user_id=user_id,
         product_id=product_id,
         product_name=product.name,
-        category=product.category,
+        category_id=product.category_id,
         quantity=quantity,
         unit=product.unit,
     )
@@ -95,12 +98,13 @@ def consume_product(db: Session, product_id: uuid.UUID, quantity: float, user_id
     
     db.commit()
     db.refresh(product)
+    db.refresh(product, attribute_names=['category_obj'])
     return product
 
 
 def get_expiring_products(db: Session, user_id: uuid.UUID, days: int = 3) -> List[Product]:
     cutoff = date.today() + timedelta(days=days)
-    return db.query(Product).filter(
+    return db.query(Product).options(joinedload(Product.category_obj)).filter(
         and_(
             Product.user_id == user_id,
             Product.is_active == True,
@@ -112,7 +116,7 @@ def get_expiring_products(db: Session, user_id: uuid.UUID, days: int = 3) -> Lis
 
 
 def get_expired_products(db: Session, user_id: uuid.UUID) -> List[Product]:
-    return db.query(Product).filter(
+    return db.query(Product).options(joinedload(Product.category_obj)).filter(
         and_(
             Product.user_id == user_id,
             Product.is_active == True,
@@ -124,6 +128,6 @@ def get_expired_products(db: Session, user_id: uuid.UUID) -> List[Product]:
 
 def get_consumed_products(db: Session, user_id: uuid.UUID, limit: int = 100) -> List[ConsumedProduct]:
     """Get consumption history for a user sorted by consumed_at descending."""
-    return db.query(ConsumedProduct).filter(
+    return db.query(ConsumedProduct).options(joinedload(ConsumedProduct.category_obj)).filter(
         ConsumedProduct.user_id == user_id
     ).order_by(ConsumedProduct.consumed_at.desc()).limit(limit).all()

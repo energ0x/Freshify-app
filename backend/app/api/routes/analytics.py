@@ -1,12 +1,12 @@
 import asyncio
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from starlette.websockets import WebSocketState
 from app.db.database import get_db
-from app.db.models import User, ConsumedProduct, Product
+from app.db.models import User, ConsumedProduct, Product, Category
 from app.services.gemini_service import stream_diet_recommendations
 from app.utils.dependencies import get_current_user
 from app.core.config import get_settings
@@ -37,22 +37,22 @@ def get_analytics(
 
     consumed = db.query(
         ConsumedProduct.product_name,
-        ConsumedProduct.category,
+        Category.name.label("category"),
         ConsumedProduct.unit,
         func.sum(ConsumedProduct.quantity).label("total_quantity"),
         func.count(ConsumedProduct.id).label("times_consumed"),
-    ).filter(
+    ).join(Category, ConsumedProduct.category_id == Category.id, isouter=True).filter(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
     ).group_by(
-        ConsumedProduct.product_name, ConsumedProduct.category, ConsumedProduct.unit
+        ConsumedProduct.product_name, Category.name, ConsumedProduct.unit
     ).all()
 
     by_category = db.query(
-        ConsumedProduct.category,
+        Category.name.label("category"),
         func.sum(ConsumedProduct.quantity).label("total"),
-    ).filter(
+    ).join(Category, ConsumedProduct.category_id == Category.id, isouter=True).filter(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
-    ).group_by(ConsumedProduct.category).all()
+    ).group_by(Category.name).all()
 
     daily = db.query(
         func.date_trunc("day", ConsumedProduct.consumed_at).label("day"),
@@ -61,13 +61,14 @@ def get_analytics(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
     ).group_by("day").order_by("day").all()
 
-    active_count = db.query(func.count(Product.id)).filter(
+    # Calculate the sum of quantities instead of counting rows
+    active_quantity = db.query(func.sum(Product.quantity)).filter(
         and_(Product.user_id == current_user.id, Product.is_active == True)
     ).scalar()
 
     return {
         "period_days": days,
-        "total_products_in_fridge": active_count,
+        "total_products_in_fridge": float(active_quantity) if active_quantity is not None else 0.0,
         "consumed_products": [
             {
                 "product_name": r.product_name,
@@ -107,12 +108,12 @@ async def websocket_ai_recommendations(
         since = datetime.utcnow() - timedelta(days=days)
         consumed = db.query(
             ConsumedProduct.product_name,
-            ConsumedProduct.category,
+            Category.name.label("category"),
             ConsumedProduct.unit,
             func.sum(ConsumedProduct.quantity).label("total_quantity"),
-        ).filter(
+        ).join(Category, ConsumedProduct.category_id == Category.id, isouter=True).filter(
             and_(ConsumedProduct.user_id == user.id, ConsumedProduct.consumed_at >= since)
-        ).group_by(ConsumedProduct.product_name, ConsumedProduct.category, ConsumedProduct.unit).all()
+        ).group_by(ConsumedProduct.product_name, Category.name, ConsumedProduct.unit).all()
 
         consumed_data = [
             {"product_name": r.product_name, "category": r.category, "unit": r.unit, "total_quantity": float(r.total_quantity or 0)}

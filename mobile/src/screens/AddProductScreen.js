@@ -5,17 +5,19 @@ import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import DatePicker from '../components/DatePicker';
 import CustomPicker from '../components/CustomPicker';
-import { CATEGORIES, UNITS } from '../utils/constants';
+import { UNITS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
+import { useCategories } from '../hooks/useCategories';
 
 export default function AddProductScreen({ navigation, route }) {
   const { addProduct } = useProductStore();
   const { colors: COLORS } = useThemeStore();
+  const { categories, createCategory } = useCategories();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
-    category: CATEGORIES[0],
+    category_id: null,
     quantity: '1',
     unit: UNITS[0],
     expiry_date: new Date(),
@@ -23,6 +25,12 @@ export default function AddProductScreen({ navigation, route }) {
   });
 
   const styles = getStyles(COLORS);
+
+  useEffect(() => {
+    if (categories.length > 0 && !form.category_id) {
+        setForm(prev => ({...prev, category_id: categories[0].id}));
+    }
+  }, [categories]);
 
   useEffect(() => {
     if (route.params?.aiResult) {
@@ -35,18 +43,52 @@ export default function AddProductScreen({ navigation, route }) {
         data = data[0] || {};
       }
 
-      const { name, category, estimated_shelf_life_days } = data;
+      const { name, category_id, estimated_shelf_life_days, category_suggestion } = data;
       const expiry = new Date();
       if (estimated_shelf_life_days) {
         expiry.setDate(expiry.getDate() + estimated_shelf_life_days);
       }
       
-      setForm(prev => ({
-        ...prev,
-        name: name || prev.name,
-        category: category || prev.category,
-        expiry_date: expiry
-      }));
+      // Обробка пропозиції відновити категорію
+      if (category_suggestion) {
+        Alert.alert(
+          'Категорію не знайдено',
+          `Цієї категорії продуктів ("${category_suggestion}") у вас немає. Відновити її?`,
+          [
+            { 
+              text: 'Ні', 
+              style: 'cancel',
+              onPress: () => Alert.alert('Помилка', 'Не вдалося повністю розпізнати продукт без категорії.')
+            },
+            {
+              text: 'Так',
+              onPress: async () => {
+                setLoading(true);
+                try {
+                  const newCat = await createCategory({ name: category_suggestion });
+                  setForm(prev => ({
+                    ...prev,
+                    name: name || prev.name,
+                    category_id: newCat.id,
+                    expiry_date: expiry
+                  }));
+                } catch (e) {
+                   Alert.alert('Помилка', 'Не вдалося створити категорію');
+                } finally {
+                   setLoading(false);
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        setForm(prev => ({
+          ...prev,
+          name: name || prev.name,
+          category_id: category_id || prev.category_id,
+          expiry_date: expiry
+        }));
+      }
     }
   }, [route.params?.aiResult]);
 
@@ -66,7 +108,7 @@ export default function AddProductScreen({ navigation, route }) {
   };
 
   const unitItems = UNITS.map(u => ({ label: u, value: u }));
-  const categoryItems = CATEGORIES.map(c => ({ label: c, value: c }));
+  const categoryItems = categories.map(c => ({ label: c.name, value: c.id }));
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -127,8 +169,8 @@ export default function AddProductScreen({ navigation, route }) {
         <CustomPicker
           label="Категорія"
           items={categoryItems}
-          selectedValue={form.category}
-          onValueChange={(val) => setForm({ ...form, category: val })}
+          selectedValue={form.category_id}
+          onValueChange={(val) => setForm({ ...form, category_id: val })}
         />
       </View>
 
