@@ -13,6 +13,8 @@ import { settingsAPI } from '../services/api';
 import CustomButton from '../components/CustomButton';
 import { CHARITY } from '../utils/constants';
 
+import DailyTasksWidget from '../components/DailyTasksWidget';
+
 const AVAILABLE_CHARITIES = [
   CHARITY,
   { name: 'Фонд Сергія Притули', url: 'https://prytulafoundation.org' },
@@ -186,6 +188,9 @@ export default function SettingsScreen({ navigation }) {
         </View>
 
         <Text style={styles.sectionLabel}>Мій Прогрес</Text>
+
+        <DailyTasksWidget navigation={navigation} isClosable={false} />
+        
         <TouchableOpacity 
           style={styles.progressCard} 
           onPress={() => navigation.navigate('Achievements')}
@@ -220,6 +225,7 @@ export default function SettingsScreen({ navigation }) {
           <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
           <Text style={styles.shareBtnText}>Поділитися успіхами</Text>
         </TouchableOpacity>
+
 
         <TouchableOpacity 
           style={styles.premiumCard} 
