@@ -1,0 +1,16 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from typing import List, Dict, Any
+from app.db.database import get_db
+from app.db.models import User
+from app.utils.dependencies import get_current_user
+from app.services import achievement_service
+
+router = APIRouter(prefix="/achievements", tags=["achievements"])
+
+@router.get("", response_model=List[Dict[str, Any]])
+def get_achievements(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return achievement_service.get_user_achievements_progress(db, current_user.id)

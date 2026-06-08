@@ -89,4 +89,10 @@ export const settingsAPI = {
   updateDonation: (data) => api.put('/settings/donation', data),
 };
 
+// Achievements
+export const achievementsAPI = {
+  get: () => api.get('/achievements'),
+};
+
+
 export default api;

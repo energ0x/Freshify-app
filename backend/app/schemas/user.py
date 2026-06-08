@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 import uuid
 from enum import Enum
+from app.schemas.achievement import UserAchievementResponse
 
 
 class DietaryPreference(str, Enum):
@@ -50,11 +51,12 @@ class UserResponse(BaseModel):
     is_premium: bool = False
     xp_points: int = 0
     created_at: datetime
+    achievements: List[UserAchievementResponse] = []
 
     class Config:
         from_attributes = True
 
-    @field_validator('allergens', 'is_premium', 'xp_points', mode='before')
+    @field_validator('allergens', 'is_premium', 'xp_points', 'achievements', mode='before')
     @classmethod
     def handle_null_defaults(cls, v, info):
         if v is None:
@@ -64,6 +66,8 @@ class UserResponse(BaseModel):
                 return False
             if info.field_name == 'xp_points':
                 return 0
+            if info.field_name == 'achievements':
+                return []
         return v
 
 

@@ -1,28 +1,19 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import useThemeStore from '../store/themeStore';
 import useAuthStore from '../store/authStore';
+import { achievementsAPI } from '../services/api';
 
 const { width } = Dimensions.get('window');
 
-// Дані про ліги та рівні, можна винести в константи, якщо використовуються в кількох місцях
 const ROADMAP_DATA = [
   { id: '1', level: 1, title: 'Зелені Паростки', icon: 'leaf', color: '#2ECC71' },
   { id: '4', level: 101, title: 'Майстри Свіжості', icon: 'ribbon', color: '#3498DB' },
   { id: '6', level: 201, title: 'Еко-Герої', icon: 'planet', color: '#F1C40F' },
 ];
 
-const ACHIEVEMENTS = [
-  { id: '1', title: 'Чистий холодильник', desc: 'Використайте 10 продуктів', icon: 'leaf', progress: 10, total: 10, completed: true, color: '#2ECC71' },
-  { id: '5', title: 'Кармічний баланс', desc: 'Зробіть перший авто-донат', icon: 'heart', progress: 1, total: 1, completed: true, color: '#E74C3C' },
-  { id: '2', title: 'ШІ-Дослідник', desc: 'Додайте 5 продуктів через фото', icon: 'camera', progress: 2, total: 5, completed: false, color: '#3498DB' },
-  { id: '3', title: 'Магістр штрихкодів', desc: 'Відскануйте 20 штрихкодів', icon: 'barcode', progress: 15, total: 20, completed: false, color: '#9B59B6' },
-  { id: '4', title: 'Ідеальний баланс', desc: 'Тиждень без зіпсованих продуктів', icon: 'scale', progress: 4, total: 7, completed: false, color: '#F1C40F' },
-  { id: '6', title: 'Кулінарна магія', desc: 'Зготуйте страву з 5+ інгредієнтів', icon: 'restaurant', progress: 0, total: 1, completed: false, color: '#E67E22' },
-];
-
-// Мокові дані для статистики, які в майбутньому будуть приходити з API
 const OTHER_STATS = {
   totalSaved: 45,
   donated: 150,
@@ -34,6 +25,26 @@ export default function AchievementsScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark);
 
+  const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchAchievements = async () => {
+        try {
+          setLoading(true);
+          const response = await achievementsAPI.get();
+          setAchievements(response.data);
+        } catch (error) {
+          console.error("Failed to fetch achievements", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchAchievements();
+    }, [])
+  );
+
   const currentXP = user?.xp_points || 0;
   const currentLevel = Math.floor(currentXP / 100) + 1;
   const nextLevelXP = (Math.floor(currentXP / 100) + 1) * 100;
@@ -42,8 +53,8 @@ export default function AchievementsScreen({ navigation }) {
   const currentLeague = ROADMAP_DATA.slice().reverse().find(l => currentLevel >= l.level) || ROADMAP_DATA[0];
 
   const renderAchievement = (item) => {
-    const isCompleted = item.progress >= item.total;
-    const itemProgressPercent = (item.progress / item.total) * 100;
+    const isCompleted = item.completed;
+    const itemProgressPercent = item.total > 0 ? (item.progress / item.total) * 100 : 0;
 
     return (
       <View key={item.id} style={[styles.achievementCard, !isCompleted && styles.achievementLocked]}>
@@ -112,9 +123,13 @@ export default function AchievementsScreen({ navigation }) {
 
       <View style={styles.achievementsSection}>
         <Text style={styles.sectionLabel}>Ваші Досягнення</Text>
-        <View style={styles.gridContainer}>
-          {ACHIEVEMENTS.map(renderAchievement)}
-        </View>
+        {loading ? (
+          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
+        ) : (
+          <View style={styles.gridContainer}>
+            {achievements.map(renderAchievement)}
+          </View>
+        )}
       </View>
       
     </ScrollView>
@@ -171,7 +186,7 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
   
   gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   achievementCard: {
-    width: (width - 40 - 12) / 2, // Ширина екрану - (20+20) відступи - 12 між картками / 2
+    width: (width - 40 - 12) / 2,
     backgroundColor: COLORS.surface,
     borderRadius: 20,
     padding: 16,

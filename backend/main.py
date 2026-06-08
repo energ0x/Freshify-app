@@ -1,15 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.database import engine, Base
+from app.db.database import engine, Base, SessionLocal
 
 # ДОДАНО: імпортуємо файл з моделями до виклику create_all, 
 # щоб SQLAlchemy знала, які саме таблиці треба створити
 import app.db.models 
 
-from app.api.routes import auth, products, ai_vision, recipes, grocery, analytics, settings as settings_router
+from app.api.routes import auth, products, ai_vision, recipes, grocery, analytics, achievements, settings as settings_router
+from app.services.achievement_service import init_achievements
 
 # Тепер база побачить моделі і успішно створить таблицю users (і всі інші)
 Base.metadata.create_all(bind=engine)
+
+# Ініціалізуємо базові досягнення
+db = SessionLocal()
+try:
+    init_achievements(db)
+finally:
+    db.close()
 
 app = FastAPI(title="Freshify API", version="1.0.0", description="Food monitoring app API")
 
@@ -28,6 +36,7 @@ app.include_router(recipes.router)
 app.include_router(grocery.router)
 app.include_router(analytics.router)
 app.include_router(settings_router.router)
+app.include_router(achievements.router)
 
 
 @app.get("/health")

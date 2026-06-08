@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView, View, Text, StyleSheet, Switch, Alert, Linking,
   Modal, TextInput, TouchableOpacity, KeyboardAvoidingView,
@@ -9,9 +9,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, achievementsAPI } from '../services/api';
 import CustomButton from '../components/CustomButton';
 import { CHARITY } from '../utils/constants';
 
@@ -29,11 +30,6 @@ const LANGUAGES = [
   { code: 'en', name: 'English 🇬🇧' }
 ];
 
-const USER_STATS = {
-  achievementsUnlocked: 2,
-  totalAchievements: 6
-};
-
 export default function SettingsScreen({ navigation }) {
   const { t, i18n } = useTranslation();
   const { user, logout, updateProfile } = useAuthStore();
@@ -41,6 +37,7 @@ export default function SettingsScreen({ navigation }) {
 
   const [donationSettings, setDonationSettings] = useState({ auto_donate: false });
   const [saving, setSaving] = useState(false);
+  const [achievements, setAchievements] = useState([]);
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -69,6 +66,20 @@ export default function SettingsScreen({ navigation }) {
       });
     }
   }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchAchievements = async () => {
+        try {
+          const response = await achievementsAPI.get();
+          setAchievements(response.data);
+        } catch (error) {
+          console.error("Failed to fetch achievements", error);
+        }
+      };
+      fetchAchievements();
+    }, [])
+  );
 
   const loadSettings = async () => {
     try {
@@ -140,6 +151,8 @@ export default function SettingsScreen({ navigation }) {
   };
 
   const level = user ? Math.floor((user.xp_points || 0) / 100) + 1 : 1;
+  const unlockedAchievementsCount = achievements.filter(a => a.completed).length;
+  const totalAchievementsCount = achievements.length || 6;
 
   const handleShareSuccess = async () => {
     try {
@@ -234,7 +247,7 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="trophy" size={22} color="#F39C12" />
             </View>
             <View>
-              <Text style={styles.progressValue}>{USER_STATS.achievementsUnlocked} / {USER_STATS.totalAchievements}</Text>
+              <Text style={styles.progressValue}>{unlockedAchievementsCount} / {totalAchievementsCount}</Text>
               <Text style={styles.progressLabel}>{t('settings.achievements')}</Text>
             </View>
           </View>

@@ -14,9 +14,8 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
     
-    # New columns
-    dietary_preference = Column(String(50), nullable=True) # e.g. vegan, vegetarian
-    allergens = Column(JSON, default=list) # List of strings like ['Milk', 'Nuts']
+    dietary_preference = Column(String(50), nullable=True)
+    allergens = Column(JSON, default=list)
     is_premium = Column(Boolean, default=False)
     xp_points = Column(Integer, default=0)
     
@@ -27,6 +26,30 @@ class User(Base):
     consumed_products = relationship("ConsumedProduct", back_populates="user", cascade="all, delete-orphan")
     grocery_items = relationship("GroceryItem", back_populates="user", cascade="all, delete-orphan")
     donation_settings = relationship("DonationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
+
+
+class Achievement(Base):
+    __tablename__ = "achievements"
+
+    id = Column(String(50), primary_key=True, index=True)  # e.g., "first_product_added"
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=False)
+    icon = Column(String(50), nullable=False)
+    xp_reward = Column(Integer, default=50)
+
+    users = relationship("UserAchievement", back_populates="achievement")
+
+
+class UserAchievement(Base):
+    __tablename__ = "user_achievements"
+
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    achievement_id = Column(String(50), ForeignKey("achievements.id", ondelete="CASCADE"), primary_key=True)
+    unlocked_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="achievements")
+    achievement = relationship("Achievement", back_populates="users")
 
 
 class Product(Base):
@@ -43,7 +66,6 @@ class Product(Base):
     notes = Column(Text)
     is_active = Column(Boolean, default=True)
     
-    # New nutritional info
     calories = Column(Float, nullable=True)
     proteins = Column(Float, nullable=True)
     fats = Column(Float, nullable=True)
