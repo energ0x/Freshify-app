@@ -21,6 +21,14 @@ def read_categories(
     return category_service.get_categories(db, current_user.id)
 
 
+@router.post("/restore-defaults", response_model=List[CategoryResponse])
+def restore_default_categories(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return category_service.restore_default_categories(db, current_user.id)
+
+
 @router.post("", response_model=CategoryResponse)
 def create_category(
     category: CategoryCreate,

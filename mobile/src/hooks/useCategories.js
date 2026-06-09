@@ -55,6 +55,17 @@ export const useCategories = () => {
     }
   };
 
+  const restoreDefaultCategories = async () => {
+    try {
+      const response = await categoriesAPI.restoreDefaults();
+      setCategories(response.data);
+      return response.data;
+    } catch (err) {
+      console.error("Failed to restore default categories", err);
+      throw err;
+    }
+  };
+
   return {
     categories,
     loading,
@@ -63,5 +74,6 @@ export const useCategories = () => {
     createCategory,
     updateCategory,
     deleteCategory,
+    restoreDefaultCategories,
   };
 };

@@ -4,11 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from 'react-i18next';
+import CustomButton from '../components/CustomButton';
 
 export default function CategoriesScreen({ navigation }) {
   const { t } = useTranslation();
   const { colors: COLORS } = useThemeStore();
-  const { categories, loading, error, createCategory, deleteCategory } = useCategories();
+  const { categories, loading, error, createCategory, deleteCategory, restoreDefaultCategories } = useCategories();
   const [newCategoryName, setNewCategoryName] = useState('');
 
   const styles = getStyles(COLORS);
@@ -41,6 +42,27 @@ export default function CategoriesScreen({ navigation }) {
             } catch (e) {
               const detail = e.response?.data?.detail || t('errors.deleteCategory');
               Alert.alert(t('common.error'), detail);
+            }
+          },
+        },
+      ]
+    );
+  };
+  
+  const handleRestoreDefaults = async () => {
+    Alert.alert(
+      t('categories.restoreTitle'),
+      t('categories.restoreMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.restore'),
+          style: 'default',
+          onPress: async () => {
+            try {
+              await restoreDefaultCategories();
+            } catch (e) {
+              Alert.alert(t('common.error'), t('errors.restoreCategories'));
             }
           },
         },
@@ -86,6 +108,15 @@ export default function CategoriesScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {categories.map(c => renderItem(c))}
       </ScrollView>
+      
+      <View style={styles.footer}>
+        <CustomButton
+          title="Скинути до стандартних"
+          onPress={handleRestoreDefaults}
+          variant="outline"
+          icon={<Ionicons name="refresh-outline" size={20} color={COLORS.primary} />}
+        />
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -128,7 +159,7 @@ const getStyles = (COLORS) => StyleSheet.create({
     marginLeft: 10,
   },
   scrollContainer: { 
-    paddingBottom: 40 
+    paddingBottom: 20 
   },
   card: { 
     flexDirection: 'row', 
@@ -151,4 +182,8 @@ const getStyles = (COLORS) => StyleSheet.create({
     padding: 8,
     marginLeft: 12,
   },
+  footer: {
+    paddingVertical: 10,
+    paddingBottom: 30,
+  }
 });

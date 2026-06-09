@@ -30,6 +30,24 @@ def create_initial_categories_for_user(db: Session, user_id: uuid.UUID):
     db.commit()
 
 
+def restore_default_categories(db: Session, user_id: uuid.UUID) -> List[Category]:
+    # Отримуємо всі наявні категорії користувача (приводимо до нижнього регістру для точного порівняння)
+    existing_categories = {c.name.lower() for c in get_categories(db, user_id)}
+    
+    new_categories = []
+    for cat_name in DEFAULT_CATEGORIES:
+        if cat_name.lower() not in existing_categories:
+            db_category = Category(name=cat_name, user_id=user_id)
+            db.add(db_category)
+            new_categories.append(db_category)
+            
+    db.commit()
+    for cat in new_categories:
+        db.refresh(cat)
+        
+    return get_categories(db, user_id)
+
+
 def get_categories(db: Session, user_id: uuid.UUID) -> List[Category]:
     return db.query(Category).filter(Category.user_id == user_id).all()
 
