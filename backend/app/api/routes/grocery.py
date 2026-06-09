@@ -55,19 +55,39 @@ def add_from_fridge(data: AddFromFridgeRequest, db: Session = Depends(get_db), c
     products = db.query(Product).filter(
         and_(Product.id.in_(data.product_ids), Product.user_id == current_user.id, Product.is_active == True)
     ).all()
-    items = []
+    
+    # Отримуємо всі наявні неуплені продукти у списку покупок для цього користувача
+    existing_unpurchased_items = db.query(GroceryItem).filter(
+        and_(GroceryItem.user_id == current_user.id, GroceryItem.is_purchased == False)
+    ).all()
+    
+    # Створюємо множину імен існуючих продуктів (без урахування регістру)
+    existing_names = {item.name.lower() for item in existing_unpurchased_items}
+    
+    items_to_return = []
+    
     for product in products:
-        item = GroceryItem(
-            user_id=current_user.id,
-            name=product.name,
-            category_id=product.category_id,
-            quantity=1.0,
-            unit=product.unit,
-        )
-        db.add(item)
-        items.append(item)
+        product_name_lower = product.name.lower()
+        
+        if product_name_lower not in existing_names:
+            # Якщо продукту ще немає в списку, додаємо його
+            item = GroceryItem(
+                user_id=current_user.id,
+                name=product.name,
+                category_id=product.category_id,
+                quantity=1.0,
+                unit=product.unit,
+            )
+            db.add(item)
+            items_to_return.append(item)
+            # Додаємо ім'я до множини, щоб уникнути дублювання, якщо в холодильнику
+            # є кілька продуктів з однаковою назвою, які ми переносимо
+            existing_names.add(product_name_lower)
+            
     db.commit()
-    for item in items:
+    
+    for item in items_to_return:
         db.refresh(item)
         db.refresh(item, attribute_names=['category_obj'])
-    return items
+        
+    return items_to_return
