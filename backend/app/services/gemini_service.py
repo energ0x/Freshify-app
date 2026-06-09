@@ -52,14 +52,34 @@ async def clean_stream(response_stream):
             yield buffer
 
 
-def analyze_product_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> dict:
-    prompt = """Ти — асистент, що розпізнає продукти харчування.
-Подивись на це зображення і визнач, чи є там продукт харчування.
-Якщо це продукт харчування — поверни JSON:
-{"name": "Назва українською", "category": "категорія", "estimated_shelf_life_days": кількість_днів}
-Категорія має бути однією з: Молочні продукти, М'ясо та риба, Овочі, Фрукти, Зелень, Хліб та випічка, Напої, Консерви, Крупи та злаки, Заморожені продукти, Соуси та приправи, Солодощі, Інше
-Якщо це НЕ продукт харчування — поверни JSON:
-{"error": "Продукт не знайдено"}"""
+def analyze_product_image(
+    image_bytes: bytes,
+    mime_type: str = "image/jpeg",
+    user_allergens: list[str] | None = None,
+    available_categories: list[str] | None = None
+) -> dict:
+    
+    allergens_prompt = f"User is allergic to: {', '.join(user_allergens)}." if user_allergens else "User has no known allergies."
+    categories_prompt = f"Available categories: {', '.join(available_categories)}." if available_categories else "No categories available."
+
+    prompt = f"""You are a food recognition assistant.
+Analyze the image and identify the food product.
+
+1.  **Identify the product** and its name in Ukrainian.
+2.  **Categorize the product.** Choose the BEST category ONLY from this list: {categories_prompt}
+3.  **Check for allergens.** The user's allergies are: {allergens_prompt}. Does the product contain any of these?
+4.  **Estimate shelf life.** Provide the estimated number of days the product stays fresh.
+
+Respond with a JSON object following this exact format:
+{{
+  "name": "Назва українською",
+  "category": "Одна з доступних категорій",
+  "estimated_shelf_life_days": int,
+  "has_allergen": boolean 
+}}
+
+If the image does not contain a food product, return:
+{{"error": "Продукт не знайдено"}}"""
 
     if not client:
         return {"error": "Gemini API ключ не налаштовано"}
@@ -79,28 +99,40 @@ def analyze_product_image(image_bytes: bytes, mime_type: str = "image/jpeg") -> 
         return {"error": "Не вдалося розпізнати продукт"}
 
 
-async def generate_recipes(products: list[dict], include_grocery: bool = False):
+async def generate_recipes(
+    products: list[dict],
+    user_diet: str | None = None,
+    user_allergens: list[str] | None = None,
+    include_grocery: bool = False
+):
     product_list = "\n".join(
         f"- {p['name']} ({p.get('category', '')}, {p.get('quantity', 1)} {p.get('unit', 'шт')})"
         for p in products
     )
+
+    diet_prompt = f"User's diet: {user_diet}." if user_diet and user_diet != 'none' else "User has no specific diet."
+    allergens_prompt = f"User is allergic to: {', '.join(user_allergens)}." if user_allergens else "User has no known allergies."
 
     if include_grocery:
         grocery_rule = "You CAN use extra ingredients. List all missing items strictly under '### Треба докупити:'."
     else:
         grocery_rule = "Use ONLY the provided ingredients. Do NOT add anything new. NEVER output the '### Треба докупити:' section."
 
-    prompt = f"""You are a culinary AI assistant. 
+    prompt = f"""You are a culinary AI assistant.
         Available ingredients:
         {product_list}
 
-        TASK: Suggest 5 diverse recipes based on available ingredients.
+        USER CONSTRAINTS:
+        - Diet: {diet_prompt}
+        - Allergies: {allergens_prompt}
 
-    CRITICAL CONSTRAINT 1: {grocery_rule}
-    CRITICAL CONSTRAINT 2: Respond strictly in Ukrainian.
-    CRITICAL CONSTRAINT 3: Do NOT use emojis.
-    CRITICAL CONSTRAINT 4: Separate recipes ONLY with `---`.
-    CRITICAL CONSTRAINT 5: Follow the exact Markdown template and headers below.
+        TASK: Suggest 5 diverse recipes based on available ingredients, strictly adhering to the user's diet and allergy constraints.
+
+        CRITICAL CONSTRAINT 1: {grocery_rule}
+        CRITICAL CONSTRAINT 2: Respond strictly in Ukrainian.
+        CRITICAL CONSTRAINT 3: Do NOT use emojis.
+        CRITICAL CONSTRAINT 4: Separate recipes ONLY with `---`.
+        CRITICAL CONSTRAINT 5: Follow the exact Markdown template and headers below.
 
         Template:
         ## [Recipe Name]

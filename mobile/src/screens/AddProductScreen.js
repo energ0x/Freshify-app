@@ -32,6 +32,68 @@ export default function AddProductScreen({ navigation, route }) {
     }
   }, [categories]);
 
+  const processAiResult = (data) => {
+    const { name, category_id, estimated_shelf_life_days, category_suggestion, has_allergen } = data;
+    const expiry = new Date();
+    if (estimated_shelf_life_days) {
+      expiry.setDate(expiry.getDate() + estimated_shelf_life_days);
+    }
+
+    const updateForm = (newCategoryId) => {
+      setForm(prev => ({
+        ...prev,
+        name: name || prev.name,
+        category_id: newCategoryId || prev.category_id,
+        expiry_date: expiry
+      }));
+    };
+
+    const handleAllergenWarning = (onConfirm) => {
+      if (has_allergen) {
+        Alert.alert(
+          'Увага, алерген!',
+          'У вас може бути алергія на цей продукт. Все одно додати?',
+          [
+            { text: 'Ні', style: 'cancel' },
+            { text: 'Так', onPress: onConfirm }
+          ]
+        );
+      } else {
+        onConfirm();
+      }
+    };
+
+    if (category_suggestion) {
+      Alert.alert(
+        'Категорію не знайдено',
+        `Цієї категорії продуктів ("${category_suggestion}") у вас немає. Відновити її?`,
+        [
+          { 
+            text: 'Ні', 
+            style: 'cancel',
+            onPress: () => Alert.alert('Помилка', 'Не вдалося повністю розпізнати продукт без категорії.')
+          },
+          {
+            text: 'Так',
+            onPress: () => handleAllergenWarning(async () => {
+              setLoading(true);
+              try {
+                const newCat = await createCategory({ name: category_suggestion });
+                updateForm(newCat.id);
+              } catch (e) {
+                 Alert.alert('Помилка', 'Не вдалося створити категорію');
+              } finally {
+                 setLoading(false);
+              }
+            })
+          }
+        ]
+      );
+    } else {
+      handleAllergenWarning(() => updateForm(category_id));
+    }
+  };
+
   useEffect(() => {
     if (route.params?.aiResult) {
       let data = route.params.aiResult;
@@ -42,53 +104,7 @@ export default function AddProductScreen({ navigation, route }) {
         }
         data = data[0] || {};
       }
-
-      const { name, category_id, estimated_shelf_life_days, category_suggestion } = data;
-      const expiry = new Date();
-      if (estimated_shelf_life_days) {
-        expiry.setDate(expiry.getDate() + estimated_shelf_life_days);
-      }
-      
-      // Обробка пропозиції відновити категорію
-      if (category_suggestion) {
-        Alert.alert(
-          'Категорію не знайдено',
-          `Цієї категорії продуктів ("${category_suggestion}") у вас немає. Відновити її?`,
-          [
-            { 
-              text: 'Ні', 
-              style: 'cancel',
-              onPress: () => Alert.alert('Помилка', 'Не вдалося повністю розпізнати продукт без категорії.')
-            },
-            {
-              text: 'Так',
-              onPress: async () => {
-                setLoading(true);
-                try {
-                  const newCat = await createCategory({ name: category_suggestion });
-                  setForm(prev => ({
-                    ...prev,
-                    name: name || prev.name,
-                    category_id: newCat.id,
-                    expiry_date: expiry
-                  }));
-                } catch (e) {
-                   Alert.alert('Помилка', 'Не вдалося створити категорію');
-                } finally {
-                   setLoading(false);
-                }
-              }
-            }
-          ]
-        );
-      } else {
-        setForm(prev => ({
-          ...prev,
-          name: name || prev.name,
-          category_id: category_id || prev.category_id,
-          expiry_date: expiry
-        }));
-      }
+      processAiResult(data);
     }
   }, [route.params?.aiResult]);
 

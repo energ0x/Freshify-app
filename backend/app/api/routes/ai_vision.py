@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.schemas.product import AIProductResponse
 from app.services.gemini_service import analyze_product_image
-from app.services.category_service import get_category_by_name, DEFAULT_CATEGORIES
+from app.services.category_service import get_category_by_name, get_categories, DEFAULT_CATEGORIES
 from app.utils.image_utils import validate_and_compress_image
 from app.utils.dependencies import get_current_user
 from app.db.models import User
@@ -29,7 +29,20 @@ async def analyze_image(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    result = analyze_product_image(compressed, "image/jpeg")
+    # Отримуємо список усіх категорій (користувацьких та дефолтних)
+    user_categories_objects = get_categories(db, current_user.id)
+    user_category_names = [c.name for c in user_categories_objects]
+    
+    # Формуємо список доступних категорій для промпту, щоб ШІ міг вибрати з них
+    # Додаємо також дефолтні, на випадок, якщо користувач видалив їх, але ШІ розпізнає продукт як частину цієї категорії
+    available_categories = list(set(user_category_names + DEFAULT_CATEGORIES))
+
+    result = analyze_product_image(
+        image_bytes=compressed, 
+        mime_type="image/jpeg",
+        user_allergens=current_user.allergens,
+        available_categories=available_categories
+    )
 
     if "category" in result and result["category"]:
         category_name = result["category"]
@@ -41,10 +54,9 @@ async def analyze_image(
             result["category_id"] = category.id
             result["category"] = category.name
         else:
-            # Якщо категорію не знайдено, але вона є в списку дефолтних,
+            # Якщо категорію не знайдено (навіть якщо ШІ її запропонував), 
             # відправляємо її на фронтенд як "пропозицію"
-            if category_name in DEFAULT_CATEGORIES:
-                result["category_suggestion"] = category_name
+            result["category_suggestion"] = category_name
             
             # Видаляємо category_id, оскільки його немає
             result.pop("category_id", None)

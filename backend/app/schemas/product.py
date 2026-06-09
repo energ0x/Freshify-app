@@ -8,7 +8,8 @@ class AIProductResponse(BaseModel):
     name: Optional[str] = None
     category: Optional[str] = None
     category_id: Optional[uuid.UUID] = None
-    category_suggestion: Optional[str] = None # Нове поле
+    category_suggestion: Optional[str] = None
+    has_allergen: Optional[bool] = False # Нове поле
     estimated_shelf_life_days: Optional[int] = None
     calories: Optional[float] = None
     proteins: Optional[float] = None

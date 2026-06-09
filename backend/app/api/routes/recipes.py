@@ -55,7 +55,12 @@ async def websocket_recipe_generator(
              return
 
         async def send_data():
-            async for chunk in generate_recipes(products_data, include_grocery):
+            async for chunk in generate_recipes(
+                products=products_data, 
+                user_diet=user.dietary_preference,
+                user_allergens=user.allergens,
+                include_grocery=include_grocery
+            ):
                 await websocket.send_text(chunk)
                 
         async def receive_disconnect():
