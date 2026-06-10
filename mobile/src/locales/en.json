@@ -6,6 +6,7 @@
     "error": "Error",
     "success": "Success",
     "yes": "Yes",
+    "no": "No",
     "delete": "Delete",
     "restore": "Restore"
   },
@@ -150,5 +151,16 @@
     "passShort": "Password must be at least 6 characters",
     "currentPassReq": "Enter current password",
     "passMismatch": "Passwords do not match"
+  },
+  "achievements": {
+    "roadmap1": "Green Sprouts",
+    "roadmap2": "Freshness Masters",
+    "roadmap3": "Eco Heroes",
+    "level": "Level",
+    "experience": "Experience (XP)",
+    "xpLeft": "{{xp}} XP left to the next level",
+    "savedProducts": "Saved\nproducts",
+    "donatedUAF": "Donated\nto UAF",
+    "yourAchievements": "Your Achievements"
   }
 }
