@@ -5,7 +5,23 @@
     "next": "Далі",
     "error": "Помилка",
     "success": "Успіх",
-    "yes": "Так"
+    "yes": "Так",
+    "delete": "Видалити",
+    "restore": "Скинути"
+  },
+  "categories": {
+    "deleteTitle": "Видалення категорії",
+    "deleteMessage": "Ви впевнені, що хочете видалити цю категорію?",
+    "restoreTitle": "Скидання до стандартних",
+    "restoreMessage": "Ви впевнені, що хочете скинути категорії? Це замінить ваші поточні категорії стандартними.",
+    "addPlaceholder": "Назва нової категорії...",
+    "restoreDefaults": "Скинути до стандартних"
+  },
+  "errors": {
+    "createCategory": "Не вдалося створити категорію",
+    "deleteCategory": "Не вдалося видалити категорію",
+    "restoreCategories": "Не вдалося скинути категорії",
+    "loadingCategories": "Помилка завантаження категорій"
   },
   "premium": {
     "title": "Freshify Premium",

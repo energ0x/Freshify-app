@@ -111,7 +111,7 @@ export default function CategoriesScreen({ navigation }) {
       
       <View style={styles.footer}>
         <CustomButton
-          title="Скинути до стандартних"
+          title={t('categories.restoreDefaults')}
           onPress={handleRestoreDefaults}
           variant="outline"
           icon={<Ionicons name="refresh-outline" size={20} color={COLORS.primary} />}
