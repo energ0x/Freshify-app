@@ -8,7 +8,7 @@ settings = get_settings()
 api_key = str(settings.gemini_api_key) if settings.gemini_api_key else None
 client = genai.Client(api_key=api_key) if api_key else None
 
-TEXT_MODEL_NAME = 'gemma-4-31b-it'
+TEXT_MODEL_NAME = 'gemma-4-26b-a4b-it'
 VISION_MODEL_NAME = 'gemini-3.1-flash-lite-preview'
 
 
@@ -164,7 +164,10 @@ async def generate_recipes(
     try:
         response_stream = await client.aio.models.generate_content_stream(
             model=TEXT_MODEL_NAME,
-            contents=prompt
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_level="minimal")
+            )
         )
 
         async for chunk in clean_stream(response_stream):
@@ -212,7 +215,10 @@ async def stream_diet_recommendations(consumed_data: list[dict]):
     try:
         response_stream = await client.aio.models.generate_content_stream(
             model=TEXT_MODEL_NAME,
-            contents=prompt
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_level="minimal")
+            )
         )
 
         async for chunk in clean_stream(response_stream):
