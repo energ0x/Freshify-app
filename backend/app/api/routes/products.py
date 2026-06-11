@@ -9,27 +9,31 @@ from app.db.models import User
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductConsumeRequest, ConsumedProductResponse
 from app.services import product_service
 from app.utils.dependencies import get_current_user
+from app.utils.image_utils import validate_and_compress_image
 from app.scraper import fetch_product_slug, parse_nutrition_info
 
 router = APIRouter(prefix="/products", tags=["products"])
 
+
 @router.post("/upload-image")
 async def upload_image(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    if not file.content_type.startswith("image/"):
+    if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="Only image files are allowed")
-    
-    file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-    unique_filename = f"{uuid.uuid4()}.{file_extension}"
-    file_path = os.path.join("uploads", unique_filename)
-    
-    # Read the file fully and save it
+
     content = await file.read()
+    try:
+        compressed = validate_and_compress_image(content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    unique_filename = f"{uuid.uuid4()}.jpg"
+    file_path = os.path.join("uploads", unique_filename)
     with open(file_path, "wb") as f:
-        f.write(content)
-        
+        f.write(compressed)
+
     return {"image_url": f"/uploads/{unique_filename}"}
 
 @router.get("/barcode/{barcode}")
