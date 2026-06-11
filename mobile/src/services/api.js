@@ -94,10 +94,8 @@ export const aiAPI = {
   },
 };
 
-// Recipes
-export const recipesAPI = {
-  get: (includeGrocery = false) => api.get('/recipes', { params: { include_grocery: includeGrocery } }),
-};
+// Recipes — streaming via WebSocket only; no REST equivalent on the backend
+export const recipesAPI = {};
 
 // Grocery
 export const groceryAPI = {
@@ -108,10 +106,9 @@ export const groceryAPI = {
   addFromFridge: (productIds) => api.post('/grocery/from-fridge', { product_ids: productIds }),
 };
 
-// Analytics
+// Analytics — AI recommendations stream via WebSocket only; REST endpoint returns raw data only
 export const analyticsAPI = {
   get: (days = 30) => api.get('/analytics', { params: { days } }),
-  getRecommendations: (days = 30) => api.get('/analytics/ai-recommendations', { params: { days } }),
 };
 
 // Settings
