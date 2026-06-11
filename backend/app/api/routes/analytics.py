@@ -1,32 +1,20 @@
 import asyncio
+import json
+import logging
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-from datetime import datetime, timedelta
-from jose import JWTError, jwt
+from datetime import datetime, timezone, timedelta
 from starlette.websockets import WebSocketState
 from app.db.database import get_db
 from app.db.models import User, ConsumedProduct, Product, Category
 from app.services.gemini_service import stream_diet_recommendations
-from app.utils.dependencies import get_current_user, check_and_reset_limits
-from app.core.config import get_settings
-import json
+from app.utils.dependencies import get_current_user, check_and_reset_limits, get_user_from_ws_token
 from app.core.limiter_config import ANALYTICS_GENERATIONS_LIMIT
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
-settings = get_settings()
 
-async def get_user_from_token(token: str, db: Session) -> User:
-    try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            return None
-    except JWTError:
-        return None
-
-    user = db.query(User).filter(User.id == user_id).first()
-    return user
 
 @router.get("")
 def get_analytics(
@@ -34,7 +22,7 @@ def get_analytics(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    since = datetime.utcnow() - timedelta(days=days)
+    since = datetime.now(timezone.utc) - timedelta(days=days)
 
     consumed = db.query(
         ConsumedProduct.product_name,
@@ -62,7 +50,6 @@ def get_analytics(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
     ).group_by("day").order_by("day").all()
 
-    # Calculate the sum of quantities instead of counting rows
     active_quantity = db.query(func.sum(Product.quantity)).filter(
         and_(Product.user_id == current_user.id, Product.is_active == True)
     ).scalar()
@@ -95,31 +82,28 @@ def get_analytics(
 async def websocket_ai_recommendations(
     websocket: WebSocket,
     days: int = Query(30, ge=7, le=365),
-    token: str = Query(...)
+    token: str = Query(...),
 ):
     await websocket.accept()
     db: Session = next(get_db())
-    
+
     try:
-        user = await get_user_from_token(token, db)
+        user = get_user_from_ws_token(token, db)
         if not user:
             await websocket.close(code=1008, reason="Not authenticated")
             return
-            
-        check_and_reset_limits(user, db)
-        
-        if not user.is_premium:
-            if user.analytics_generations_count >= ANALYTICS_GENERATIONS_LIMIT:
-                error_data = json.dumps({"error": "Limit reached", "detail": "Limit reached for analytics_generations. Please upgrade to Premium."})
-                await websocket.send_text(error_data)
-                await websocket.close(code=1008, reason="Limit reached")
-                return
-                
-            user.analytics_generations_count += 1
-            db.commit()
-            db.refresh(user)
 
-        since = datetime.utcnow() - timedelta(days=days)
+        check_and_reset_limits(user, db)
+
+        if not user.is_premium and user.analytics_generations_count >= ANALYTICS_GENERATIONS_LIMIT:
+            await websocket.send_text(json.dumps({
+                "error": "Limit reached",
+                "detail": "Limit reached for analytics_generations. Please upgrade to Premium.",
+            }))
+            await websocket.close(code=1008, reason="Limit reached")
+            return
+
+        since = datetime.now(timezone.utc) - timedelta(days=days)
         consumed = db.query(
             ConsumedProduct.product_name,
             Category.name.label("category"),
@@ -130,14 +114,25 @@ async def websocket_ai_recommendations(
         ).group_by(ConsumedProduct.product_name, Category.name, ConsumedProduct.unit).all()
 
         consumed_data = [
-            {"product_name": r.product_name, "category": r.category, "unit": r.unit, "total_quantity": float(r.total_quantity or 0)}
+            {
+                "product_name": r.product_name,
+                "category": r.category,
+                "unit": r.unit,
+                "total_quantity": float(r.total_quantity or 0),
+            }
             for r in consumed
         ]
-        
+
+        # Charge after data retrieval, before AI stream
+        if not user.is_premium:
+            user.analytics_generations_count += 1
+            db.commit()
+            db.refresh(user)
+
         async def send_data():
             async for chunk in stream_diet_recommendations(consumed_data):
                 await websocket.send_text(chunk)
-                
+
         async def receive_disconnect():
             try:
                 while True:
@@ -147,19 +142,19 @@ async def websocket_ai_recommendations(
 
         send_task = asyncio.create_task(send_data())
         receive_task = asyncio.create_task(receive_disconnect())
-        
+
         done, pending = await asyncio.wait(
             [send_task, receive_task],
             return_when=asyncio.FIRST_COMPLETED,
         )
-        
+
         for task in pending:
             task.cancel()
-            
+
     except WebSocketDisconnect:
-        print("Client disconnected")
+        logger.debug("Analytics WS: client disconnected")
     except Exception as e:
-        print(f"WebSocket Error: {e}")
+        logger.error("Analytics WS error: %s", e)
     finally:
         try:
             if websocket.application_state == WebSocketState.CONNECTED:
