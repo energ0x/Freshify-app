@@ -20,9 +20,6 @@ wheels/
 .installed.cfg
 *.egg
 
-# Pipenv
-Pipfile.lock
-
 # Virtual Environment
 .venv
 venv/
@@ -61,6 +58,12 @@ web-build/
 
 # Docker
 docker-compose.override.yml
+
+# Uploaded user files — tracked by named Docker volume, not git
+backend/uploads/*.jpg
+backend/uploads/*.jpeg
+backend/uploads/*.png
+backend/uploads/*.webp
 
 # Database
 *.db
