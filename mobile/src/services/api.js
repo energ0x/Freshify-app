@@ -65,6 +65,18 @@ export const productsAPI = {
   getConsumed: (limit = 100) => api.get('/products/history/consumed', { params: { limit } }),
   getExpiring: (days = 3) => api.get('/products/expiring', { params: { days } }),
   getExpired: () => api.get('/products/expired'),
+  analyzeBarcode: (barcode) => api.get(`/products/barcode/${barcode}`),
+  uploadImage: async (imageUri) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'product.jpg',
+    });
+    return api.post('/products/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // AI

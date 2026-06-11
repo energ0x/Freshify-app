@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.db.database import engine, Base, SessionLocal
+import os
 
 # ДОДАНО: імпортуємо файл з моделями до виклику create_all, 
 # щоб SQLAlchemy знала, які саме таблиці треба створити
@@ -19,7 +21,11 @@ try:
 finally:
     db.close()
 
+os.makedirs("uploads", exist_ok=True)
+
 app = FastAPI(title="Freshify API", version="1.0.0", description="Food monitoring app API")
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,

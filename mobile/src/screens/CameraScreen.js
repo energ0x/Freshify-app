@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { aiAPI } from '../services/api';
+import { aiAPI, productsAPI } from '../services/api';
 import { COLORS } from '../utils/constants';
 import CustomButton from '../components/CustomButton';
 
@@ -33,12 +33,7 @@ export default function CameraScreen({ navigation, route }) {
     setLoading(true);
     
     try {
-      let response;
-      if (aiAPI.analyzeBarcode) {
-        response = await aiAPI.analyzeBarcode(data);
-      } else {
-        response = { data: { name: `Продукт за кодом ${data}`, category: 'Інше' } };
-      }
+      const response = await productsAPI.analyzeBarcode(data);
 
       if (response?.data?.error) {
         Alert.alert('Увага', response.data.error);
@@ -61,17 +56,7 @@ export default function CameraScreen({ navigation, route }) {
     setLoading(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
-      let response;
-
-      if (mode === 'receipt') {
-        if (aiAPI.analyzeReceipt) {
-          response = await aiAPI.analyzeReceipt(photo.uri);
-        } else {
-          response = await aiAPI.analyzeImage(photo.uri);
-        }
-      } else {
-        response = await aiAPI.analyzeImage(photo.uri);
-      }
+      const response = await aiAPI.analyzeImage(photo.uri);
 
       if (response?.data?.error) {
         Alert.alert('Увага', response.data.error);
@@ -79,7 +64,7 @@ export default function CameraScreen({ navigation, route }) {
         return;
       }
 
-      navigation.navigate('AddProduct', { aiResult: response.data });
+      navigation.navigate('AddProduct', { aiResult: response.data, imageUri: photo.uri });
     } catch (error) {
       Alert.alert('Помилка', 'Не вдалося розпізнати зображення. Спробуйте ще раз.');
       setLoading(false);

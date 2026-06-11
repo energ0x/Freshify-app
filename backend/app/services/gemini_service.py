@@ -63,23 +63,30 @@ def analyze_product_image(
     categories_prompt = f"Available categories: {', '.join(available_categories)}." if available_categories else "No categories available."
 
     prompt = f"""You are a food recognition assistant.
-Analyze the image and identify the food product.
+Analyze the image and identify ALL food products visible (e.g. from a receipt or multiple items on a table).
 
-1.  **Identify the product** and its name in Ukrainian.
-2.  **Categorize the product.** Choose the BEST category ONLY from this list: {categories_prompt}
-3.  **Check for allergens.** The user's allergies are: {allergens_prompt}. Does the product contain any of these?
+1.  **Identify the products** and their names in Ukrainian.
+2.  **Categorize the products.** Choose the BEST category ONLY from this list: {categories_prompt}
+3.  **Check for allergens.** The user's allergies are: {allergens_prompt}. Do the products contain any of these?
 4.  **Estimate shelf life.** Provide the estimated number of days the product stays fresh.
 
 Respond with a JSON object following this exact format:
 {{
-  "name": "Назва українською",
-  "category": "Одна з доступних категорій",
-  "estimated_shelf_life_days": int,
-  "has_allergen": boolean 
+  "products": [
+    {{
+      "name": "Назва українською",
+      "category": "Одна з доступних категорій",
+      "estimated_shelf_life_days": int,
+      "has_allergen": boolean 
+    }}
+  ]
 }}
 
-If the image does not contain a food product, return:
-{{"error": "Продукт не знайдено"}}"""
+If the image does not contain any food products, return:
+{{
+  "error": "Продукти не знайдено",
+  "products": []
+}}"""
 
     if not client:
         return {"error": "Gemini API ключ не налаштовано"}

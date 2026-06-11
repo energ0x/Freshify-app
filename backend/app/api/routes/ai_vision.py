@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.schemas.product import AIProductResponse
+from app.schemas.product import AIProductListResponse, AIProductResponse
 from app.services.gemini_service import analyze_product_image
 from app.services.category_service import get_category_by_name, get_categories, DEFAULT_CATEGORIES
 from app.utils.image_utils import validate_and_compress_image
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/ai", tags=["ai"])
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
 
-@router.post("/analyze-image", response_model=AIProductResponse)
+@router.post("/analyze-image", response_model=AIProductListResponse)
 async def analyze_image(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
@@ -55,22 +55,30 @@ async def analyze_image(
         available_categories=available_categories
     )
 
-    if "category" in result and result["category"]:
-        category_name = result["category"]
-        
-        # Шукаємо категорію ТІЛЬКИ серед існуючих у користувача
-        category = get_category_by_name(db, category_name, current_user.id)
-        
-        if category:
-            result["category_id"] = category.id
-            result["category"] = category.name
-        else:
-            # Якщо категорію не знайдено (навіть якщо ШІ її запропонував), 
-            # відправляємо її на фронтенд як "пропозицію"
-            result["category_suggestion"] = category_name
-            
-            # Видаляємо category_id, оскільки його немає
-            result.pop("category_id", None)
-            result["category"] = None # Скидаємо, щоб фронтенд не заплутався
+    if "error" in result and not result.get("products"):
+        return {"error": result["error"], "products": []}
 
-    return result
+    processed_products = []
+    
+    for prod in result.get("products", []):
+        if "category" in prod and prod["category"]:
+            category_name = prod["category"]
+            
+            # Шукаємо категорію ТІЛЬКИ серед існуючих у користувача
+            category = get_category_by_name(db, category_name, current_user.id)
+            
+            if category:
+                prod["category_id"] = category.id
+                prod["category"] = category.name
+            else:
+                # Якщо категорію не знайдено (навіть якщо ШІ її запропонував), 
+                # відправляємо її на фронтенд як "пропозицію"
+                prod["category_suggestion"] = category_name
+                
+                # Видаляємо category_id, оскільки його немає
+                prod.pop("category_id", None)
+                prod["category"] = None # Скидаємо, щоб фронтенд не заплутався
+                
+        processed_products.append(prod)
+
+    return {"products": processed_products, "error": result.get("error")}
