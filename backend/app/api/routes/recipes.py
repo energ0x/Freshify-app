@@ -8,7 +8,10 @@ from app.services.gemini_service import generate_recipes
 from app.services.product_service import get_products
 from app.core.config import get_settings
 from jose import JWTError, jwt
-
+from datetime import datetime, timedelta
+import json
+from app.core.limiter_config import RECIPE_GENERATIONS_LIMIT
+from app.utils.dependencies import check_and_reset_limits
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 settings = get_settings()
@@ -29,7 +32,7 @@ async def get_user_from_token(token: str, db: Session) -> User:
 async def websocket_recipe_generator(
     websocket: WebSocket,
     include_grocery: bool = Query(False),
-    token: str = Query(...),
+    token: str = Query(...)
 ):
     await websocket.accept()
     db: Session = next(get_db())
@@ -38,6 +41,23 @@ async def websocket_recipe_generator(
         if not user:
             await websocket.close(code=1008, reason="Invalid authentication credentials")
             return
+            
+        # Оновлюємо ліміти перед перевіркою за допомогою централізованої функції
+        check_and_reset_limits(user, db)
+
+        # Перевіряємо ліміт для генерації рецептів
+        if not user.is_premium:
+            if user.recipe_generations_count >= RECIPE_GENERATIONS_LIMIT:
+                # Відправляємо спеціальне повідомлення про помилку ліміту
+                error_data = json.dumps({"error": "Limit reached", "detail": "Limit reached for recipe_generations. Please upgrade to Premium."})
+                await websocket.send_text(error_data)
+                await websocket.close(code=1008, reason="Limit reached")
+                return
+            
+            # Інкрементуємо лічильник
+            user.recipe_generations_count += 1
+            db.commit()
+            db.refresh(user) # Оновлюємо об'єкт після інкрементації
 
         products = get_products(db, user.id)
         products_data = [

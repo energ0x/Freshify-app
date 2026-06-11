@@ -7,11 +7,11 @@ from app.services.category_service import get_category_by_name, get_categories, 
 from app.utils.image_utils import validate_and_compress_image
 from app.utils.dependencies import get_current_user
 from app.db.models import User
+from app.core.limiter_config import PHOTO_UPLOADS_LIMIT
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
-
 
 @router.post("/analyze-image", response_model=AIProductResponse)
 async def analyze_image(
@@ -21,6 +21,17 @@ async def analyze_image(
 ):
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail="Only JPEG, PNG, or WebP images are allowed")
+
+    # Перевірка ліміту
+    if not current_user.is_premium:
+        if current_user.photo_uploads_count >= PHOTO_UPLOADS_LIMIT:
+            raise HTTPException(
+                status_code=403,
+                detail="Limit reached for photo_uploads. Please upgrade to Premium."
+            )
+        current_user.photo_uploads_count += 1
+        db.commit()
+        db.refresh(current_user)
 
     image_bytes = await file.read()
 

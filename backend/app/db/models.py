@@ -16,9 +16,14 @@ class User(Base):
     
     dietary_preference = Column(String(50), nullable=True)
     allergens = Column(JSON, default=list)
-    is_premium = Column(Boolean, default=False)
+    is_premium = Column(Boolean, default=False, nullable=False)
     xp_points = Column(Integer, default=0)
     
+    premium_expires_at = Column(DateTime(timezone=True), nullable=True)
+    photo_uploads_count = Column(Integer, default=0, nullable=False)
+    recipe_generations_count = Column(Integer, default=0, nullable=False)
+    analytics_generations_count = Column(Integer, default=0, nullable=False)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

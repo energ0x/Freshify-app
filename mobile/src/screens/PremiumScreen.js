@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
+import { authAPI } from '../services/api';
 
 export default function PremiumScreen({ navigation }) {
   const { t } = useTranslation();
@@ -18,12 +19,34 @@ export default function PremiumScreen({ navigation }) {
     { id: 4, title: t('premium.f4_title'), desc: t('premium.f4_desc'), icon: 'star-outline', color: '#F1C40F' },
   ];
 
-  const handleSubscribe = () => {
-    Alert.alert(
-      t('premium.successTitle'),
-      t('premium.successMsg'),
-      [{ text: t('premium.cool'), onPress: () => navigation.goBack() }]
-    );
+  const handleSubscribe = async () => {
+    try {
+      // 1. Активація преміуму на бекенді
+      await authAPI.activatePremium();
+      
+      // 2. Відкриття посилання
+      const url = 'https://send.monobank.ua/4abA62Fckj';
+      const supported = await Linking.canOpenURL(url);
+      
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        console.error("Don't know how to open this URL: " + url);
+      }
+      
+      // 3. Показ повідомлення про успіх
+      Alert.alert(
+        t('premium.successTitle'),
+        t('premium.successMsg'),
+        [{ text: t('premium.cool'), onPress: () => navigation.goBack() }]
+      );
+    } catch (error) {
+       console.error("Error activating premium:", error);
+       Alert.alert(
+         "Помилка",
+         "Не вдалося активувати преміум. Спробуйте пізніше."
+       );
+    }
   };
 
   const isDark = theme === 'dark';

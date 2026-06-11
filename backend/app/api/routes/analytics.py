@@ -8,8 +8,10 @@ from starlette.websockets import WebSocketState
 from app.db.database import get_db
 from app.db.models import User, ConsumedProduct, Product, Category
 from app.services.gemini_service import stream_diet_recommendations
-from app.utils.dependencies import get_current_user
+from app.utils.dependencies import get_current_user, check_and_reset_limits
 from app.core.config import get_settings
+import json
+from app.core.limiter_config import ANALYTICS_GENERATIONS_LIMIT
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 settings = get_settings()
@@ -25,7 +27,6 @@ async def get_user_from_token(token: str, db: Session) -> User:
 
     user = db.query(User).filter(User.id == user_id).first()
     return user
-
 
 @router.get("")
 def get_analytics(
@@ -94,7 +95,7 @@ def get_analytics(
 async def websocket_ai_recommendations(
     websocket: WebSocket,
     days: int = Query(30, ge=7, le=365),
-    token: str = Query(...),
+    token: str = Query(...)
 ):
     await websocket.accept()
     db: Session = next(get_db())
@@ -104,6 +105,19 @@ async def websocket_ai_recommendations(
         if not user:
             await websocket.close(code=1008, reason="Not authenticated")
             return
+            
+        check_and_reset_limits(user, db)
+        
+        if not user.is_premium:
+            if user.analytics_generations_count >= ANALYTICS_GENERATIONS_LIMIT:
+                error_data = json.dumps({"error": "Limit reached", "detail": "Limit reached for analytics_generations. Please upgrade to Premium."})
+                await websocket.send_text(error_data)
+                await websocket.close(code=1008, reason="Limit reached")
+                return
+                
+            user.analytics_generations_count += 1
+            db.commit()
+            db.refresh(user)
 
         since = datetime.utcnow() - timedelta(days=days)
         consumed = db.query(

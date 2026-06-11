@@ -17,11 +17,20 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Додамо подію, яку можна слухати з UI компонентів
+export const premiumLimitListeners = new Set();
+
+export const notifyPremiumLimitReached = (message) => {
+  premiumLimitListeners.forEach(listener => listener(message));
+};
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       SecureStore.deleteItemAsync('auth_token').catch(() => {});
+    } else if (error.response?.status === 403 && error.response?.data?.detail?.includes('Limit reached')) {
+        notifyPremiumLimitReached(error.response.data.detail);
     }
     return Promise.reject(error);
   }
@@ -33,6 +42,7 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
   updateMe: (data) => api.put('/auth/me', data),
+  activatePremium: () => api.post('/auth/me/activate-premium'),
 };
 
 // Categories

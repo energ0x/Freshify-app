@@ -49,6 +49,7 @@ class UserResponse(BaseModel):
     dietary_preference: Optional[DietaryPreference] = None
     allergens: List[str] = []
     is_premium: bool = False
+    premium_expires_at: Optional[datetime] = None
     xp_points: int = 0
     created_at: datetime
     achievements: List[UserAchievementResponse] = []
