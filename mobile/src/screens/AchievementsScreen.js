@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import useAuthStore from '../store/authStore';
 import { achievementsAPI } from '../services/api';
@@ -9,9 +10,9 @@ import { achievementsAPI } from '../services/api';
 const { width } = Dimensions.get('window');
 
 const ROADMAP_DATA = [
-  { id: '1', level: 1, title: 'Зелені Паростки', icon: 'leaf', color: '#2ECC71' },
-  { id: '4', level: 101, title: 'Майстри Свіжості', icon: 'ribbon', color: '#3498DB' },
-  { id: '6', level: 201, title: 'Еко-Герої', icon: 'planet', color: '#F1C40F' },
+  { id: '1', level: 1, titleKey: 'achievements.roadmap1', icon: 'leaf', color: '#2ECC71' },
+  { id: '4', level: 101, titleKey: 'achievements.roadmap2', icon: 'ribbon', color: '#3498DB' },
+  { id: '6', level: 201, titleKey: 'achievements.roadmap3', icon: 'planet', color: '#F1C40F' },
 ];
 
 const OTHER_STATS = {
@@ -20,6 +21,7 @@ const OTHER_STATS = {
 };
 
 export default function AchievementsScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const { user, refreshUser } = useAuthStore();
   const isDark = theme === 'dark';
@@ -92,21 +94,21 @@ export default function AchievementsScreen({ navigation }) {
             <Ionicons name={currentLeague.icon} size={40} color={currentLeague.color} />
           </View>
           <View style={styles.leagueInfo}>
-            <Text style={styles.levelText}>Рівень {currentLevel}</Text>
-            <Text style={styles.leagueName}>{currentLeague.title}</Text>
+            <Text style={styles.levelText}>{t('achievements.level')} {currentLevel}</Text>
+            <Text style={styles.leagueName}>{t(currentLeague.titleKey)}</Text>
           </View>
           <Ionicons name="chevron-forward" size={24} color={COLORS.outline} />
         </View>
 
         <View style={styles.xpContainer}>
           <View style={styles.xpTextRow}>
-            <Text style={styles.xpText}>Досвід (XP)</Text>
+            <Text style={styles.xpText}>{t('achievements.experience')}</Text>
             <Text style={styles.xpValues}>{currentXP} / {nextLevelXP}</Text>
           </View>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: currentLeague.color }]} />
           </View>
-          <Text style={styles.xpHint}>Залишилось {nextLevelXP - currentXP} XP до наступного рівня</Text>
+          <Text style={styles.xpHint}>{t('achievements.xpLeft', { xp: nextLevelXP - currentXP })}</Text>
         </View>
       </TouchableOpacity>
 
@@ -114,17 +116,17 @@ export default function AchievementsScreen({ navigation }) {
         <View style={styles.statBox}>
           <Ionicons name="shield-checkmark" size={26} color={COLORS.success} />
           <Text style={styles.statValue}>{OTHER_STATS.totalSaved}</Text>
-          <Text style={styles.statLabel}>Врятовано{"\n"}продуктів</Text>
+          <Text style={styles.statLabel}>{t('achievements.savedProducts')}</Text>
         </View>
         <View style={styles.statBox}>
           <Ionicons name="heart" size={26} color={COLORS.danger} />
           <Text style={styles.statValue}>{OTHER_STATS.donated} ₴</Text>
-          <Text style={styles.statLabel}>Передано{"\n"}на ЗСУ</Text>
+          <Text style={styles.statLabel}>{t('achievements.donatedUAF')}</Text>
         </View>
       </View>
 
       <View style={styles.achievementsSection}>
-        <Text style={styles.sectionLabel}>Ваші Досягнення</Text>
+        <Text style={styles.sectionLabel}>{t('achievements.yourAchievements')}</Text>
         {loading ? (
           <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
         ) : (

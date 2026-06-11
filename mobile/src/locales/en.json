@@ -5,7 +5,24 @@
     "next": "Next",
     "error": "Error",
     "success": "Success",
-    "yes": "Yes"
+    "yes": "Yes",
+    "no": "No",
+    "delete": "Delete",
+    "restore": "Restore"
+  },
+  "categories": {
+    "deleteTitle": "Delete Category",
+    "deleteMessage": "Are you sure you want to delete this category?",
+    "restoreTitle": "Restore defaults",
+    "restoreMessage": "Are you sure you want to restore default categories? This will replace your current categories.",
+    "addPlaceholder": "New category name...",
+    "restoreDefaults": "Restore defaults"
+  },
+  "errors": {
+    "createCategory": "Failed to create category",
+    "deleteCategory": "Failed to delete category",
+    "restoreCategories": "Failed to restore categories",
+    "loadingCategories": "Error loading categories"
   },
   "premium": {
     "title": "Freshify Premium",
@@ -134,5 +151,16 @@
     "passShort": "Password must be at least 6 characters",
     "currentPassReq": "Enter current password",
     "passMismatch": "Passwords do not match"
+  },
+  "achievements": {
+    "roadmap1": "Green Sprouts",
+    "roadmap2": "Freshness Masters",
+    "roadmap3": "Eco Heroes",
+    "level": "Level",
+    "experience": "Experience (XP)",
+    "xpLeft": "{{xp}} XP left to the next level",
+    "savedProducts": "Saved\nproducts",
+    "donatedUAF": "Donated\nto UAF",
+    "yourAchievements": "Your Achievements"
   }
 }
