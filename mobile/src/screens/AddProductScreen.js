@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, TextInput, StyleSheet, Alert, Platform, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -10,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCategories } from '../hooks/useCategories';
 
 export default function AddProductScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const { addProduct } = useProductStore();
   const { colors: COLORS } = useThemeStore();
   const { categories, createCategory } = useCategories();
@@ -25,6 +27,11 @@ export default function AddProductScreen({ navigation, route }) {
   });
 
   const styles = getStyles(COLORS);
+
+  // Update header title dynamically when language changes
+  useEffect(() => {
+    navigation.setOptions({ title: t('addProduct.screenTitle') });
+  }, [navigation, t]);
 
   useEffect(() => {
     if (categories.length > 0 && !form.category_id) {
@@ -51,11 +58,11 @@ export default function AddProductScreen({ navigation, route }) {
     const handleAllergenWarning = (onConfirm) => {
       if (has_allergen) {
         Alert.alert(
-          'Увага, алерген!',
-          'У вас може бути алергія на цей продукт. Все одно додати?',
+          t('addProduct.allergenWarningTitle'),
+          t('addProduct.allergenWarningMsg'),
           [
-            { text: 'Ні', style: 'cancel' },
-            { text: 'Так', onPress: onConfirm }
+            { text: t('common.no'), style: 'cancel' },
+            { text: t('common.yes'), onPress: onConfirm }
           ]
         );
       } else {
@@ -65,23 +72,23 @@ export default function AddProductScreen({ navigation, route }) {
 
     if (category_suggestion) {
       Alert.alert(
-        'Категорію не знайдено',
-        `Цієї категорії продуктів ("${category_suggestion}") у вас немає. Відновити її?`,
+        t('addProduct.categoryNotFoundTitle'),
+        t('addProduct.categoryNotFoundMsg', { category: category_suggestion }),
         [
           { 
-            text: 'Ні', 
+            text: t('common.no'), 
             style: 'cancel',
-            onPress: () => Alert.alert('Помилка', 'Не вдалося повністю розпізнати продукт без категорії.')
+            onPress: () => Alert.alert(t('common.error'), t('addProduct.unrecognizedNoCategory'))
           },
           {
-            text: 'Так',
+            text: t('common.yes'),
             onPress: () => handleAllergenWarning(async () => {
               setLoading(true);
               try {
                 const newCat = await createCategory({ name: category_suggestion });
                 updateForm(newCat.id);
               } catch (e) {
-                 Alert.alert('Помилка', 'Не вдалося створити категорію');
+                 Alert.alert(t('common.error'), t('addProduct.createCategoryError'));
               } finally {
                  setLoading(false);
               }
@@ -100,7 +107,10 @@ export default function AddProductScreen({ navigation, route }) {
       
       if (Array.isArray(data)) {
         if (data.length > 1) {
-          Alert.alert('Чек розпізнано', `Знайдено ${data.length} продуктів. Поки що заповнено перший, інші ви зможете додати згодом.`);
+          Alert.alert(
+            t('addProduct.receiptRecognizedTitle'), 
+            t('addProduct.receiptRecognizedMsg', { count: data.length })
+          );
         }
         data = data[0] || {};
       }
@@ -109,7 +119,7 @@ export default function AddProductScreen({ navigation, route }) {
   }, [route.params?.aiResult]);
 
   const handleSave = async () => {
-    if (!form.name) return Alert.alert('Помилка', 'Введіть назву продукту');
+    if (!form.name) return Alert.alert(t('common.error'), t('addProduct.nameRequired'));
 
     setLoading(true);
     const res = await addProduct({
@@ -120,49 +130,53 @@ export default function AddProductScreen({ navigation, route }) {
     setLoading(false);
 
     if (res.success) navigation.goBack();
-    else Alert.alert('Помилка', res.error);
+    else Alert.alert(t('common.error'), res.error);
   };
 
-  const unitItems = UNITS.map(u => ({ label: u, value: u }));
+  // Dynamically map unit text to localizations (e.g., 'шт' -> 'pcs')
+  const unitItems = UNITS.map(u => ({ 
+    label: t(`units.${u}`, { defaultValue: u }), 
+    value: u 
+  }));
   const categoryItems = categories.map(c => ({ label: c.name, value: c.id }));
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      <Text style={styles.scanLabel}>Додати за допомогою ШІ</Text>
+      <Text style={styles.scanLabel}>{t('addProduct.addWithAi')}</Text>
       <View style={styles.scanRow}>
         <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'product' })} activeOpacity={0.7}>
           <Ionicons name="camera-outline" size={28} color={COLORS.primary} />
-          <Text style={styles.scanBtnText}>Фото</Text>
+          <Text style={styles.scanBtnText}>{t('addProduct.photo')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'barcode' })} activeOpacity={0.7}>
           <Ionicons name="barcode-outline" size={28} color={COLORS.primary} />
-          <Text style={styles.scanBtnText}>Штрихкод</Text>
+          <Text style={styles.scanBtnText}>{t('addProduct.barcode')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'receipt' })} activeOpacity={0.7}>
           <Ionicons name="receipt-outline" size={28} color={COLORS.primary} />
-          <Text style={styles.scanBtnText}>Чек</Text>
+          <Text style={styles.scanBtnText}>{t('addProduct.receipt')}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.divider} />
 
       <View style={styles.section}>
-        <Text style={styles.label}>Назва продукту</Text>
+        <Text style={styles.label}>{t('addProduct.productName')}</Text>
         <TextInput
           style={styles.input}
           value={form.name}
           onChangeText={(val) => setForm({ ...form, name: val })}
-          placeholder="Наприклад: Молоко"
+          placeholder={t('addProduct.namePlaceholder')}
           placeholderTextColor={COLORS.onSurfaceVariant}
         />
       </View>
 
       <View style={styles.row}>
         <View style={[styles.section, { flex: 2, marginRight: 10 }]}>
-          <Text style={styles.label}>Кількість</Text>
+          <Text style={styles.label}>{t('addProduct.quantity')}</Text>
           <TextInput
             style={styles.input}
             value={form.quantity}
@@ -173,7 +187,7 @@ export default function AddProductScreen({ navigation, route }) {
         </View>
         <View style={[styles.section, { flex: 3 }]}>
           <CustomPicker
-            label="Одиниця"
+            label={t('addProduct.unit')}
             items={unitItems}
             selectedValue={form.unit}
             onValueChange={(val) => setForm({ ...form, unit: val })}
@@ -183,7 +197,7 @@ export default function AddProductScreen({ navigation, route }) {
 
       <View style={styles.section}>
         <CustomPicker
-          label="Категорія"
+          label={t('addProduct.category')}
           items={categoryItems}
           selectedValue={form.category_id}
           onValueChange={(val) => setForm({ ...form, category_id: val })}
@@ -198,12 +212,12 @@ export default function AddProductScreen({ navigation, route }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.label}>Нотатки (опціонально)</Text>
+        <Text style={styles.label}>{t('addProduct.notes')}</Text>
         <TextInput
           style={[styles.input, styles.textArea]}
           value={form.notes}
           onChangeText={(val) => setForm({ ...form, notes: val })}
-          placeholder="Наприклад: Зберігати в холодильнику..."
+          placeholder={t('addProduct.notesPlaceholder')}
           placeholderTextColor={COLORS.onSurfaceVariant}
           multiline={true}
           numberOfLines={3}
@@ -212,7 +226,7 @@ export default function AddProductScreen({ navigation, route }) {
       </View>
 
       <CustomButton
-        title="Зберегти"
+        title={t('common.save')}
         onPress={handleSave}
         loading={loading}
         style={styles.saveButton}

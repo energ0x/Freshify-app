@@ -8,7 +8,9 @@
     "yes": "Yes",
     "no": "No",
     "delete": "Delete",
-    "restore": "Restore"
+    "restore": "Restore",
+    "attention": "Attention",
+    "ok": "OK"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -74,6 +76,21 @@
     "notesPlaceholder": "Important product information...",
     "updateError": "Failed to update product",
     "nameRequired": "Enter product name"
+  },
+  "addProduct": {
+    "attentionAllergenTitle": "Allergen Warning!",
+    "attentionAllergenMsg": "You might be allergic to this product. Add it anyway?",
+    "categoryNotFoundTitle": "Category not found",
+    "categoryNotFoundMsg": "You don't have this product category (\"{{category}}\"). Restore it?",
+    "productNotRecognizedMsg": "Failed to fully recognize the product without a category.",
+    "receiptRecognizedTitle": "Receipt Recognized",
+    "receiptRecognizedMsg": "Found {{count}} products. The first one is filled in for now, you can add the others later.",
+    "addWithAI": "Add with AI",
+    "photo": "Photo",
+    "barcode": "Barcode",
+    "receipt": "Receipt",
+    "notesOptional": "Notes (optional)",
+    "notesPlaceholder2": "E.g.: Store in the fridge..."
   },
   "recipes": {
     "title": "AI Recipes",
@@ -143,6 +160,39 @@
     "profileUpdated": "Profile updated successfully",
     "profileUpdateError": "Failed to update profile",
     "settingsSaveError": "Failed to save settings"
+  },
+  "allergens": {
+    "allergenExists": "This allergen is already in the list",
+    "allergensSaved": "Allergen settings saved.",
+    "allergensSaveError": "Failed to save settings.",
+    "subtitle": "Add products to avoid. Our AI will automatically exclude them from your recipes.",
+    "addCustomPlaceholder": "Add custom allergen..."
+  },
+  "analytics": {
+    "title": "Analytics",
+    "loadStatsError": "Error loading statistics",
+    "loadRecsError": "Failed to load recommendations.",
+    "generationCancelled": "**Generation cancelled.**",
+    "analyzingHabits": "Analyzing your dietary habits...",
+    "productsAtHome": "Products at home",
+    "consumedPerMonth": "Consumed this month",
+    "consumptionByCategory": "Consumption by Category",
+    "noConsumptionData": "No consumption data for the last 30 days",
+    "aiRecommendationsTitle": "AI Dietitian Recommendations",
+    "getAdvice": "Get advice"
+  },
+  "camera": {
+    "permissionMsg": "The app needs camera access to recognize products.",
+    "grantPermission": "Grant permission",
+    "productByCode": "Product by code {{code}}",
+    "other": "Other",
+    "barcodeError": "Failed to recognize the barcode.",
+    "imageRecognizeError": "Failed to recognize the image. Please try again.",
+    "pointCameraAtBarcode": "Point the camera at the barcode",
+    "photoEntireReceipt": "Photograph the entire receipt",
+    "photoProductClose": "Take a close-up photo of the product",
+    "searchingProduct": "Searching for product...",
+    "aiAnalyzingPhoto": "AI is analyzing the photo..."
   },
   "validation": {
     "nameShort": "Name must be at least 2 characters",

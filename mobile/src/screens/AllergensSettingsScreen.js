@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
@@ -10,6 +11,7 @@ const INITIAL_ALLERGENS = [
 ];
 
 export default function AllergensSettingsScreen({ navigation }) {
+  const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
   const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
   const [selected, setSelected] = useState([]);
@@ -18,7 +20,6 @@ export default function AllergensSettingsScreen({ navigation }) {
 
   useEffect(() => {
     if (user?.allergens) {
-      // Відновлюємо емодзі для відображення в UI
       const mappedSelected = user.allergens.map(backendAllergen => {
         const found = INITIAL_ALLERGENS.find(
           ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() === backendAllergen
@@ -44,7 +45,7 @@ export default function AllergensSettingsScreen({ navigation }) {
     const text = customInput.trim();
     if (!text) return;
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
-      return Alert.alert('Увага', 'Цей алерген уже є у списку');
+      return Alert.alert(t('common.attention'), t('allergens.alreadyInList'));
     }
     setAllergens([...allergens, text]);
     setSelected([...selected, text]);
@@ -57,14 +58,14 @@ export default function AllergensSettingsScreen({ navigation }) {
       const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
       const res = await updateProfile({ allergens: cleanedAllergens });
       if (res.success) {
-        Alert.alert('Успіх', 'Налаштування алергенів збережено.', [
-          { text: 'ОК', onPress: () => navigation.goBack() }
+        Alert.alert(t('common.success'), t('allergens.saveSuccess'), [
+          { text: t('common.ok'), onPress: () => navigation.goBack() }
         ]);
       } else {
-        Alert.alert('Помилка', res.error || 'Не вдалося зберегти налаштування.');
+        Alert.alert(t('common.error'), res.error || t('allergens.saveError'));
       }
     } catch (error) {
-      Alert.alert('Помилка', 'Не вдалося зберегти налаштування.');
+      Alert.alert(t('common.error'), t('allergens.saveError'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -74,13 +75,13 @@ export default function AllergensSettingsScreen({ navigation }) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <Text style={styles.subtitle}>
-        Додайте продукти, які варто уникати. Наш ШІ автоматично виключатиме їх із ваших рецептів.
+        {t('allergens.description')}
       </Text>
 
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Додати власний алерген..."
+          placeholder={t('allergens.addCustomPlaceholder')}
           value={customInput}
           onChangeText={setCustomInput}
           onSubmitEditing={addCustomAllergen}
@@ -111,7 +112,7 @@ export default function AllergensSettingsScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <CustomButton title="Зберегти" onPress={handleSave} loading={loading} />
+        <CustomButton title={t('common.save')} onPress={handleSave} loading={loading} />
       </View>
     </KeyboardAvoidingView>
   );

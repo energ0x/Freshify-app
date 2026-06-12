@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import * as SecureStore from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { analyticsAPI } from '../services/api';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
@@ -15,6 +16,7 @@ const screenWidth = Dimensions.get('window').width;
 const chartColors = ['#2ECC71', '#3498DB', '#9B59B6', '#E67E22', '#E74C3C', '#1ABC9C', '#F1C40F'];
 
 export default function AnalyticsScreen({ navigation }) {
+  const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAi, setLoadingAi] = useState(false);
@@ -40,8 +42,6 @@ export default function AnalyticsScreen({ navigation }) {
     }
   }, []);
 
-  // Використовуємо useFocusEffect замість useEffect для перезавантаження даних
-  // щоразу, коли екран стає активним (наприклад, після повернення з вкладки продуктів)
   useFocusEffect(
     useCallback(() => {
       loadStats();
@@ -60,7 +60,7 @@ export default function AnalyticsScreen({ navigation }) {
       }
       setLoadingAi(false);
       Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
-      setStreamedText(prev => prev + "\n\n**Генерацію скасовано.**");
+      setStreamedText(prev => prev + "\n\n" + t('analytics.generationCancelled'));
       return;
     }
 
@@ -92,14 +92,14 @@ export default function AnalyticsScreen({ navigation }) {
 
       ws.onerror = (e) => {
         console.log("WebSocket Error:", e.message);
-        setStreamedText('Не вдалося завантажити рекомендації.');
+        setStreamedText(t('analytics.loadError'));
         setLoadingAi(false);
         Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
       };
 
     } catch (error) {
       console.log('Помилка ініціалізації WebSocket', error);
-      setStreamedText('Не вдалося завантажити рекомендації.');
+      setStreamedText(t('analytics.loadError'));
       setLoadingAi(false);
       Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
     }
@@ -118,7 +118,7 @@ export default function AnalyticsScreen({ navigation }) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Аналізуємо ваші харчові звички...</Text>
+        <Text style={styles.loadingText}>{t('analytics.analyzingHabits')}</Text>
       </View>
     );
   }
@@ -136,7 +136,7 @@ export default function AnalyticsScreen({ navigation }) {
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
 
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Аналітика</Text>
+        <Text style={styles.headerTitle}>{t('analytics.title')}</Text>
       </View>
 
       <ScrollView
@@ -144,7 +144,6 @@ export default function AnalyticsScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={loadingStats} onRefresh={loadStats} colors={[COLORS.primary]} />}
         showsVerticalScrollIndicator={false}
       >
-        {/* ─── Stat Cards ──────────────────────────────────────────────────── */}
         <View style={styles.statsRow}>
           <TouchableOpacity
             style={styles.statCard}
@@ -152,7 +151,7 @@ export default function AnalyticsScreen({ navigation }) {
             onPress={() => navigation.navigate('Продукти')}
           >
             <Text style={styles.statValue}>{data?.total_products_in_fridge || 0}</Text>
-            <Text style={styles.statLabel}>Продуктів вдома</Text>
+            <Text style={styles.statLabel}>{t('analytics.productsAtHome')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -161,13 +160,12 @@ export default function AnalyticsScreen({ navigation }) {
             onPress={() => navigation.navigate('History')}
           >
             <Text style={styles.statValue}>{data?.consumed_products?.length || 0}</Text>
-            <Text style={styles.statLabel}>Спожито за місяць</Text>
+            <Text style={styles.statLabel}>{t('analytics.consumedPerMonth')}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* ─── Pie Chart ───────────────────────────────────────────────────── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Споживання за категоріями</Text>
+          <Text style={styles.sectionTitle}>{t('analytics.consumptionByCategory')}</Text>
           {chartData.length > 0 ? (
             <PieChart
               data={chartData}
@@ -180,22 +178,21 @@ export default function AnalyticsScreen({ navigation }) {
               absolute
             />
           ) : (
-            <Text style={styles.emptyText}>Немає даних про споживання за останні 30 днів</Text>
+            <Text style={styles.emptyText}>{t('analytics.noData')}</Text>
           )}
         </View>
 
-        {/* ─── AI Recommendations ──────────────────────────────────────────── */}
         <View style={styles.sectionAi}>
           <View style={styles.aiHeader}>
             <Ionicons name="sparkles" size={24} color={COLORS.warning} />
-            <Text style={styles.sectionTitleAi}>AI Рекомендації дієтолога</Text>
+            <Text style={styles.sectionTitleAi}>{t('analytics.aiRecommendationsTitle')}</Text>
           </View>
 
           <TouchableOpacity style={styles.generateButton} onPress={handleGenerateRecs}>
             <Animated.View style={animatedStyle}>
               <Ionicons name={loadingAi ? "close" : "sparkles-outline"} size={24} color={COLORS.onPrimary} />
             </Animated.View>
-            <Text style={styles.generateButtonText}>{loadingAi ? "Скасувати" : "Отримати поради"}</Text>
+            <Text style={styles.generateButtonText}>{loadingAi ? t('analytics.cancel') : t('analytics.getAdvice')}</Text>
           </TouchableOpacity>
 
           {streamedText ? (
@@ -220,8 +217,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.background,
   },
-
-  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -238,8 +233,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontWeight: '700',
     color: COLORS.text,
   },
-
-  // ─── Scroll content ────────────────────────────────────────────────────────
   scrollContent: {
     padding: 20,
     paddingBottom: tabBarHeight + 40,
@@ -249,8 +242,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontSize: 14,
     color: COLORS.onSurfaceVariant,
   },
-
-  // ─── Stat cards ────────────────────────────────────────────────────────────
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -276,8 +267,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     textAlign: 'center',
     fontWeight: '500',
   },
-
-  // ─── Section card ──────────────────────────────────────────────────────────
   section: {
     backgroundColor: COLORS.surface,
     marginBottom: 20,
@@ -300,8 +289,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     color: COLORS.onSurfaceVariant,
     paddingVertical: 30,
   },
-
-  // ─── AI section ────────────────────────────────────────────────────────────
   sectionAi: {
     backgroundColor: COLORS.primaryContainer,
     borderRadius: 24,

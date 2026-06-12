@@ -2,11 +2,13 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { aiAPI } from '../services/api';
 import { COLORS } from '../utils/constants';
 import CustomButton from '../components/CustomButton';
 
 export default function CameraScreen({ navigation, route }) {
+  const { t } = useTranslation();
   const mode = route.params?.mode || 'product'; 
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -21,8 +23,8 @@ export default function CameraScreen({ navigation, route }) {
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>Додаток потребує доступу до камери для розпізнавання продуктів.</Text>
-        <CustomButton title="Надати дозвіл" onPress={requestPermission} />
+        <Text style={styles.permissionText}>{t('camera.permissionRequired')}</Text>
+        <CustomButton title={t('camera.grantPermission')} onPress={requestPermission} />
       </View>
     );
   }
@@ -37,11 +39,16 @@ export default function CameraScreen({ navigation, route }) {
       if (aiAPI.analyzeBarcode) {
         response = await aiAPI.analyzeBarcode(data);
       } else {
-        response = { data: { name: `Продукт за кодом ${data}`, category: 'Інше' } };
+        response = { 
+          data: { 
+            name: t('camera.productByCode', { code: data, defaultValue: `Продукт за кодом ${data}` }), 
+            category: t('camera.other', { defaultValue: 'Інше' }) 
+          } 
+        };
       }
 
       if (response?.data?.error) {
-        Alert.alert('Увага', response.data.error);
+        Alert.alert(t('common.attention'), response.data.error);
         setScanned(false);
         setLoading(false);
         return;
@@ -49,7 +56,7 @@ export default function CameraScreen({ navigation, route }) {
 
       navigation.navigate('AddProduct', { aiResult: response.data });
     } catch (error) {
-      Alert.alert('Помилка', 'Не вдалося розпізнати штрихкод.');
+      Alert.alert(t('common.error'), t('camera.unrecognizedBarcode'));
       setScanned(false);
       setLoading(false);
     }
@@ -74,22 +81,22 @@ export default function CameraScreen({ navigation, route }) {
       }
 
       if (response?.data?.error) {
-        Alert.alert('Увага', response.data.error);
+        Alert.alert(t('common.attention'), response.data.error);
         setLoading(false);
         return;
       }
 
       navigation.navigate('AddProduct', { aiResult: response.data });
     } catch (error) {
-      Alert.alert('Помилка', 'Не вдалося розпізнати зображення. Спробуйте ще раз.');
+      Alert.alert(t('common.error'), t('camera.unrecognizedImage'));
       setLoading(false);
     }
   };
 
   const getInstructionText = () => {
-    if (mode === 'barcode') return 'Наведіть камеру на штрихкод';
-    if (mode === 'receipt') return 'Сфотографуйте весь чек';
-    return 'Сфотографуйте продукт крупним планом';
+    if (mode === 'barcode') return t('camera.pointAtBarcode');
+    if (mode === 'receipt') return t('camera.photoReceipt');
+    return t('camera.photoProductClose');
   };
 
   return (
@@ -119,7 +126,7 @@ export default function CameraScreen({ navigation, route }) {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
                 <Text style={styles.loadingText}>
-                  {mode === 'barcode' ? 'Шукаємо продукт...' : 'ШІ аналізує фото...'}
+                  {mode === 'barcode' ? t('camera.searchingProduct') : t('camera.aiAnalyzing')}
                 </Text>
               </View>
             ) : (

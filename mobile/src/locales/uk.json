@@ -8,7 +8,9 @@
     "yes": "Так",
     "no": "Ні",
     "delete": "Видалити",
-    "restore": "Скинути"
+    "restore": "Скинути",
+    "attention": "Увага",
+    "ok": "ОК"
   },
   "categories": {
     "deleteTitle": "Видалення категорії",
@@ -74,6 +76,21 @@
     "notesPlaceholder": "Важлива інформація про продукт...",
     "updateError": "Не вдалося оновити продукт",
     "nameRequired": "Введіть назву продукту"
+  },
+  "addProduct": {
+    "attentionAllergenTitle": "Увага, алерген!",
+    "attentionAllergenMsg": "У вас може бути алергія на цей продукт. Все одно додати?",
+    "categoryNotFoundTitle": "Категорію не знайдено",
+    "categoryNotFoundMsg": "Цієї категорії продуктів (\"{{category}}\") у вас немає. Відновити її?",
+    "productNotRecognizedMsg": "Не вдалося повністю розпізнати продукт без категорії.",
+    "receiptRecognizedTitle": "Чек розпізнано",
+    "receiptRecognizedMsg": "Знайдено {{count}} продуктів. Поки що заповнено перший, інші ви зможете додати згодом.",
+    "addWithAI": "Додати за допомогою ШІ",
+    "photo": "Фото",
+    "barcode": "Штрихкод",
+    "receipt": "Чек",
+    "notesOptional": "Нотатки (опціонально)",
+    "notesPlaceholder2": "Наприклад: Зберігати в холодильнику..."
   },
   "recipes": {
     "title": "Рецепти від AI",
@@ -143,6 +160,39 @@
     "profileUpdated": "Профіль оновлено",
     "profileUpdateError": "Не вдалося оновити профіль",
     "settingsSaveError": "Не вдалося зберегти налаштування"
+  },
+  "allergens": {
+    "allergenExists": "Цей алерген уже є у списку",
+    "allergensSaved": "Налаштування алергенів збережено.",
+    "allergensSaveError": "Не вдалося зберегти налаштування.",
+    "subtitle": "Додайте продукти, які варто уникати. Наш ШІ автоматично виключатиме їх із ваших рецептів.",
+    "addCustomPlaceholder": "Додати власний алерген..."
+  },
+  "analytics": {
+    "title": "Аналітика",
+    "loadStatsError": "Помилка завантаження статистики",
+    "loadRecsError": "Не вдалося завантажити рекомендації.",
+    "generationCancelled": "**Генерацію скасовано.**",
+    "analyzingHabits": "Аналізуємо ваші харчові звички...",
+    "productsAtHome": "Продуктів вдома",
+    "consumedPerMonth": "Спожито за місяць",
+    "consumptionByCategory": "Споживання за категоріями",
+    "noConsumptionData": "Немає даних про споживання за останні 30 днів",
+    "aiRecommendationsTitle": "AI Рекомендації дієтолога",
+    "getAdvice": "Отримати поради"
+  },
+  "camera": {
+    "permissionMsg": "Додаток потребує доступу до камери для розпізнавання продуктів.",
+    "grantPermission": "Надати дозвіл",
+    "productByCode": "Продукт за кодом {{code}}",
+    "other": "Інше",
+    "barcodeError": "Не вдалося розпізнати штрихкод.",
+    "imageRecognizeError": "Не вдалося розпізнати зображення. Спробуйте ще раз.",
+    "pointCameraAtBarcode": "Наведіть камеру на штрихкод",
+    "photoEntireReceipt": "Сфотографуйте весь чек",
+    "photoProductClose": "Сфотографуйте продукт крупним планом",
+    "searchingProduct": "Шукаємо продукт...",
+    "aiAnalyzingPhoto": "ШІ аналізує фото..."
   },
   "validation": {
     "nameShort": "Ім'я повинно мати мінімум 2 символи",
