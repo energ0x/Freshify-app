@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  backend:
+    name: Backend — lint & test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_freshify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pipenv
+        run: pip install --upgrade pipenv
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pipenv install --dev
+
+      - name: Syntax check (all .py files)
+        working-directory: backend
+        run: find . -name "*.py" -not -path "./.venv/*" | xargs python -m py_compile
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_freshify
+          SECRET_KEY: ci-only-secret-key-not-used-in-prod-xxxxxxxxxxxxxxxx
+          GEMINI_API_KEY: ""
+        run: pipenv run pytest --tb=short -v
+
+  docker-build:
+    name: Docker — build image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build ./backend -t freshify-backend:ci

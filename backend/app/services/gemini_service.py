@@ -1,85 +1,58 @@
 import json
+import logging
 from google import genai
 from google.genai import types
 from app.core.config import get_settings
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 api_key = str(settings.gemini_api_key) if settings.gemini_api_key else None
 client = genai.Client(api_key=api_key) if api_key else None
 
-TEXT_MODEL_NAME = 'gemma-4-31b-it'
-VISION_MODEL_NAME = 'gemini-3.1-flash-lite-preview'
+MODEL_NAME = "gemini-2.0-flash"
 
 
-async def clean_stream(response_stream):
-    """Фільтрує процес міркування моделі під час стрімінгу."""
-    buffer = ""
-    is_thinking = False
-    start_tag = "Thinking..."
-    end_tag = "...done thinking."
-
-    async for chunk in response_stream:
-        if not chunk.text:
-            continue
-
-        buffer += chunk.text
-
-        if not is_thinking:
-            if start_tag in buffer:
-                pre_text, rest = buffer.split(start_tag, 1)
-                if pre_text:
-                    yield pre_text
-                buffer = rest
-                is_thinking = True
-            else:
-                safe_len = len(buffer) - len(start_tag) + 1
-                if safe_len > 0:
-                    yield buffer[:safe_len]
-                    buffer = buffer[safe_len:]
-
-        if is_thinking:
-            if end_tag in buffer:
-                _, buffer = buffer.split(end_tag, 1)
-                buffer = buffer.lstrip()
-                is_thinking = False
-            else:
-                if len(buffer) > len(end_tag):
-                    buffer = buffer[-len(end_tag):]
-
-    if not is_thinking and buffer:
-        if not start_tag.startswith(buffer):
-            yield buffer
-
-
-def analyze_product_image(
+async def analyze_product_image(
     image_bytes: bytes,
     mime_type: str = "image/jpeg",
     user_allergens: list[str] | None = None,
-    available_categories: list[str] | None = None
+    available_categories: list[str] | None = None,
 ) -> dict:
-    
-    allergens_prompt = f"User is allergic to: {', '.join(user_allergens)}." if user_allergens else "User has no known allergies."
-    categories_prompt = f"Available categories: {', '.join(available_categories)}." if available_categories else "No categories available."
+    allergens_prompt = (
+        f"User is allergic to: {', '.join(user_allergens)}." if user_allergens
+        else "User has no known allergies."
+    )
+    categories_prompt = (
+        f"Available categories: {', '.join(available_categories)}." if available_categories
+        else "No categories available."
+    )
 
     prompt = f"""You are a food recognition assistant.
-Analyze the image and identify the food product.
+Analyze the image and identify ALL food products visible (e.g. from a receipt or multiple items on a table).
 
-1.  **Identify the product** and its name in Ukrainian.
-2.  **Categorize the product.** Choose the BEST category ONLY from this list: {categories_prompt}
-3.  **Check for allergens.** The user's allergies are: {allergens_prompt}. Does the product contain any of these?
+1.  **Identify the products** and their names in Ukrainian.
+2.  **Categorize the products.** Choose the BEST category ONLY from this list: {categories_prompt}
+3.  **Check for allergens.** The user's allergies are: {allergens_prompt}. Do the products contain any of these?
 4.  **Estimate shelf life.** Provide the estimated number of days the product stays fresh.
 
 Respond with a JSON object following this exact format:
 {{
-  "name": "Назва українською",
-  "category": "Одна з доступних категорій",
-  "estimated_shelf_life_days": int,
-  "has_allergen": boolean 
+  "products": [
+    {{
+      "name": "Назва українською",
+      "category": "Одна з доступних категорій",
+      "estimated_shelf_life_days": int,
+      "has_allergen": boolean
+    }}
+  ]
 }}
 
-If the image does not contain a food product, return:
-{{"error": "Продукт не знайдено"}}"""
+If the image does not contain any food products, return:
+{{
+  "error": "Продукти не знайдено",
+  "products": []
+}}"""
 
     if not client:
         return {"error": "Gemini API ключ не налаштовано"}
@@ -88,14 +61,14 @@ If the image does not contain a food product, return:
         image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
         config = types.GenerateContentConfig(response_mime_type="application/json")
 
-        response = client.models.generate_content(
-            model=VISION_MODEL_NAME,
+        response = await client.aio.models.generate_content(
+            model=MODEL_NAME,
             contents=[prompt, image_part],
-            config=config
+            config=config,
         )
         return json.loads(response.text or "{}")
     except Exception as e:
-        print(f"Error analyzing product image with Gemini: {e}")
+        logger.error("Error analyzing product image: %s", e)
         return {"error": "Не вдалося розпізнати продукт"}
 
 
@@ -103,15 +76,21 @@ async def generate_recipes(
     products: list[dict],
     user_diet: str | None = None,
     user_allergens: list[str] | None = None,
-    include_grocery: bool = False
+    include_grocery: bool = False,
 ):
     product_list = "\n".join(
         f"- {p['name']} ({p.get('category', '')}, {p.get('quantity', 1)} {p.get('unit', 'шт')})"
         for p in products
     )
 
-    diet_prompt = f"User's diet: {user_diet}." if user_diet and user_diet != 'none' else "User has no specific diet."
-    allergens_prompt = f"User is allergic to: {', '.join(user_allergens)}." if user_allergens else "User has no known allergies."
+    diet_prompt = (
+        f"User's diet: {user_diet}." if user_diet and user_diet != "none"
+        else "User has no specific diet."
+    )
+    allergens_prompt = (
+        f"User is allergic to: {', '.join(user_allergens)}." if user_allergens
+        else "User has no known allergies."
+    )
 
     if include_grocery:
         grocery_rule = "You CAN use extra ingredients. List all missing items strictly under '### Треба докупити:'."
@@ -156,15 +135,16 @@ async def generate_recipes(
 
     try:
         response_stream = await client.aio.models.generate_content_stream(
-            model=TEXT_MODEL_NAME,
-            contents=prompt
+            model=MODEL_NAME,
+            contents=prompt,
         )
 
-        async for chunk in clean_stream(response_stream):
-            yield chunk
+        async for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
 
     except Exception as e:
-        print(f"Error streaming recipes with Gemini: {e}")
+        logger.error("Error streaming recipes: %s", e)
         yield "\n\n**Помилка:** Не вдалося згенерувати рецепти."
 
 
@@ -204,13 +184,14 @@ async def stream_diet_recommendations(consumed_data: list[dict]):
 
     try:
         response_stream = await client.aio.models.generate_content_stream(
-            model=TEXT_MODEL_NAME,
-            contents=prompt
+            model=MODEL_NAME,
+            contents=prompt,
         )
 
-        async for chunk in clean_stream(response_stream):
-            yield chunk
+        async for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
 
     except Exception as e:
-        print(f"Error streaming recommendations with Gemini: {e}")
+        logger.error("Error streaming recommendations: %s", e)
         yield "\n\n**Помилка:** Не вдалося завершити генерацію рекомендацій."

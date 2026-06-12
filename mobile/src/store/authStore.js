@@ -20,9 +20,12 @@ const useAuthStore = create((set, get) => ({
         const response = await authAPI.getMe();
         set({ user: response.data });
       }
-    } catch {
-      await SecureStore.deleteItemAsync('auth_token');
-      set({ token: null, isAuthenticated: false, user: null }); 
+    } catch (error) {
+      // Only force-logout on a confirmed 401; keep the session alive on network errors
+      if (error.response?.status === 401) {
+        await SecureStore.deleteItemAsync('auth_token');
+        set({ token: null, isAuthenticated: false, user: null });
+      }
     } finally {
       set({ isInitializing: false });
     }

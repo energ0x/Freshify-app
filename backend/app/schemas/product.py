@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import date, datetime
 import uuid
 
@@ -17,6 +17,9 @@ class AIProductResponse(BaseModel):
     carbohydrates: Optional[float] = None
     error: Optional[str] = None
 
+class AIProductListResponse(BaseModel):
+    products: List[AIProductResponse] = []
+    error: Optional[str] = None
 
 class CategoryResponse(BaseModel):
     id: uuid.UUID
@@ -51,6 +54,7 @@ class ProductUpdate(BaseModel):
     proteins: Optional[float] = None
     fats: Optional[float] = None
     carbohydrates: Optional[float] = None
+    image_url: Optional[str] = None
 
 
 class ProductConsumeRequest(BaseModel):

@@ -1,15 +1,64 @@
-from fastapi import APIRouter, Depends, Query
+import httpx
+from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional, List
 import uuid
+import os
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse, ProductConsumeRequest, ConsumedProductResponse
 from app.services import product_service
 from app.utils.dependencies import get_current_user
+from app.utils.image_utils import validate_and_compress_image
+from app.scraper import fetch_product_slug, parse_nutrition_info
 
 router = APIRouter(prefix="/products", tags=["products"])
 
+
+@router.post("/upload-image")
+async def upload_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files are allowed")
+
+    content = await file.read()
+    try:
+        compressed = validate_and_compress_image(content)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    unique_filename = f"{uuid.uuid4()}.jpg"
+    file_path = os.path.join("uploads", unique_filename)
+    with open(file_path, "wb") as f:
+        f.write(compressed)
+
+    return {"image_url": f"/uploads/{unique_filename}"}
+
+@router.get("/barcode/{barcode}")
+async def get_by_barcode(
+    barcode: str,
+    current_user: User = Depends(get_current_user)
+):
+    slug = await fetch_product_slug(barcode)
+    if not slug:
+        raise HTTPException(status_code=404, detail="Product not found on scraper")
+        
+    result = await parse_nutrition_info(slug, barcode)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
+        
+    return {
+        "name": result.get("name", "Unknown Product"),
+        "category": None,
+        "image_url": result.get("image_url"),
+        "calories": result.get("calories"),
+        "proteins": result.get("proteins"),
+        "fats": result.get("fats"),
+        "carbohydrates": result.get("carbs"),
+        "has_allergen": False
+    }
 
 @router.get("", response_model=List[ProductResponse])
 def list_products(

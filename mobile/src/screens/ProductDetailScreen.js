@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -8,9 +8,11 @@ import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import DatePicker from '../components/DatePicker';
 import CustomPicker from '../components/CustomPicker';
-import { UNITS } from '../utils/constants';
+import { UNITS, API_URL } from '../utils/constants';
 import { getExpiryLabel, getExpiryColor, formatDate } from '../utils/dateHelpers';
 import { useCategories } from '../hooks/useCategories';
+import * as ImagePicker from 'expo-image-picker';
+import { productsAPI } from '../services/api';
 
 export default function ProductDetailScreen({ route, navigation }) {
   const { t } = useTranslation();
@@ -21,6 +23,7 @@ export default function ProductDetailScreen({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [localImageUri, setLocalImageUri] = useState(null);
   const insets = useSafeAreaInsets();
 
   const product = products.find(p => p.id === productId);
@@ -32,6 +35,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     unit: UNITS[0],
     expiry_date: new Date(),
     notes: '',
+    image_url: null,
   });
 
   useEffect(() => {
@@ -43,7 +47,9 @@ export default function ProductDetailScreen({ route, navigation }) {
         unit: product.unit || UNITS[0],
         expiry_date: product.expiry_date ? new Date(product.expiry_date) : new Date(),
         notes: product.notes || '',
+        image_url: product.image_url || null,
       });
+      setLocalImageUri(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}`) : null);
     }
   }, [product, categories]);
 
@@ -98,27 +104,55 @@ export default function ProductDetailScreen({ route, navigation }) {
       }
     ]);
   };
+  
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setLocalImageUri(result.assets[0].uri);
+    }
+  };
 
   const handleSaveEdit = async () => {
     if (!editForm.name) return Alert.alert(t('common.error'), t('productDetail.nameRequired'));
 
     setSaving(true);
-    const updateData = {
-      name: editForm.name,
-      category_id: editForm.category_id,
-      quantity: parseFloat(editForm.quantity),
-      unit: editForm.unit,
-      expiry_date: editForm.expiry_date.toISOString().split('T')[0],
-      notes: editForm.notes,
-    };
+    let finalImageUrl = editForm.image_url;
+    
+    try {
+      if (localImageUri && localImageUri !== (product.image_url?.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}`)) {
+        if (!localImageUri.startsWith('http') || localImageUri.startsWith('file://')) {
+          const uploadRes = await productsAPI.uploadImage(localImageUri);
+          finalImageUrl = uploadRes.data.image_url;
+        }
+      }
 
-    const res = await updateProduct(product.id, updateData);
-    setSaving(false);
+      const updateData = {
+        name: editForm.name,
+        category_id: editForm.category_id,
+        quantity: parseFloat(editForm.quantity),
+        unit: editForm.unit,
+        expiry_date: editForm.expiry_date.toISOString().split('T')[0],
+        notes: editForm.notes,
+        image_url: finalImageUrl,
+      };
 
-    if (res.success) {
-      setEditModalVisible(false);
-    } else {
-      Alert.alert(t('common.error'), res.error || t('productDetail.updateError'));
+      const res = await updateProduct(product.id, updateData);
+      setSaving(false);
+
+      if (res.success) {
+        setEditModalVisible(false);
+      } else {
+        Alert.alert(t('common.error'), res.error || t('productDetail.updateError'));
+      }
+    } catch (e) {
+      setSaving(false);
+      Alert.alert(t('common.error'), 'Failed to save changes.');
     }
   };
 
@@ -131,6 +165,12 @@ export default function ProductDetailScreen({ route, navigation }) {
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.card}>
+          {product.image_url && (
+            <Image 
+               source={{ uri: product.image_url.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}` }} 
+               style={styles.detailImage} 
+            />
+          )}
           <View style={styles.headerRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{product.name}</Text>
@@ -209,6 +249,20 @@ export default function ProductDetailScreen({ route, navigation }) {
               </View>
 
               <ScrollView style={styles.modalForm}>
+                
+                <View style={styles.imageSection}>
+                  <TouchableOpacity style={styles.imagePlaceholder} onPress={pickImage}>
+                    {localImageUri ? (
+                      <Image source={{ uri: localImageUri }} style={styles.productImage} />
+                    ) : (
+                      <>
+                        <Ionicons name="image-outline" size={40} color={COLORS.onSurfaceVariant} />
+                        <Text style={styles.imageText}>Додати фото продукту</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
                 <View style={styles.formGroup}>
                   <Text style={styles.formLabel}>{t('productDetail.nameLabel')}</Text>
                   <TextInput
@@ -300,7 +354,8 @@ const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
   content: { padding: 20, paddingBottom: insets?.bottom + 40 || 40 },
-  card: { backgroundColor: COLORS.surface, borderRadius: 24, padding: 24, marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
+  card: { backgroundColor: COLORS.surface, borderRadius: 24, padding: 24, marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, overflow: 'hidden' },
+  detailImage: { width: '100%', height: 200, borderRadius: 16, marginBottom: 20, resizeMode: 'cover' },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
   name: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 8 },
   categoryBadge: { backgroundColor: COLORS.primaryContainer, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, alignSelf: 'flex-start' },
@@ -324,6 +379,10 @@ const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 20 },
   modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.text },
   modalForm: { paddingHorizontal: 24, paddingTop: 8 },
+  imageSection: { marginBottom: 20, alignItems: 'center' },
+  imagePlaceholder: { width: '100%', height: 150, backgroundColor: COLORS.surfaceVariant, borderRadius: 16, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: `${COLORS.primary}20`, borderStyle: 'dashed' },
+  productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  imageText: { marginTop: 8, fontSize: 14, color: COLORS.onSurfaceVariant },
   formGroup: { marginBottom: 20 },
   row: { flexDirection: 'row' },
   formLabel: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 8 },

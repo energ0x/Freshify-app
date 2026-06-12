@@ -9,7 +9,7 @@ Purpose: give an AI coding agent the minimal, high-value orientation needed to b
   - Services: business logic is in `backend/app/services/` (e.g. `auth_service.py`, `gemini_service.py`, `product_service.py`). Routes call service functions (thin controllers).
   - Utils & dependencies: shared helpers in `backend/app/utils/` — `dependencies.py` (auth dependency), `image_utils.py` (image validation/compression). Auth uses HTTP Bearer tokens validated by `jose.jwt` using `settings.secret_key`.
   - Mobile client: React Native app under `mobile/`. It talks to backend using `mobile/src/services/api.js` and expects an `API_URL` in `mobile/src/utils/constants.js` (default is a local IP). Mobile stores token with Expo SecureStore under key `auth_token`.
-  - AI integration: `backend/app/services/gemini_service.py` uses `ollama.chat` (VISION_MODEL/TEXT_MODEL constants). The backend expects an Ollama-like runtime (ollama models) or compatible chat API. There's also `google-generativeai` in Pipfile but current code uses `ollama`.
+  - AI integration: `backend/app/services/gemini_service.py` uses `google.genai` Client for both vision (`gemini-3.1-flash-lite-preview`) and text (`gemma-4-31b-it`). Requires `gemini_api_key` in `.env`.
 
 - How to run (developer shortcuts)
   - Start local Postgres (docker-compose):
@@ -37,7 +37,7 @@ Purpose: give an AI coding agent the minimal, high-value orientation needed to b
   - Model imports order matters: `backend/main.py` includes `import app.db.models` before `create_all` — do the same if you add scripts that call `create_all`.
   - Tokens: code expects `sub` claim to be a string UUID. Changing token claims will require updating `get_current_user` logic.
   - Mobile dev convenience: `mobile/src/utils/constants.js` uses a hard-coded `API_URL` local IP. When running backend on a dev machine or emulator, update this constant or use environment configurations for the mobile app.
-  - AI runtime: `ollama` is used directly — the repo expects a local Ollama runtime or compatible API. If you replace the model backend, keep `gemini_service` signature (bytes + mime_type) to minimize changes.
+  - AI runtime: The project uses the Google GenAI SDK. If replacing the model backend, keep the `gemini_service` function signatures (e.g., bytes + mime_type for vision) to minimize changes.
 
 - Useful entry points / files to open first
   - `backend/main.py` — server entry, routers, CORS.
@@ -51,7 +51,7 @@ Purpose: give an AI coding agent the minimal, high-value orientation needed to b
     1. Add Column to `backend/app/db/models.py` and corresponding field to `backend/app/schemas/product.py`.
     2. Update create/update endpoints in `backend/app/api/routes/products.py` and `backend/app/services/product_service.py` (if present).
     3. Run the server and verify with the mobile client or curl.
-  - Replace Ollama call with another LLM: edit `backend/app/services/gemini_service.py`, keep function names and returned JSON shape.
+  - Replace Gemini call with another LLM: edit `backend/app/services/gemini_service.py`, keep function names and returned JSON shape.
 
 Keep changes small and local: modify schema -> model -> service -> route in that order. Always run the server and test the route you changed.
 

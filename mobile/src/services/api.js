@@ -17,11 +17,20 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Додамо подію, яку можна слухати з UI компонентів
+export const premiumLimitListeners = new Set();
+
+export const notifyPremiumLimitReached = (message) => {
+  premiumLimitListeners.forEach(listener => listener(message));
+};
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       SecureStore.deleteItemAsync('auth_token').catch(() => {});
+    } else if (error.response?.status === 403 && error.response?.data?.detail?.includes('Limit reached')) {
+        notifyPremiumLimitReached(error.response.data.detail);
     }
     return Promise.reject(error);
   }
@@ -33,6 +42,7 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
   updateMe: (data) => api.put('/auth/me', data),
+  activatePremium: () => api.post('/auth/me/activate-premium'),
 };
 
 // Categories
@@ -55,6 +65,18 @@ export const productsAPI = {
   getConsumed: (limit = 100) => api.get('/products/history/consumed', { params: { limit } }),
   getExpiring: (days = 3) => api.get('/products/expiring', { params: { days } }),
   getExpired: () => api.get('/products/expired'),
+  analyzeBarcode: (barcode) => api.get(`/products/barcode/${barcode}`),
+  uploadImage: async (imageUri) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'product.jpg',
+    });
+    return api.post('/products/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // AI
@@ -72,10 +94,8 @@ export const aiAPI = {
   },
 };
 
-// Recipes
-export const recipesAPI = {
-  get: (includeGrocery = false) => api.get('/recipes', { params: { include_grocery: includeGrocery } }),
-};
+// Recipes — streaming via WebSocket only; no REST equivalent on the backend
+export const recipesAPI = {};
 
 // Grocery
 export const groceryAPI = {
@@ -86,10 +106,9 @@ export const groceryAPI = {
   addFromFridge: (productIds) => api.post('/grocery/from-fridge', { product_ids: productIds }),
 };
 
-// Analytics
+// Analytics — AI recommendations stream via WebSocket only; REST endpoint returns raw data only
 export const analyticsAPI = {
   get: (days = 30) => api.get('/analytics', { params: { days } }),
-  getRecommendations: (days = 30) => api.get('/analytics/ai-recommendations', { params: { days } }),
 };
 
 // Settings

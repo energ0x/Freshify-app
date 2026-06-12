@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -16,8 +16,8 @@ class DietaryPreference(str, Enum):
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str
-    name: str
+    password: str = Field(min_length=8, max_length=128)
+    name: str = Field(min_length=1, max_length=255)
     dietary_preference: Optional[DietaryPreference] = None
     allergens: Optional[List[str]] = []
 
@@ -49,6 +49,7 @@ class UserResponse(BaseModel):
     dietary_preference: Optional[DietaryPreference] = None
     allergens: List[str] = []
     is_premium: bool = False
+    premium_expires_at: Optional[datetime] = None
     xp_points: int = 0
     created_at: datetime
     achievements: List[UserAchievementResponse] = []

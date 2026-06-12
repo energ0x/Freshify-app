@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 import { getExpiryLabel, getExpiryColor } from '../utils/dateHelpers';
+import { API_URL } from '../utils/constants';
 
 export default function ProductCard({ item, onPress, style }) {
   const { colors: COLORS } = useThemeStore();
@@ -23,11 +24,27 @@ export default function ProductCard({ item, onPress, style }) {
     }
   };
 
-  return (
-    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={1}>
+  const renderIconOrImage = () => {
+    if (item.image_url) {
+      const imageUrl = item.image_url.startsWith('http') 
+        ? item.image_url 
+        : `${API_URL}${item.image_url}`;
+        
+      return (
+        <Image source={{ uri: imageUrl }} style={styles.image} />
+      );
+    }
+    
+    return (
       <View style={styles.iconContainer}>
          <Ionicons name={getCategoryIcon(categoryName)} size={24} color={COLORS.primary} />
       </View>
+    );
+  };
+
+  return (
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={1}>
+      {renderIconOrImage()}
       <View style={styles.mainInfo}>
         <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.subtext}>
@@ -69,6 +86,12 @@ const getStyles = (COLORS, expiryColor) => StyleSheet.create({
     backgroundColor: COLORS.primaryContainer,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 16,
+  },
+  image: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 16,
   },
   mainInfo: {
