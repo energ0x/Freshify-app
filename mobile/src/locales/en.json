@@ -12,6 +12,19 @@
     "attention": "Attention",
     "ok": "OK"
   },
+  "screens": {
+    "addProduct": "Add Product",
+    "scan": "Scan",
+    "productDetail": "Product Details",
+    "history": "Consumption History",
+    "recipes": "Recipes",
+    "achievements": "Achievements",
+    "leagues": "Leagues",
+    "dietSettings": "My Diet",
+    "allergensSettings": "My Allergens",
+    "categories": "My Categories",
+    "dailyTasks": "Daily Tasks"
+  },
   "categories": {
     "deleteTitle": "Delete Category",
     "deleteMessage": "Are you sure you want to delete this category?",
