@@ -103,11 +103,13 @@
   },
   "register": {
     "title": "Створити акаунт",
+    "namePlaceholder": "Ім'я *",
     "emailPlaceholder": "Email *",
     "passwordPlaceholder": "Пароль *",
     "btnRegister": "Зареєструватися",
     "btnAlreadyHave": "Вже є акаунт? Увійти",
-    "errorRequired": "Введіть обов'язкові дані"
+    "errorRequired": "Введіть обов'язкові дані",
+    "errorPasswordLength": "Пароль має бути не менше 8 символів"
   },
   "home": {
     "title": "Мої продукти",

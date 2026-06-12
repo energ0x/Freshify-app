@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
-import { authAPI } from '../services/api';
+import { authAPI, extractApiError } from '../services/api';
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -53,7 +53,7 @@ const useAuthStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
-      return { success: false, error: error.response?.data?.detail || 'Помилка реєстрації' };
+      return { success: false, error: extractApiError(error, 'Помилка реєстрації') };
     }
   },
 
@@ -68,7 +68,7 @@ const useAuthStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       set({ isLoading: false });
-      return { success: false, error: error.response?.data?.detail || 'Невірний email або пароль' };
+      return { success: false, error: extractApiError(error, 'Невірний email або пароль') };
     }
   },
 
@@ -83,7 +83,7 @@ const useAuthStore = create((set, get) => ({
       set({ user: response.data });
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data?.detail || 'Помилка оновлення' };
+      return { success: false, error: extractApiError(error, 'Помилка оновлення') };
     }
   },
 }));

@@ -103,11 +103,13 @@
   },
   "register": {
     "title": "Create Account",
+    "namePlaceholder": "Name *",
     "emailPlaceholder": "Email *",
     "passwordPlaceholder": "Password *",
     "btnRegister": "Sign Up",
     "btnAlreadyHave": "Already have an account? Sign In",
-    "errorRequired": "Enter mandatory fields"
+    "errorRequired": "Enter mandatory fields",
+    "errorPasswordLength": "Password must be at least 8 characters"
   },
   "home": {
     "title": "My Fridge",
