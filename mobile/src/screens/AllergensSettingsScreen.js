@@ -6,23 +6,14 @@ import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
 
-const ALLERGEN_DEFS = [
-  { labelKey: 'allergens.milk',    emoji: '🥛' },
-  { labelKey: 'allergens.nuts',    emoji: '🥜' },
-  { labelKey: 'allergens.eggs',    emoji: '🥚' },
-  { labelKey: 'allergens.gluten',  emoji: '🌾' },
-  { labelKey: 'allergens.fish',    emoji: '🐟' },
-  { labelKey: 'allergens.seafood', emoji: '🦀' },
-  { labelKey: 'allergens.soy',     emoji: '🌱' },
-  { labelKey: 'allergens.citrus',  emoji: '🍊' },
-  { labelKey: 'allergens.honey',   emoji: '🍯' },
+const INITIAL_ALLERGENS = [
+  'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
 ];
 
 export default function AllergensSettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
-  const initList = ALLERGEN_DEFS.map(a => `${t(a.labelKey)}${a.emoji}`);
-  const [allergens, setAllergens] = useState(initList);
+  const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,14 +21,14 @@ export default function AllergensSettingsScreen({ navigation }) {
   useEffect(() => {
     if (user?.allergens) {
       const mappedSelected = user.allergens.map(backendAllergen => {
-        const found = initList.find(
-          ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim().toLowerCase() === backendAllergen.toLowerCase()
+        const found = INITIAL_ALLERGENS.find(
+          ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() === backendAllergen
         );
         return found || backendAllergen;
       });
 
-      const remoteAllergens = mappedSelected.filter(a => !initList.includes(a));
-      setAllergens([...initList, ...remoteAllergens]);
+      const remoteAllergens = mappedSelected.filter(a => !INITIAL_ALLERGENS.includes(a));
+      setAllergens([...INITIAL_ALLERGENS, ...remoteAllergens]);
       setSelected(mappedSelected);
     }
   }, [user]);
@@ -54,7 +45,7 @@ export default function AllergensSettingsScreen({ navigation }) {
     const text = customInput.trim();
     if (!text) return;
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
-      return Alert.alert(t('common.attention'), t('allergens.allergenExists'));
+      return Alert.alert(t('common.attention'), t('allergens.alreadyInList'));
     }
     setAllergens([...allergens, text]);
     setSelected([...selected, text]);
@@ -67,14 +58,14 @@ export default function AllergensSettingsScreen({ navigation }) {
       const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
       const res = await updateProfile({ allergens: cleanedAllergens });
       if (res.success) {
-        Alert.alert(t('common.success'), t('allergens.allergensSaved'), [
+        Alert.alert(t('common.success'), t('allergens.saveSuccess'), [
           { text: t('common.ok'), onPress: () => navigation.goBack() }
         ]);
       } else {
-        Alert.alert(t('common.error'), res.error || t('allergens.allergensSaveError'));
+        Alert.alert(t('common.error'), res.error || t('allergens.saveError'));
       }
     } catch (error) {
-      Alert.alert(t('common.error'), t('allergens.allergensSaveError'));
+      Alert.alert(t('common.error'), t('allergens.saveError'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -84,7 +75,7 @@ export default function AllergensSettingsScreen({ navigation }) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <Text style={styles.subtitle}>
-        {t('allergens.subtitle')}
+        {t('allergens.description')}
       </Text>
 
       <View style={styles.inputContainer}>

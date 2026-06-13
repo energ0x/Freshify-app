@@ -10,7 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCategories } from '../hooks/useCategories';
 import { productsAPI } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
-import { useTranslation } from 'react-i18next';
+import useTranslation from 'react-i18next';
+
 
 export default function AddProductScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -75,7 +76,7 @@ export default function AddProductScreen({ navigation, route }) {
       });
 
       if (data.has_allergen) {
-        Alert.alert(t('addProduct.attentionAllergenTitle'), t('addProduct.allergenWarning', { name: data.name }));
+        Alert.alert('Увага, алерген!', `Продукт "${data.name}" може містити алерген!`);
       }
     }
     
@@ -134,7 +135,7 @@ export default function AddProductScreen({ navigation, route }) {
 
   const handleSave = async () => {
     for (let i = 0; i < forms.length; i++) {
-      if (!forms[i].name) return Alert.alert(t('common.error'), t('addProduct.nameRequiredNumber', { number: i + 1 }));
+      if (!forms[i].name) return Alert.alert('Помилка', `Введіть назву для продукту #${i + 1}`);
     }
 
     setLoading(true);
@@ -164,11 +165,11 @@ export default function AddProductScreen({ navigation, route }) {
       if (savedCount === forms.length) {
         navigation.goBack();
       } else {
-        Alert.alert(t('common.error'), t('addProduct.someNotSaved'));
+        Alert.alert('Помилка', 'Деякі продукти не вдалося зберегти.');
       }
     } catch (e) {
       setLoading(false);
-      Alert.alert(t('common.error'), t('addProduct.saveFailed'));
+      Alert.alert('Помилка', 'Не вдалося зберегти продукти.');
     }
   };
 
@@ -182,7 +183,7 @@ export default function AddProductScreen({ navigation, route }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      <Text style={styles.scanLabel}>{t('addProduct.scanLabel')}</Text>
+      <Text style={styles.scanLabel}>Додати за допомогою ШІ / Штрихкоду</Text>
       <View style={styles.scanRow}>
         <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'product' })} activeOpacity={0.7}>
           <Ionicons name="camera-outline" size={28} color={COLORS.primary} />
@@ -203,7 +204,7 @@ export default function AddProductScreen({ navigation, route }) {
       {forms.map((form, index) => (
         <View key={index} style={styles.formCard}>
           <View style={styles.formHeader}>
-            <Text style={styles.formTitle}>{t('addProduct.productNumber', { number: index + 1 })}</Text>
+            <Text style={styles.formTitle}>Продукт {index + 1}</Text>
             {forms.length > 1 && (
               <TouchableOpacity onPress={() => removeForm(index)}>
                 <Ionicons name="trash-outline" size={24} color={COLORS.danger} />
@@ -218,26 +219,26 @@ export default function AddProductScreen({ navigation, route }) {
               ) : (
                 <>
                   <Ionicons name="image-outline" size={40} color={COLORS.onSurfaceVariant} />
-                  <Text style={styles.imageText}>{t('addProduct.addPhoto')}</Text>
+                  <Text style={styles.imageText}>Додати фото продукту</Text>
                 </>
               )}
             </TouchableOpacity>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.label}>{t('addProduct.nameLabel')}</Text>
+            <Text style={styles.label}>Назва продукту</Text>
             <TextInput
               style={styles.input}
               value={form.name}
               onChangeText={(val) => updateForm(index, 'name', val)}
-              placeholder={t('productDetail.namePlaceholder')}
+              placeholder="Наприклад: Молоко"
               placeholderTextColor={COLORS.onSurfaceVariant}
             />
           </View>
 
           <View style={styles.row}>
             <View style={[styles.section, { flex: 2, marginRight: 10 }]}>
-              <Text style={styles.label}>{t('addProduct.quantityLabel')}</Text>
+              <Text style={styles.label}>Кількість</Text>
               <TextInput
                 style={styles.input}
                 value={form.quantity}
@@ -248,7 +249,7 @@ export default function AddProductScreen({ navigation, route }) {
             </View>
             <View style={[styles.section, { flex: 3 }]}>
               <CustomPicker
-                label={t('addProduct.unitLabel')}
+                label="Одиниця"
                 items={unitItems}
                 selectedValue={form.unit}
                 onValueChange={(val) => updateForm(index, 'unit', val)}
@@ -258,7 +259,7 @@ export default function AddProductScreen({ navigation, route }) {
 
           <View style={styles.section}>
             <CustomPicker
-              label={t('addProduct.categoryLabel')}
+              label="Категорія"
               items={categoryItems}
               selectedValue={form.category_id}
               onValueChange={(val) => updateForm(index, 'category_id', val)}
@@ -273,12 +274,12 @@ export default function AddProductScreen({ navigation, route }) {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.label}>{t('addProduct.notesOptional')}</Text>
+            <Text style={styles.label}>Нотатки (опціонально)</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={form.notes}
               onChangeText={(val) => updateForm(index, 'notes', val)}
-              placeholder={t('addProduct.notesPlaceholder2')}
+              placeholder="Наприклад: Зберігати в холодильнику..."
               placeholderTextColor={COLORS.onSurfaceVariant}
               multiline={true}
               numberOfLines={3}
@@ -290,11 +291,11 @@ export default function AddProductScreen({ navigation, route }) {
 
       <TouchableOpacity style={styles.addMoreBtn} onPress={addEmptyForm}>
         <Ionicons name="add-circle-outline" size={24} color={COLORS.primary} />
-        <Text style={[styles.addMoreText, { color: COLORS.primary }]}>{t('addProduct.addMore')}</Text>
+        <Text style={[styles.addMoreText, { color: COLORS.primary }]}>Додати ще один продукт</Text>
       </TouchableOpacity>
 
       <CustomButton
-        title={t('addProduct.saveWithCount', { count: forms.length })}
+        title={`Зберегти (${forms.length})`}
         onPress={handleSave}
         loading={loading}
         style={styles.saveButton}

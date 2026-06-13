@@ -22,8 +22,6 @@ export default function ProductDetailScreen({ route, navigation }) {
   const { categories } = useCategories();
   const [loading, setLoading] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [consumeModalVisible, setConsumeModalVisible] = useState(false);
-  const [consumeAmount, setConsumeAmount] = useState('');
   const [saving, setSaving] = useState(false);
   const [localImageUri, setLocalImageUri] = useState(null);
   const insets = useSafeAreaInsets();
@@ -82,30 +80,29 @@ export default function ProductDetailScreen({ route, navigation }) {
     ]);
   };
 
-  const handleConsume = () => {
-    setConsumeAmount('');
-    setConsumeModalVisible(true);
-  };
+  const handleConsume = async () => {
+    const amountToConsume = product.quantity >= 1 ? 1 : product.quantity;
 
-  const submitConsume = async () => {
-    const amount = Number(consumeAmount.replace(',', '.'));
-    if (!amount || isNaN(amount) || amount <= 0) {
-      return Alert.alert(t('common.error'), t('home.invalidQty'));
-    }
-    if (amount > product.quantity) {
-      return Alert.alert(t('common.attention'), t('home.qtyExceeds'));
-    }
-    setConsumeModalVisible(false);
-    setLoading(true);
-    const res = await consumeProduct(product.id, amount);
-    setLoading(false);
-    if (res.success) {
-      if (product.quantity - amount <= 0) {
-        navigation.goBack();
+    Alert.alert(t('productDetail.consumeConfirmTitle'), t('productDetail.consumeConfirmMsg', { amount: amountToConsume, unit: product.unit }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.yes'),
+        onPress: async () => {
+          setLoading(true);
+          const res = await consumeProduct(product.id, amountToConsume);
+          setLoading(false);
+
+          if (res.success) {
+            Alert.alert(t('common.success'), t('productDetail.consumeSuccessMsg'));
+            if (product.quantity - amountToConsume <= 0) {
+              navigation.goBack();
+            }
+          } else {
+            Alert.alert(t('common.error'), res.error);
+          }
+        }
       }
-    } else {
-      Alert.alert(t('common.error'), res.error);
-    }
+    ]);
   };
   
   const pickImage = async () => {
@@ -155,7 +152,7 @@ export default function ProductDetailScreen({ route, navigation }) {
       }
     } catch (e) {
       setSaving(false);
-      Alert.alert(t('common.error'), t('productDetail.updateError'));
+      Alert.alert(t('common.error'), 'Failed to save changes.');
     }
   };
 
@@ -232,27 +229,6 @@ export default function ProductDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
-      <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.consumeModalOverlay}>
-          <View style={styles.consumeModalContent}>
-            <Text style={styles.modalTitle}>{t('home.consumeTitle')}</Text>
-            <Text style={styles.consumeSubtitle}>{product.name} ({t('home.consumeAvailable', { quantity: product.quantity, unit: product.unit })})</Text>
-            <TextInput
-              style={styles.consumeInput}
-              keyboardType="numeric"
-              value={consumeAmount}
-              onChangeText={setConsumeAmount}
-              autoFocus
-              placeholderTextColor={COLORS.onSurfaceVariant}
-            />
-            <View style={styles.consumeModalActions}>
-              <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setConsumeModalVisible(false)} style={styles.modalButton} />
-              <CustomButton title={t('common.confirm')} onPress={submitConsume} style={styles.modalButton} />
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
       <Modal
         visible={editModalVisible}
         animationType="slide"
@@ -281,7 +257,7 @@ export default function ProductDetailScreen({ route, navigation }) {
                     ) : (
                       <>
                         <Ionicons name="image-outline" size={40} color={COLORS.onSurfaceVariant} />
-                        <Text style={styles.imageText}>{t('addProduct.addPhoto')}</Text>
+                        <Text style={styles.imageText}>Додати фото продукту</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -414,9 +390,4 @@ const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
   textArea: { minHeight: 100, textAlignVertical: 'top' },
   modalActions: { flexDirection: 'row', gap: 16, paddingHorizontal: 24, paddingTop: 20, borderTopWidth: 1, borderTopColor: COLORS.border },
   modalButton: { flex: 1 },
-  consumeModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', paddingHorizontal: 24 },
-  consumeModalContent: { backgroundColor: COLORS.surface, borderRadius: 24, padding: 24 },
-  consumeSubtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 20, textAlign: 'center' },
-  consumeInput: { backgroundColor: COLORS.surfaceVariant, borderRadius: 12, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 20, color: COLORS.text, textAlign: 'center', marginBottom: 20 },
-  consumeModalActions: { flexDirection: 'row', gap: 12 },
 });

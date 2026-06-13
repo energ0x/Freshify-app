@@ -1,19 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import CustomButton from '../../components/CustomButton';
 import useAuthStore from '../../store/authStore';
 import { COLORS } from '../../utils/constants';
 
 export default function WelcomeScreen({ navigation }) {
-  const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
   const [name, setName] = useState(user?.name || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleNext = async () => {
     if (!name.trim()) {
-      return Alert.alert(t('common.error'), t('welcome.nameRequired'));
+      return Alert.alert('Помилка', 'Будь ласка, введіть ваше ім\'я');
     }
 
     setIsSubmitting(true);
@@ -23,18 +21,18 @@ export default function WelcomeScreen({ navigation }) {
     if (res.success) {
       navigation.navigate('Diet');
     } else {
-      Alert.alert(t('common.error'), res.error || t('welcome.saveError'));
+      Alert.alert('Помилка оновлення', res.error || 'Не вдалося зберегти ім\'я');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>{t('welcome.subtitle')}</Text>
-      <Text style={styles.title}>{t('welcome.title')}</Text>
-
+      <Text style={styles.subtitle}>Вітаємо у Freshify! 🌱</Text>
+      <Text style={styles.title}>Як до вас звертатися?</Text>
+      
       <TextInput
         style={styles.input}
-        placeholder={t('welcome.namePlaceholder')}
+        placeholder="Ваше ім'я"
         placeholderTextColor={COLORS.textLight}
         value={name}
         onChangeText={setName}
@@ -42,9 +40,9 @@ export default function WelcomeScreen({ navigation }) {
         maxLength={30}
       />
 
-      <CustomButton
-        title={isSubmitting ? t('welcome.saving') : t('common.next')}
-        onPress={handleNext}
+      <CustomButton 
+        title={isSubmitting ? "Зберігаємо..." : "Далі"} 
+        onPress={handleNext} 
         disabled={isSubmitting}
       />
     </View>

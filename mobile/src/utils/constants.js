@@ -1,6 +1,6 @@
 import { EXPO_PUBLIC_API_URL } from '@env';
 
-export const API_URL = EXPO_PUBLIC_API_URL || "http://10.149.118.225:8000";
+export const API_URL = EXPO_PUBLIC_API_URL || "http://192.168.0.101:8000";
 
 export const lightColors = {
   primary: '#578E5B', 

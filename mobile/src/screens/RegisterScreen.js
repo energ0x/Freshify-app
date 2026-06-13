@@ -13,8 +13,7 @@ export default function RegisterScreen({ navigation }) {
   const { register, isLoading } = useAuthStore();
 
   const handleRegister = async () => {
-    if (!name || !email || !password) return Alert.alert(t('common.error'), t('register.errorRequired'));
-    if (password.length < 8) return Alert.alert(t('common.error'), t('register.errorPasswordLength'));
+    if (!email || !password) return Alert.alert(t('common.error'), t('register.errorRequired'));
     const res = await register(email, password, name);
     if (!res.success) Alert.alert(t('common.error'), res.error);
   };
@@ -22,12 +21,6 @@ export default function RegisterScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{t('register.title')}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder={t('register.namePlaceholder')}
-        value={name}
-        onChangeText={setName}
-      />
       <TextInput
         style={styles.input}
         placeholder={t('register.emailPlaceholder')}

@@ -1,29 +1,42 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions, FlatList, Image } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import CustomButton from '../../components/CustomButton';
 import useAuthStore from '../../store/authStore';
 import { COLORS } from '../../utils/constants';
 
 const { width } = Dimensions.get('window');
 
-const SLIDE_KEYS = [
-  { id: '1', titleKey: 'onboarding.guide1Title', descKey: 'onboarding.guide1Desc', image: 'https://cdn-icons-png.flaticon.com/512/3143/3143636.png' },
-  { id: '2', titleKey: 'onboarding.guide2Title', descKey: 'onboarding.guide2Desc', image: 'https://cdn-icons-png.flaticon.com/512/2913/2913584.png' },
-  { id: '3', titleKey: 'onboarding.guide3Title', descKey: 'onboarding.guide3Desc', image: 'https://cdn-icons-png.flaticon.com/512/3502/3502688.png' },
+const SLIDES = [
+  {
+    id: '1',
+    title: 'Скануйте чеки або продукти',
+    description: 'Просто зробіть фото за допомогою вбудованої камери. Наш ШІ розпізнає назву та автоматично виставить дату придатності.',
+    image: 'https://cdn-icons-png.flaticon.com/512/3143/3143636.png'
+  },
+  {
+    id: '2',
+    title: 'Контролюйте свіжість',
+    description: 'Freshify буде завчасно надсилати вам push-сповіщення про продукти, у яких завершується термін дії, щоб ви встигли їх з\'їсти.',
+    image: 'https://cdn-icons-png.flaticon.com/512/2913/2913584.png'
+  },
+  {
+    id: '3',
+    title: 'Розумні рецепти та списки',
+    description: 'Генеруйте ідеї для страв виключно з того, що вже лежить у вашому холодильнику, та автоматично створюйте списки покупок.',
+    image: 'https://cdn-icons-png.flaticon.com/512/3502/3502688.png'
+  }
 ];
 
 export default function GuideScreen() {
-  const { t } = useTranslation();
   const { finishOnboarding } = useAuthStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
 
   const handleNext = () => {
-    if (currentIndex < SLIDE_KEYS.length - 1) {
+    if (currentIndex < SLIDES.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      finishOnboarding();
+      finishOnboarding(); // Закриваємо онбординг назавжди!
     }
   };
 
@@ -37,7 +50,7 @@ export default function GuideScreen() {
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={SLIDE_KEYS}
+        data={SLIDES}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -47,25 +60,26 @@ export default function GuideScreen() {
         renderItem={({ item }) => (
           <View style={styles.slide}>
             <Image source={{ uri: item.image }} style={styles.image} />
-            <Text style={styles.slideTitle}>{t(item.titleKey)}</Text>
-            <Text style={styles.slideDesc}>{t(item.descKey)}</Text>
+            <Text style={styles.slideTitle}>{item.title}</Text>
+            <Text style={styles.slideDesc}>{item.description}</Text>
           </View>
         )}
       />
 
+      {/* Пагінація (Крапки) */}
       <View style={styles.indicatorContainer}>
-        {SLIDE_KEYS.map((_, index) => (
-          <View
-            key={index}
-            style={[styles.indicator, currentIndex === index && styles.activeIndicator]}
+        {SLIDES.map((_, index) => (
+          <View 
+            key={index} 
+            style={[styles.indicator, currentIndex === index && styles.activeIndicator]} 
           />
         ))}
       </View>
 
       <View style={styles.footer}>
-        <CustomButton
-          title={currentIndex === SLIDE_KEYS.length - 1 ? t('onboarding.start') : t('common.next')}
-          onPress={handleNext}
+        <CustomButton 
+          title={currentIndex === SLIDES.length - 1 ? "Почати роботу ✨" : "Далі"} 
+          onPress={handleNext} 
         />
       </View>
     </View>

@@ -123,12 +123,4 @@ export const achievementsAPI = {
 };
 
 
-export const extractApiError = (error, fallback) => {
-  const detail = error?.response?.data?.detail;
-  if (!detail) return fallback;
-  if (typeof detail === 'string') return detail;
-  if (Array.isArray(detail)) return detail.map(e => e.msg || String(e)).join('\n');
-  return fallback;
-};
-
 export default api;

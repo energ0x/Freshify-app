@@ -23,7 +23,7 @@ export default function CameraScreen({ navigation, route }) {
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>{t('camera.permissionMsg')}</Text>
+        <Text style={styles.permissionText}>{t('camera.permissionRequired')}</Text>
         <CustomButton title={t('camera.grantPermission')} onPress={requestPermission} />
       </View>
     );
@@ -46,7 +46,7 @@ export default function CameraScreen({ navigation, route }) {
 
       navigation.navigate('AddProduct', { aiResult: response.data });
     } catch (error) {
-      Alert.alert(t('common.error'), t('camera.barcodeError'));
+      Alert.alert(t('common.error'), t('camera.unrecognizedBarcode'));
       setScanned(false);
       setLoading(false);
     }
@@ -68,14 +68,14 @@ export default function CameraScreen({ navigation, route }) {
 
       navigation.navigate('AddProduct', { aiResult: response.data, imageUri: photo.uri });
     } catch (error) {
-      Alert.alert(t('common.error'), t('camera.imageRecognizeError'));
+      Alert.alert(t('common.error'), t('camera.unrecognizedImage'));
       setLoading(false);
     }
   };
 
   const getInstructionText = () => {
-    if (mode === 'barcode') return t('camera.pointCameraAtBarcode');
-    if (mode === 'receipt') return t('camera.photoEntireReceipt');
+    if (mode === 'barcode') return t('camera.pointAtBarcode');
+    if (mode === 'receipt') return t('camera.photoReceipt');
     return t('camera.photoProductClose');
   };
 
@@ -106,7 +106,7 @@ export default function CameraScreen({ navigation, route }) {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
                 <Text style={styles.loadingText}>
-                  {mode === 'barcode' ? t('camera.searchingProduct') : t('camera.aiAnalyzingPhoto')}
+                  {mode === 'barcode' ? t('camera.searchingProduct') : t('camera.aiAnalyzing')}
                 </Text>
               </View>
             ) : (

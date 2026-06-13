@@ -1,27 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
 import useAuthStore from '../../store/authStore';
 
-const ALLERGEN_DEFS = [
-  { labelKey: 'allergens.milk',    emoji: '🥛' },
-  { labelKey: 'allergens.nuts',    emoji: '🥜' },
-  { labelKey: 'allergens.eggs',    emoji: '🥚' },
-  { labelKey: 'allergens.gluten',  emoji: '🌾' },
-  { labelKey: 'allergens.fish',    emoji: '🐟' },
-  { labelKey: 'allergens.seafood', emoji: '🦀' },
-  { labelKey: 'allergens.soy',     emoji: '🌱' },
-  { labelKey: 'allergens.citrus',  emoji: '🍊' },
-  { labelKey: 'allergens.honey',   emoji: '🍯' },
+const INITIAL_ALLERGENS = [
+  'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
 ];
 
 export default function AllergensScreen({ navigation }) {
-  const { t } = useTranslation();
   const { updateProfile } = useAuthStore();
-  const [allergens, setAllergens] = useState(() => ALLERGEN_DEFS.map(a => `${t(a.labelKey)}${a.emoji}`));
+  const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -39,7 +29,7 @@ export default function AllergensScreen({ navigation }) {
     const text = customInput.trim();
     if (!text) return;
     if (allergens.includes(text)) {
-      return Alert.alert(t('common.attention'), t('allergens.allergenExists'));
+      return Alert.alert('Увага', 'Цей алерген уже є у списку');
     }
     setAllergens([...allergens, text]);
     setSelected([...selected, text]);
@@ -49,22 +39,23 @@ export default function AllergensScreen({ navigation }) {
 
   const handleNext = async () => {
     setLoading(true);
+    // Видаляємо емодзі для збереження в БД
     const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
-
+    
     const res = await updateProfile({ allergens: cleanedAllergens });
     setLoading(false);
 
     if (res.success) {
       navigation.navigate('Guide');
     } else {
-      Alert.alert(t('common.error'), res.error || t('allergens.allergensSaveError'));
+      Alert.alert('Помилка', res.error || 'Не вдалося зберегти алергени. Спробуйте ще раз.');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('onboarding.allergensTitle')}</Text>
-      <Text style={styles.subtitle}>{t('onboarding.allergensSubtitle')}</Text>
+      <Text style={styles.title}>Чи маєте ви алергію на якісь продукти?</Text>
+      <Text style={styles.subtitle}>ШІ буде попереджати вас, якщо знайде небезпечні інгредієнти.</Text>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.grid}>
@@ -83,12 +74,12 @@ export default function AllergensScreen({ navigation }) {
             );
           })}
 
-          <TouchableOpacity
-            style={[styles.chip, styles.chipAdd]}
+          <TouchableOpacity 
+            style={[styles.chip, styles.chipAdd]} 
             onPress={() => setShowCustomInput(!showCustomInput)}
           >
             <Ionicons name="add" size={16} color={COLORS.primary} style={{marginRight: 4}} />
-            <Text style={[styles.chipText, {color: COLORS.primary}]}>{t('common.other')}</Text>
+            <Text style={[styles.chipText, {color: COLORS.primary}]}>Інше...</Text>
           </TouchableOpacity>
         </View>
 
@@ -96,13 +87,13 @@ export default function AllergensScreen({ navigation }) {
           <View style={styles.inputBlock}>
             <TextInput
               style={styles.input}
-              placeholder={t('allergens.customInputPlaceholder')}
+              placeholder="Введіть свій варіант..."
               value={customInput}
               onChangeText={setCustomInput}
               maxLength={20}
             />
             <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
-              <Text style={styles.addButtonText}>{t('common.add')}</Text>
+              <Text style={styles.addButtonText}>Додати</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -110,7 +101,7 @@ export default function AllergensScreen({ navigation }) {
 
       <View style={styles.footer}>
         <CustomButton
-          title={selected.length > 0 ? t('common.continue') : t('onboarding.noAllergens')}
+          title={selected.length > 0 ? `Продовжити` : "Немає алергій"}
           onPress={handleNext}
           loading={loading}
         />
