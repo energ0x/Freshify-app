@@ -5,6 +5,7 @@ import { createStackNavigator, TransitionPresets } from '@react-navigation/stack
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BlurView } from "expo-blur";
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 
@@ -163,7 +164,15 @@ const TabBarBackground = ({ theme }) => {
 };
 
 const MainTabs = () => {
+  const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
+
+  const tabLabel = {
+    'Продукти': t('nav.products'),
+    'Покупки': t('nav.grocery'),
+    'Аналітика': t('nav.analytics'),
+    'Параметри': t('nav.settings'),
+  };
 
   return (
     <Tab.Navigator
@@ -211,7 +220,7 @@ const MainTabs = () => {
                 />
               </View>
               <Text style={[styles.tabLabel, { color: focused ? COLORS.primary : COLORS.textLight }]}>
-                {route.name}
+                {tabLabel[route.name] || route.name}
               </Text>
             </View>
           );
@@ -241,6 +250,7 @@ const MainTabs = () => {
 };
 
 export default function AppNavigator() {
+  const { t } = useTranslation();
   const { isAuthenticated, isInitializing, needsOnboarding, initialize } = useAuthStore();
   const { theme, colors: COLORS } = useThemeStore();
 
@@ -300,18 +310,18 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: 'Додати продукт' }} />
-            <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: 'Сканувати', ...TransitionPresets.ModalSlideFromBottomIOS }} />
-            <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: 'Деталі продукту' }} />
-            <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: 'Історія споживання' }} />
-            <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: 'Рецепти' }} />
-            <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: 'Досягнення' }} />
+            <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: t('nav.addProduct') }} />
+            <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: t('nav.scan'), ...TransitionPresets.ModalSlideFromBottomIOS }} />
+            <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: t('nav.productDetail') }} />
+            <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: t('nav.history') }} />
+            <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: t('nav.recipes') }} />
+            <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: t('nav.achievements') }} />
             <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false, ...TransitionPresets.ModalPresentationIOS }} />
-            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false, title: 'Ліги' }} />
-            <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: 'Моя дієта' }} />
-            <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: 'Мої алергени' }} />
-            <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: 'Мої категорії' }} />
-            <Stack.Screen name="DailyTasks" component={DailyTasksScreen} options={{ headerShown: true, title: 'Завдання' }} />
+            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: t('nav.diet') }} />
+            <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: t('nav.allergens') }} />
+            <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: t('nav.categories') }} />
+            <Stack.Screen name="DailyTasks" component={DailyTasksScreen} options={{ headerShown: true, title: t('nav.dailyTasks') }} />
           </>
         )}
       </Stack.Navigator>
