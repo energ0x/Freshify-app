@@ -42,7 +42,10 @@ export default function PremiumScreen({ navigation }) {
       );
     } catch (error) {
        console.error("Error activating premium:", error);
-       Alert.alert(t('common.error'), t('premium.activationError'));
+       Alert.alert(
+         "Помилка",
+         "Не вдалося активувати преміум. Спробуйте пізніше."
+       );
     }
   };
 

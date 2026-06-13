@@ -13,24 +13,29 @@ const RESOURCES = {
 
 const LANGUAGE_KEY = 'app_language';
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources: RESOURCES,
-    lng: 'en',
-    fallbackLng: 'en',
-    compatibilityJSON: 'v3',
-    interpolation: {
-      escapeValue: false,
-    },
-  });
+const initI18n = async () => {
+  // Перевіряємо, чи користувач вже обирав мову вручну
+  let savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
 
-AsyncStorage.getItem(LANGUAGE_KEY).then(savedLanguage => {
+  // Якщо ні — беремо системну мову телефону (перші 2 літери, напр. 'uk' або 'en')
   if (!savedLanguage) {
     const systemLang = Localization.getLocales()[0].languageCode;
-    savedLanguage = RESOURCES[systemLang] ? systemLang : 'en';
+    savedLanguage = RESOURCES[systemLang] ? systemLang : 'en'; // Fallback на англійську, якщо мова не підтримується
   }
-  i18n.changeLanguage(savedLanguage);
-});
+
+  i18n
+    .use(initReactI18next)
+    .init({
+      resources: RESOURCES,
+      lng: savedLanguage,
+      fallbackLng: 'en',
+      compatibilityJSON: 'v3', // Важливо для React Native
+      interpolation: {
+        escapeValue: false, // React вже захищає від XSS
+      },
+    });
+};
+
+initI18n();
 
 export default i18n;

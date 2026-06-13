@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
 
+const DIETS = [
+  { id: 'none', title: 'Всеїдний (Ніяких дієт)', desc: 'Харчуюся без виключення категорій їжі' },
+  { id: 'vegetarian', title: 'Вегетаріанець 🥦', desc: 'Без м\'яса та риби, але з молочними продуктами' },
+  { id: 'vegan', title: 'Веган 🍃', desc: 'Суворо рослинна дієта, жодних тваринних продуктів' },
+  { id: 'pescatarian', title: 'Пескетаріанець 🐟', desc: 'Рослинна їжа + риба та морепродукти (без м\'яса)' },
+  { id: 'flexitarian', title: 'Флекситаріанець 🌾', desc: 'Переважно рослинна їжа, зрідка м\'ясо/риба' },
+];
+
 export default function DietSettingsScreen({ navigation }) {
-  const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
   const [selectedDiet, setSelectedDiet] = useState('none');
   const [loading, setLoading] = useState(false);
-
-  const DIETS = [
-    { id: 'none', title: t('diet.noneTitle'), desc: t('diet.noneDesc') },
-    { id: 'vegetarian', title: t('diet.vegetarianTitle'), desc: t('diet.vegetarianDesc') },
-    { id: 'vegan', title: t('diet.veganTitle'), desc: t('diet.veganDesc') },
-    { id: 'pescatarian', title: t('diet.pescatarianTitle'), desc: t('diet.pescatarianDesc') },
-    { id: 'flexitarian', title: t('diet.flexitarianTitle'), desc: t('diet.flexitarianDesc') },
-  ];
 
   useEffect(() => {
     if (user?.dietary_preference) {
@@ -30,14 +28,14 @@ export default function DietSettingsScreen({ navigation }) {
     try {
       const res = await updateProfile({ dietary_preference: selectedDiet });
       if (res.success) {
-        Alert.alert(t('common.success'), t('diet.savedSuccess'), [
-          { text: t('common.ok'), onPress: () => navigation.goBack() }
+        Alert.alert('Успіх', 'Ваші налаштування дієти збережено.', [
+          { text: 'ОК', onPress: () => navigation.goBack() }
         ]);
       } else {
-        Alert.alert(t('common.error'), res.error || t('diet.saveError'));
+        Alert.alert('Помилка', res.error || 'Не вдалося зберегти налаштування.');
       }
     } catch (error) {
-      Alert.alert(t('common.error'), t('diet.saveError'));
+      Alert.alert('Помилка', 'Не вдалося зберегти налаштування.');
       console.error(error);
     } finally {
       setLoading(false);
@@ -46,7 +44,9 @@ export default function DietSettingsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>{t('diet.subtitle')}</Text>
+      <Text style={styles.subtitle}>
+        Це допоможе нам точніше аналізувати продукти та пропонувати релевантні рецепти.
+      </Text>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {DIETS.map((diet) => {
@@ -71,7 +71,7 @@ export default function DietSettingsScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <CustomButton title={t('common.save')} onPress={handleSave} loading={loading} />
+        <CustomButton title="Зберегти" onPress={handleSave} loading={loading} />
       </View>
     </View>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, LayoutAnimation, UIManager, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -9,7 +9,6 @@ import useThemeStore from '../store/themeStore';
 import ProductCard from '../components/ProductCard';
 import CustomButton from '../components/CustomButton';
 import { useCategories } from '../hooks/useCategories';
-import { useTranslation } from 'react-i18next';
 import { getDaysUntilExpiry } from '../utils/dateHelpers';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -17,9 +16,9 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function HomeScreen({ navigation }) {
-  const { t } = useTranslation();
   const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore();
   const { colors: COLORS, theme } = useThemeStore();
+  const { categories } = useCategories();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   
@@ -68,24 +67,6 @@ export default function HomeScreen({ navigation }) {
 
   const isFilterActive = selectedCategoryId !== null || sortBy !== null || search !== '';
 
-  const presentCategories = useMemo(() => {
-    const seen = new Set();
-    const result = [];
-    for (const p of products) {
-      if (p.category_obj && !seen.has(p.category_obj.id)) {
-        seen.add(p.category_obj.id);
-        result.push(p.category_obj);
-      }
-    }
-    return result;
-  }, [products]);
-
-  useEffect(() => {
-    if (selectedCategoryId && !presentCategories.some(c => c.id === selectedCategoryId)) {
-      setSelectedCategoryId(null);
-    }
-  }, [presentCategories, selectedCategoryId]);
-
   const animateList = () => {
     LayoutAnimation.configureNext({
       duration: 300,
@@ -128,10 +109,10 @@ export default function HomeScreen({ navigation }) {
   const submitConsume = async () => {
     const amount = Number(consumeAmount.replace(',', '.'));
     if (!amount || isNaN(amount) || amount <= 0) {
-      return Alert.alert(t('common.error'), t('home.invalidQty'));
+      return Alert.alert('Помилка', 'Введіть коректну кількість');
     }
     if (amount > productToConsume.quantity) {
-      return Alert.alert(t('common.attention'), t('home.qtyExceeds'));
+      return Alert.alert('Увага', 'Ви не можете використати більше, ніж є в наявності');
     }
 
     await consumeProduct(productToConsume.id, amount);
@@ -179,7 +160,7 @@ export default function HomeScreen({ navigation }) {
       return (
         <Animated.View style={[styles.swipeAction, styles.consumeAction, { opacity }]}>
           <Ionicons name="restaurant" size={24} color={COLORS.onPrimaryContainer} />
-          <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>{t('home.consume')}</Text>
+          <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>Використати</Text>
         </Animated.View>
       );
     };
@@ -193,7 +174,7 @@ export default function HomeScreen({ navigation }) {
       return (
         <Animated.View style={[styles.swipeAction, styles.deleteAction, { opacity }]}>
           <Ionicons name="trash" size={24} color={COLORS.onErrorContainer} />
-          <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>{t('common.delete')}</Text>
+          <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>Видалити</Text>
         </Animated.View>
       );
     };
@@ -224,14 +205,14 @@ export default function HomeScreen({ navigation }) {
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
       
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('home.title')}</Text>
+        <Text style={styles.headerTitle}>Мої продукти</Text>
 
         <View style={styles.searchRow}>
           <View style={styles.searchContainer}>
             <Ionicons name="search-outline" size={20} color={COLORS.onSurfaceVariant} />
             <TextInput 
               style={styles.searchInput} 
-              placeholder={t('home.search')}
+              placeholder="Пошук продуктів..." 
               placeholderTextColor={COLORS.onSurfaceVariant}
               value={search} 
               onChangeText={setSearch} 
@@ -257,11 +238,11 @@ export default function HomeScreen({ navigation }) {
         {isFilterActive && (
           <View style={styles.activeFiltersRow}>
             <Text style={styles.activeFiltersText}>
-              {t('home.filtersApplied')}{sortBy ? ` (${t('home.sorting')}${renderSortArrow(sortBy)})` : ''}
+              Застосовано фільтри {sortBy ? `(сортування${renderSortArrow(sortBy)})` : ''}
             </Text>
             <TouchableOpacity style={styles.resetLink} onPress={resetFilters}>
               <Ionicons name="refresh-outline" size={14} color={COLORS.danger} style={{ marginRight: 4 }} />
-              <Text style={styles.resetLinkText}>{t('common.resetAll')}</Text>
+              <Text style={styles.resetLinkText}>Скинути все</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -269,7 +250,7 @@ export default function HomeScreen({ navigation }) {
         {products.length > 0 && (
           <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Рецепти')} activeOpacity={0.8}>
             <Ionicons name="restaurant-outline" size={18} color={COLORS.onPrimary} style={{ marginRight: 8 }} />
-            <Text style={styles.recipesIdeaText}>{t('home.recipesIdea')}</Text>
+            <Text style={styles.recipesIdeaText}>Що приготувати з цих продуктів?</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -285,17 +266,17 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.emptyIconContainer}>
               <Ionicons name="fast-food-outline" size={48} color={COLORS.primary} />
             </View>
-            <Text style={styles.emptyTitle}>{t('home.empty')}</Text>
-            <Text style={styles.emptyText}>{t('home.emptyText')}</Text>
+            <Text style={styles.emptyTitle}>Список порожній</Text>
+            <Text style={styles.emptyText}>Додайте продукти, які є у вас вдома</Text>
           </View>
         }
       />
 
       {pendingDelete && (
         <View style={styles.snackbar}>
-          <Text style={styles.snackbarText}>{t('home.productDeleted')}</Text>
+          <Text style={styles.snackbarText}>Продукт видалено</Text>
           <TouchableOpacity onPress={handleUndoDelete}>
-            <Text style={styles.snackbarAction}>{t('common.undo')}</Text>
+            <Text style={styles.snackbarAction}>СКАСУВАТИ</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -303,8 +284,8 @@ export default function HomeScreen({ navigation }) {
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.consumeModalContent}>
-            <Text style={styles.modalTitle}>{t('home.consumeTitle')}</Text>
-            <Text style={styles.consumeSubtitle}>{productToConsume?.name} ({t('home.consumeAvailable', { quantity: productToConsume?.quantity, unit: productToConsume?.unit })})</Text>
+            <Text style={styles.modalTitle}>Скільки використати?</Text>
+            <Text style={styles.consumeSubtitle}>{productToConsume?.name} (Доступно: {productToConsume?.quantity} {productToConsume?.unit})</Text>
             
             <TextInput
               style={styles.consumeInput}
@@ -316,8 +297,8 @@ export default function HomeScreen({ navigation }) {
             />
             
             <View style={styles.modalActionsRow}>
-              <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setConsumeModalVisible(false)} style={styles.modalButton} />
-              <CustomButton title={t('common.confirm')} onPress={submitConsume} style={styles.modalButton} />
+              <CustomButton title="Скасувати" variant="outline" onPress={() => setConsumeModalVisible(false)} style={styles.modalButton} />
+              <CustomButton title="Підтвердити" onPress={submitConsume} style={styles.modalButton} />
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -327,31 +308,31 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.bottomModalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('home.filtersTitle')}</Text>
+              <Text style={styles.modalTitle}>Фільтри та сортування</Text>
               <TouchableOpacity onPress={() => setShowFilterModal(false)}>
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.sectionTitle}>{t('home.sortBy')}</Text>
+            <Text style={styles.sectionTitle}>Сортувати за</Text>
             <View style={styles.optionsRow}>
               <TouchableOpacity style={[styles.optionChip, sortBy === 'expiry' && styles.optionChipActive]} onPress={() => handleSortPress('expiry')}>
-                <Text style={[styles.optionChipText, sortBy === 'expiry' && styles.optionChipTextActive]}>{t('home.sortExpiry')}{renderSortArrow('expiry')}</Text>
+                <Text style={[styles.optionChipText, sortBy === 'expiry' && styles.optionChipTextActive]}>Терміном придатності{renderSortArrow('expiry')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.optionChip, sortBy === 'alphabet' && styles.optionChipActive]} onPress={() => handleSortPress('alphabet')}>
-                <Text style={[styles.optionChipText, sortBy === 'alphabet' && styles.optionChipTextActive]}>{t('home.sortAlphabet')}{renderSortArrow('alphabet')}</Text>
+                <Text style={[styles.optionChipText, sortBy === 'alphabet' && styles.optionChipTextActive]}>Алфавітом{renderSortArrow('alphabet')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.optionChip, sortBy === 'quantity' && styles.optionChipActive]} onPress={() => handleSortPress('quantity')}>
-                <Text style={[styles.optionChipText, sortBy === 'quantity' && styles.optionChipTextActive]}>{t('home.sortQuantity')}{renderSortArrow('quantity')}</Text>
+                <Text style={[styles.optionChipText, sortBy === 'quantity' && styles.optionChipTextActive]}>Кількістю{renderSortArrow('quantity')}</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.sectionTitle}>{t('home.filterCategory')}</Text>
+            <Text style={styles.sectionTitle}>Категорія</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
               <TouchableOpacity style={[styles.categoryChip, selectedCategoryId === null && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(null)}>
-                <Text style={[styles.categoryChipText, selectedCategoryId === null && styles.categoryChipTextActive]}>{t('home.all')}</Text>
+                <Text style={[styles.categoryChipText, selectedCategoryId === null && styles.categoryChipTextActive]}>Всі</Text>
               </TouchableOpacity>
-              {presentCategories.map(category => (
+              {categories.map(category => (
                 <TouchableOpacity key={category.id} style={[styles.categoryChip, selectedCategoryId === category.id && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(category.id)}>
                   <Text style={[styles.categoryChipText, selectedCategoryId === category.id && styles.categoryChipTextActive]}>{category.name}</Text>
                 </TouchableOpacity>
@@ -360,10 +341,10 @@ export default function HomeScreen({ navigation }) {
 
             <View style={styles.modalActionsRow}>
               <TouchableOpacity style={styles.modalResetButton} onPress={resetFilters}>
-                <Text style={styles.modalResetButtonText}>{t('common.resetAll')}</Text>
+                <Text style={styles.modalResetButtonText}>Скинути все</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.applyButton} onPress={() => setShowFilterModal(false)}>
-                <Text style={styles.applyButtonText}>{t('common.apply')}</Text>
+                <Text style={styles.applyButtonText}>Застосувати</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -1,32 +1,32 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 
+// Мокові дані (у майбутньому винесете їх у store)
 const STREAK_DATA = {
   current: 7,
   week: [true, true, true, true, true, true, true],
+  weekLabels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
 };
 
 const DAILY_TASKS_PREVIEW = [
-  { id: 'd1', icon: 'calendar-outline', color: '#E74C3C', xp: 20, completed: true },
-  { id: 'd2', icon: 'restaurant-outline', color: '#2ECC71', xp: 30, completed: true },
-  { id: 'd3', icon: 'add-circle-outline', color: '#3498DB', xp: 25, completed: false },
-  { id: 'd4', icon: 'bulb-outline', color: '#9B59B6', xp: 40, completed: false },
-  { id: 'd5', icon: 'share-social-outline', color: '#E67E22', xp: 15, completed: false },
+  { id: 'd1', title: 'Перевір терміни', icon: 'calendar-outline', color: '#E74C3C', xp: 20, completed: true },
+  { id: 'd2', title: 'Використай продукт', icon: 'restaurant-outline', color: '#2ECC71', xp: 30, completed: true },
+  { id: 'd3', title: 'Додай новий продукт', icon: 'add-circle-outline', color: '#3498DB', xp: 25, completed: false },
+  { id: 'd4', title: 'ШІ-рецепт дня', icon: 'bulb-outline', color: '#9B59B6', xp: 40, completed: false },
+  { id: 'd5', title: 'Поділись досягненням', icon: 'share-social-outline', color: '#E67E22', xp: 15, completed: false },
 ];
 
 export default function DailyTasksWidget({ navigation, isClosable = false, onClose }) {
-  const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const isDark = theme === 'dark';
 
-  const completedCount = DAILY_TASKS_PREVIEW.filter((task) => task.completed).length;
+  const completedCount = DAILY_TASKS_PREVIEW.filter((t) => t.completed).length;
   const totalCount = DAILY_TASKS_PREVIEW.length;
   const progressPercent = (completedCount / totalCount) * 100;
-  const todayXP = DAILY_TASKS_PREVIEW.filter((task) => task.completed).reduce((s, task) => s + task.xp, 0);
-  const maxXP = DAILY_TASKS_PREVIEW.reduce((s, task) => s + task.xp, 0);
+  const todayXP = DAILY_TASKS_PREVIEW.filter((t) => t.completed).reduce((s, t) => s + t.xp, 0);
+  const maxXP = DAILY_TASKS_PREVIEW.reduce((s, t) => s + t.xp, 0);
 
   const styles = getStyles(COLORS, isDark);
 
@@ -42,8 +42,8 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
             <Ionicons name="flame" size={20} color="#E74C3C" />
           </View>
           <View>
-            <Text style={styles.dailyStreakNumber}>{STREAK_DATA.current} {t('dailyTasks.widgetDays')}</Text>
-            <Text style={styles.dailyStreakSub}>{t('dailyTasks.currentStreak')}</Text>
+            <Text style={styles.dailyStreakNumber}>{STREAK_DATA.current} днів</Text>
+            <Text style={styles.dailyStreakSub}>поточний стрік</Text>
           </View>
         </View>
 
@@ -81,7 +81,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
       <View style={styles.dailyDivider} />
 
       <View style={styles.dailyTasksRow}>
-        <Text style={styles.dailyTasksLabel}>{t('dailyTasks.todayLabel')}</Text>
+        <Text style={styles.dailyTasksLabel}>Завдання сьогодні</Text>
         <Text style={styles.dailyTasksCount}>
           {completedCount}/{totalCount} · +{todayXP}/{maxXP} XP
         </Text>
