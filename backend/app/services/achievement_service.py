@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func, distinct
 from app.db.models import User, Achievement, UserAchievement, ConsumedProduct, DonationSettings
 import uuid
 from datetime import datetime
@@ -13,7 +14,7 @@ ACHIEVEMENT_DEFINITIONS = [
         "total": 10,
         "color": "#2ECC71",
         "xp_reward": 200,
-        "check_progress": lambda db, user_id: db.query(ConsumedProduct).filter(ConsumedProduct.user_id == user_id).count()
+        "check_progress": lambda db, user_id: db.query(func.count(distinct(ConsumedProduct.product_id))).filter(ConsumedProduct.user_id == user_id, ConsumedProduct.product_id.isnot(None)).scalar() or 0
     },
     {
         "id": "5",
