@@ -2,6 +2,7 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
+    "confirm": "Confirm",
     "next": "Next",
     "error": "Error",
     "success": "Success",
@@ -10,7 +11,11 @@
     "delete": "Delete",
     "restore": "Restore",
     "attention": "Attention",
-    "ok": "OK"
+    "ok": "OK",
+    "info": "Info",
+    "undo": "UNDO",
+    "apply": "Apply",
+    "resetAll": "Reset all"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -78,6 +83,7 @@
     "nameRequired": "Enter product name"
   },
   "addProduct": {
+    "screenTitle": "Add Product",
     "attentionAllergenTitle": "Allergen Warning!",
     "attentionAllergenMsg": "You might be allergic to this product. Add it anyway?",
     "categoryNotFoundTitle": "Category not found",
@@ -114,7 +120,85 @@
   "home": {
     "title": "My Fridge",
     "search": "Search products...",
-    "empty": "List is empty"
+    "empty": "List is empty",
+    "emptyText": "Add products you have at home",
+    "productDeleted": "Product deleted",
+    "consumeTitle": "How much to use?",
+    "consumeAvailable": "Available: {{quantity}} {{unit}}",
+    "filtersApplied": "Filters applied",
+    "sorting": "sorting",
+    "resetAll": "Reset all",
+    "recipesIdea": "What to cook from these products?",
+    "filtersTitle": "Filters & Sorting",
+    "sortBy": "Sort by",
+    "sortExpiry": "Expiry date",
+    "sortAlphabet": "Alphabetically",
+    "sortQuantity": "Quantity",
+    "filterCategory": "Category",
+    "all": "All"
+  },
+  "login": {
+    "passwordPlaceholder": "Password",
+    "btnLogin": "Log In",
+    "btnRegister": "Sign Up",
+    "required": "Enter email and password"
+  },
+  "nav": {
+    "products": "Products",
+    "grocery": "Shopping",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "addProduct": "Add Product",
+    "scan": "Scan",
+    "productDetail": "Product Details",
+    "history": "Consumption History",
+    "recipes": "Recipes",
+    "achievements": "Achievements",
+    "dailyTasks": "Daily Tasks",
+    "diet": "My Diet",
+    "allergens": "My Allergens",
+    "categories": "My Categories"
+  },
+  "grocery": {
+    "title": "Shopping List",
+    "inputPlaceholder": "What to buy?",
+    "addRunningOut": "Add running out items",
+    "allSufficient": "You have enough of all products.",
+    "addedLowStock": "Running out items added to the list.",
+    "swipeBought": "Bought",
+    "emptyTitle": "List is empty",
+    "emptyText": "Add products you need to buy at the store",
+    "itemDeleted": "Item deleted"
+  },
+  "history": {
+    "searchPlaceholder": "Search in history...",
+    "emptyTitle": "History is empty",
+    "emptyText": "Products you consume will appear here"
+  },
+  "diet": {
+    "subtitle": "This will help us analyze products more accurately and suggest relevant recipes.",
+    "savedSuccess": "Your diet settings have been saved.",
+    "saveError": "Failed to save settings.",
+    "noneTitle": "Omnivore (No diet)",
+    "noneDesc": "I eat without excluding food categories",
+    "vegetarianTitle": "Vegetarian 🥦",
+    "vegetarianDesc": "No meat or fish, but with dairy products",
+    "veganTitle": "Vegan 🍃",
+    "veganDesc": "Strictly plant-based diet, no animal products",
+    "pescatarianTitle": "Pescatarian 🐟",
+    "pescatarianDesc": "Plant food + fish and seafood (no meat)",
+    "flexitarianTitle": "Flexitarian 🌾",
+    "flexitarianDesc": "Mostly plant-based, occasionally meat/fish"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "start": "Get Started",
+    "slide1Title": "Scan Products",
+    "slide1Desc": "Take a photo of a product and our AI will automatically determine its expiry date",
+    "slide2Title": "Track Freshness",
+    "slide2Desc": "Get notifications before products go bad",
+    "slide3Title": "Smart Lists",
+    "slide3Desc": "Build shopping lists based on what has run out in your fridge"
   },
   "settings": {
     "title": "Profile",
