@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { aiAPI, productsAPI } from '../services/api';
 import { COLORS } from '../utils/constants';
 import CustomButton from '../components/CustomButton';
+import { useTranslation } from 'react-i18next';
 
 export default function CameraScreen({ navigation, route }) {
   const { t } = useTranslation();

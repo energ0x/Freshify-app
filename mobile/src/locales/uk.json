@@ -17,6 +17,19 @@
     "apply": "Застосувати",
     "resetAll": "Скинути все"
   },
+  "screens": {
+    "addProduct": "Додати продукт",
+    "scan": "Сканувати",
+    "productDetail": "Деталі продукту",
+    "history": "Історія споживання",
+    "recipes": "Рецепти",
+    "achievements": "Досягнення",
+    "leagues": "Ліги",
+    "dietSettings": "Моя дієта",
+    "allergensSettings": "Мої алергени",
+    "categories": "Мої категорії",
+    "dailyTasks": "Завдання"
+  },
   "categories": {
     "deleteTitle": "Видалення категорії",
     "deleteMessage": "Ви впевнені, що хочете видалити цю категорію?",
