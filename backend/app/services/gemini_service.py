@@ -10,7 +10,7 @@ settings = get_settings()
 api_key = str(settings.gemini_api_key) if settings.gemini_api_key else None
 client = genai.Client(api_key=api_key) if api_key else None
 
-MODEL_NAME = "gemini-2.0-flash"
+MODEL_NAME = "gemini-2.5-flash"
 
 
 async def analyze_product_image(
@@ -69,6 +69,8 @@ If the image does not contain any food products, return:
         return json.loads(response.text or "{}")
     except Exception as e:
         logger.error("Error analyzing product image: %s", e)
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            return {"error": "Ліміт запитів до ШІ вичерпано. Спробуйте пізніше."}
         return {"error": "Не вдалося розпізнати продукт"}
 
 
@@ -145,6 +147,9 @@ async def generate_recipes(
 
     except Exception as e:
         logger.error("Error streaming recipes: %s", e)
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            yield "\n\n**Ліміт запитів до ШІ вичерпано.** Спробуйте пізніше."
+            return
         yield "\n\n**Помилка:** Не вдалося згенерувати рецепти."
 
 
@@ -194,4 +199,7 @@ async def stream_diet_recommendations(consumed_data: list[dict]):
 
     except Exception as e:
         logger.error("Error streaming recommendations: %s", e)
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+            yield "\n\n**Ліміт запитів до ШІ вичерпано.** Спробуйте пізніше."
+            return
         yield "\n\n**Помилка:** Не вдалося завершити генерацію рекомендацій."
