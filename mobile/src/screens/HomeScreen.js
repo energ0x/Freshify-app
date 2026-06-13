@@ -266,7 +266,7 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {products.length > 0 && (
-          <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Рецепти')} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Recipes')} activeOpacity={0.8}>
             <Ionicons name="restaurant-outline" size={18} color={COLORS.onPrimary} style={{ marginRight: 8 }} />
             <Text style={styles.recipesIdeaText}>{t('home.recipesIdea')}</Text>
           </TouchableOpacity>
