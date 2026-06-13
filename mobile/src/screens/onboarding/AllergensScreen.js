@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
 import useAuthStore from '../../store/authStore';
@@ -10,6 +11,7 @@ const INITIAL_ALLERGENS = [
 ];
 
 export default function AllergensScreen({ navigation }) {
+  const { t } = useTranslation();
   const { updateProfile } = useAuthStore();
   const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
   const [selected, setSelected] = useState([]);
@@ -29,7 +31,7 @@ export default function AllergensScreen({ navigation }) {
     const text = customInput.trim();
     if (!text) return;
     if (allergens.includes(text)) {
-      return Alert.alert('Увага', 'Цей алерген уже є у списку');
+      return Alert.alert(t('common.attention'), t('allergens.allergenExists'));
     }
     setAllergens([...allergens, text]);
     setSelected([...selected, text]);
@@ -39,23 +41,22 @@ export default function AllergensScreen({ navigation }) {
 
   const handleNext = async () => {
     setLoading(true);
-    // Видаляємо емодзі для збереження в БД
     const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
-    
+
     const res = await updateProfile({ allergens: cleanedAllergens });
     setLoading(false);
 
     if (res.success) {
       navigation.navigate('Guide');
     } else {
-      Alert.alert('Помилка', res.error || 'Не вдалося зберегти алергени. Спробуйте ще раз.');
+      Alert.alert(t('common.error'), res.error || t('allergens.allergensSaveError'));
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Чи маєте ви алергію на якісь продукти?</Text>
-      <Text style={styles.subtitle}>ШІ буде попереджати вас, якщо знайде небезпечні інгредієнти.</Text>
+      <Text style={styles.title}>{t('onboarding.allergensTitle')}</Text>
+      <Text style={styles.subtitle}>{t('onboarding.allergensSubtitle')}</Text>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.grid}>
@@ -74,12 +75,12 @@ export default function AllergensScreen({ navigation }) {
             );
           })}
 
-          <TouchableOpacity 
-            style={[styles.chip, styles.chipAdd]} 
+          <TouchableOpacity
+            style={[styles.chip, styles.chipAdd]}
             onPress={() => setShowCustomInput(!showCustomInput)}
           >
             <Ionicons name="add" size={16} color={COLORS.primary} style={{marginRight: 4}} />
-            <Text style={[styles.chipText, {color: COLORS.primary}]}>Інше...</Text>
+            <Text style={[styles.chipText, {color: COLORS.primary}]}>{t('common.other')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -87,13 +88,13 @@ export default function AllergensScreen({ navigation }) {
           <View style={styles.inputBlock}>
             <TextInput
               style={styles.input}
-              placeholder="Введіть свій варіант..."
+              placeholder={t('allergens.customInputPlaceholder')}
               value={customInput}
               onChangeText={setCustomInput}
               maxLength={20}
             />
             <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
-              <Text style={styles.addButtonText}>Додати</Text>
+              <Text style={styles.addButtonText}>{t('common.add')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -101,7 +102,7 @@ export default function AllergensScreen({ navigation }) {
 
       <View style={styles.footer}>
         <CustomButton
-          title={selected.length > 0 ? `Продовжити` : "Немає алергій"}
+          title={selected.length > 0 ? t('common.continue') : t('onboarding.noAllergens')}
           onPress={handleNext}
           loading={loading}
         />
