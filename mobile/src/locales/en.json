@@ -293,7 +293,16 @@
     "allergensSaveError": "Failed to save settings.",
     "subtitle": "Add products to avoid. Our AI will automatically exclude them from your recipes.",
     "addCustomPlaceholder": "Add custom allergen...",
-    "customInputPlaceholder": "Enter your option..."
+    "customInputPlaceholder": "Enter your option...",
+    "milk": "Milk",
+    "nuts": "Nuts",
+    "eggs": "Eggs",
+    "gluten": "Gluten",
+    "fish": "Fish",
+    "seafood": "Seafood",
+    "soy": "Soy",
+    "citrus": "Citrus",
+    "honey": "Honey"
   },
   "analytics": {
     "title": "Analytics",
@@ -342,6 +351,8 @@
   },
   "dailyTasks": {
     "streakLabel": "days in a row",
+    "widgetDays": "days",
+    "currentStreak": "current streak",
     "bestStreak": "Record: {{days}} d.",
     "todayProgress": "Today's Progress",
     "allDone": "🎉 All tasks done! +{{xp}} XP earned",

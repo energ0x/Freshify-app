@@ -293,7 +293,16 @@
     "allergensSaveError": "Не вдалося зберегти налаштування.",
     "subtitle": "Додайте продукти, які варто уникати. Наш ШІ автоматично виключатиме їх із ваших рецептів.",
     "addCustomPlaceholder": "Додати власний алерген...",
-    "customInputPlaceholder": "Введіть свій варіант..."
+    "customInputPlaceholder": "Введіть свій варіант...",
+    "milk": "Молоко",
+    "nuts": "Горіхи",
+    "eggs": "Яйця",
+    "gluten": "Глютен",
+    "fish": "Риба",
+    "seafood": "Морепродукти",
+    "soy": "Соя",
+    "citrus": "Цитрусові",
+    "honey": "Мед"
   },
   "analytics": {
     "title": "Аналітика",
@@ -342,6 +351,8 @@
   },
   "dailyTasks": {
     "streakLabel": "днів поспіль",
+    "widgetDays": "днів",
+    "currentStreak": "поточний стрік",
     "bestStreak": "Рекорд: {{days}} дн.",
     "todayProgress": "Прогрес сьогодні",
     "allDone": "🎉 Всі завдання виконано! +{{xp}} XP зараховано",
