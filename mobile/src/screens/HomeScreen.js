@@ -128,10 +128,10 @@ export default function HomeScreen({ navigation }) {
   const submitConsume = async () => {
     const amount = Number(consumeAmount.replace(',', '.'));
     if (!amount || isNaN(amount) || amount <= 0) {
-      return Alert.alert('Помилка', 'Введіть коректну кількість');
+      return Alert.alert(t('common.error'), t('home.invalidQty'));
     }
     if (amount > productToConsume.quantity) {
-      return Alert.alert('Увага', 'Ви не можете використати більше, ніж є в наявності');
+      return Alert.alert(t('common.attention'), t('home.qtyExceeds'));
     }
 
     await consumeProduct(productToConsume.id, amount);
@@ -179,7 +179,7 @@ export default function HomeScreen({ navigation }) {
       return (
         <Animated.View style={[styles.swipeAction, styles.consumeAction, { opacity }]}>
           <Ionicons name="restaurant" size={24} color={COLORS.onPrimaryContainer} />
-          <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>Використати</Text>
+          <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>{t('home.consume')}</Text>
         </Animated.View>
       );
     };
@@ -193,7 +193,7 @@ export default function HomeScreen({ navigation }) {
       return (
         <Animated.View style={[styles.swipeAction, styles.deleteAction, { opacity }]}>
           <Ionicons name="trash" size={24} color={COLORS.onErrorContainer} />
-          <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>Видалити</Text>
+          <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>{t('common.delete')}</Text>
         </Animated.View>
       );
     };

@@ -90,10 +90,10 @@ export default function ProductDetailScreen({ route, navigation }) {
   const submitConsume = async () => {
     const amount = Number(consumeAmount.replace(',', '.'));
     if (!amount || isNaN(amount) || amount <= 0) {
-      return Alert.alert(t('common.error'), 'Введіть коректну кількість');
+      return Alert.alert(t('common.error'), t('home.invalidQty'));
     }
     if (amount > product.quantity) {
-      return Alert.alert('Увага', 'Ви не можете використати більше, ніж є в наявності');
+      return Alert.alert(t('common.attention'), t('home.qtyExceeds'));
     }
     setConsumeModalVisible(false);
     setLoading(true);
@@ -155,7 +155,7 @@ export default function ProductDetailScreen({ route, navigation }) {
       }
     } catch (e) {
       setSaving(false);
-      Alert.alert(t('common.error'), 'Failed to save changes.');
+      Alert.alert(t('common.error'), t('productDetail.updateError'));
     }
   };
 
@@ -235,8 +235,8 @@ export default function ProductDetailScreen({ route, navigation }) {
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.consumeModalOverlay}>
           <View style={styles.consumeModalContent}>
-            <Text style={styles.modalTitle}>Скільки використати?</Text>
-            <Text style={styles.consumeSubtitle}>{product.name} (Доступно: {product.quantity} {product.unit})</Text>
+            <Text style={styles.modalTitle}>{t('home.consumeTitle')}</Text>
+            <Text style={styles.consumeSubtitle}>{product.name} ({t('home.consumeAvailable', { quantity: product.quantity, unit: product.unit })})</Text>
             <TextInput
               style={styles.consumeInput}
               keyboardType="numeric"
@@ -246,8 +246,8 @@ export default function ProductDetailScreen({ route, navigation }) {
               placeholderTextColor={COLORS.onSurfaceVariant}
             />
             <View style={styles.consumeModalActions}>
-              <CustomButton title="Скасувати" variant="outline" onPress={() => setConsumeModalVisible(false)} style={styles.modalButton} />
-              <CustomButton title="Підтвердити" onPress={submitConsume} style={styles.modalButton} />
+              <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setConsumeModalVisible(false)} style={styles.modalButton} />
+              <CustomButton title={t('common.confirm')} onPress={submitConsume} style={styles.modalButton} />
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -281,7 +281,7 @@ export default function ProductDetailScreen({ route, navigation }) {
                     ) : (
                       <>
                         <Ionicons name="image-outline" size={40} color={COLORS.onSurfaceVariant} />
-                        <Text style={styles.imageText}>Додати фото продукту</Text>
+                        <Text style={styles.imageText}>{t('addProduct.addPhoto')}</Text>
                       </>
                     )}
                   </TouchableOpacity>
