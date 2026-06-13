@@ -1,33 +1,43 @@
+import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.db.database import engine, Base, SessionLocal
-import os
+import app.db.models  # noqa: F401 — registers ORM models before create_all
 
-
-import app.db.models 
-
-from app.api.routes import auth, products, ai_vision, recipes, grocery, analytics, achievements, settings as settings_router, categories
+from app.api.routes import (
+    auth, products, ai_vision, recipes, grocery,
+    analytics, achievements, settings as settings_router, categories,
+)
 from app.services.achievement_service import init_achievements
 
-Base.metadata.create_all(bind=engine)
 
-db = SessionLocal()
-try:
-    init_achievements(db)
-finally:
-    db.close()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        init_achievements(db)
+    finally:
+        db.close()
+    os.makedirs("uploads", exist_ok=True)
+    yield
 
-os.makedirs("uploads", exist_ok=True)
 
-app = FastAPI(title="Freshify API", version="1.0.0", description="Food monitoring app API")
+app = FastAPI(
+    title="Freshify API",
+    version="1.0.0",
+    description="Food monitoring app API",
+    lifespan=lifespan,
+)
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,  # Bearer auth — cookies not used
     allow_methods=["*"],
     allow_headers=["*"],
 )

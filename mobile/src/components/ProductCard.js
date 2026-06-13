@@ -43,11 +43,11 @@ export default function ProductCard({ item, onPress, style }) {
   };
 
   return (
-    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={1}>
       {renderIconOrImage()}
       <View style={styles.mainInfo}>
-        <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.subtext} numberOfLines={1}>
+        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.subtext}>
           {categoryName || 'Інше'}
         </Text>
       </View>
@@ -57,7 +57,7 @@ export default function ProductCard({ item, onPress, style }) {
         </View>
         <View style={styles.expiryBadge}>
           <Ionicons name="time" size={14} color={expiryColor} />
-          <Text style={styles.expiryText} numberOfLines={1}>
+          <Text style={styles.expiryText}>
             {getExpiryLabel(item.expiry_date) || 'Не вказано'}
           </Text>
         </View>
@@ -73,11 +73,11 @@ const getStyles = (COLORS, expiryColor) => StyleSheet.create({
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowRadius: 3,
   },
   iconContainer: {
     width: 48,
@@ -97,21 +97,19 @@ const getStyles = (COLORS, expiryColor) => StyleSheet.create({
   mainInfo: {
     flex: 1,
     marginRight: 8,
-    justifyContent: 'center',
   },
   name: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   subtext: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textLight,
   },
   rightSection: {
     alignItems: 'flex-end',
-    justifyContent: 'center',
     gap: 8,
   },
   quantityBadge: {
@@ -133,12 +131,10 @@ const getStyles = (COLORS, expiryColor) => StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 100,
     gap: 4,
-    maxWidth: 120,
   },
   expiryText: {
     fontSize: 12,
     fontWeight: '600',
     color: expiryColor,
-    flexShrink: 1,
   },
 });
