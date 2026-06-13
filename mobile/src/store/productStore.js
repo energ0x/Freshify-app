@@ -131,7 +131,6 @@ const useProductStore = create((set, get) => ({
 
     if (id.toString().startsWith('temp_')) {
        // Продукт був створений офлайн і ще не на сервері
-       // TODO: Прибрати з черги ADD_PRODUCT для цього ID, якщо це можливо, або додати DELETE в чергу
        await addToOfflineQueue({ type: 'DELETE_PRODUCT', payload: { id } });
        return { success: true, offline: true };
     }
@@ -146,7 +145,6 @@ const useProductStore = create((set, get) => ({
   },
 
   consumeProduct: async (id, quantity) => {
-     // TODO: Implement optimistic UI for consume
     try {
       const response = await productsAPI.consume(id, quantity);
       set((state) => {
@@ -161,7 +159,7 @@ const useProductStore = create((set, get) => ({
       return { success: true };
     } catch (error) {
       await addToOfflineQueue({ type: 'CONSUME_PRODUCT', payload: { id, quantity } });
-      // Невеликий хак: оптимістично зменшити кількість локально, щоб користувач бачив результат
+      // Оптимістично зменшити кількість локально, щоб користувач бачив результат
       set((state) => {
          const product = state.products.find(p => p.id === id);
          if (product) {
