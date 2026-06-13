@@ -50,13 +50,13 @@ def get_analytics(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
     ).group_by("day").order_by("day").all()
 
-    active_quantity = db.query(func.sum(Product.quantity)).filter(
+    active_count = db.query(func.count(Product.id)).filter(
         and_(Product.user_id == current_user.id, Product.is_active == True)
     ).scalar()
 
     return {
         "period_days": days,
-        "total_products_in_fridge": float(active_quantity) if active_quantity is not None else 0.0,
+        "total_products_in_fridge": active_count or 0,
         "consumed_products": [
             {
                 "product_name": r.product_name,
