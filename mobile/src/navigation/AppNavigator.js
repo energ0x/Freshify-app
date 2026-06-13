@@ -1,53 +1,37 @@
-import React, { useEffect, useRef, useCallback } from "react";
-import {
-  View,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-  Platform,
-  Animated,
-  Easing,
-} from "react-native";
-import {
-  NavigationContainer,
-  DefaultTheme,
-  DarkTheme,
-  useFocusEffect,
-} from "@react-navigation/native";
-import {
-  createStackNavigator,
-  TransitionPresets,
-} from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import React, { useEffect, useRef, useCallback } from 'react';
+import { View, ActivityIndicator, Text, StyleSheet, Platform, Animated, Easing } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme, useFocusEffect } from '@react-navigation/native';
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { BlurView } from "expo-blur";
-import { Ionicons } from "@expo/vector-icons";
-import useAuthStore from "../store/authStore";
-import useThemeStore from "../store/themeStore";
-import { useTranslation } from "react-i18next";
+import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import useAuthStore from '../store/authStore';
+import useThemeStore from '../store/themeStore';
 
 // Імпорти екранів
-import LoginScreen from "../screens/LoginScreen";
-import RegisterScreen from "../screens/RegisterScreen";
-import HomeScreen from "../screens/HomeScreen";
-import AddProductScreen from "../screens/AddProductScreen";
-import CameraScreen from "../screens/CameraScreen";
-import ProductDetailScreen from "../screens/ProductDetailScreen";
-import GroceryListScreen from "../screens/GroceryListScreen";
-import AnalyticsScreen from "../screens/AnalyticsScreen";
-import RecipesScreen from "../screens/RecipesScreen";
-import SettingsScreen from "../screens/SettingsScreen";
-import WelcomeScreen from "../screens/onboarding/WelcomeScreen";
-import DietScreen from "../screens/onboarding/DietScreen";
-import AllergensScreen from "../screens/onboarding/AllergensScreen";
-import GuideScreen from "../screens/onboarding/GuideScreen";
-import HistoryScreen from "../screens/HistoryScreen";
-import AchievementsScreen from "../screens/AchievementsScreen";
-import PremiumScreen from "../screens/PremiumScreen";
-import LeaguesScreen from "../screens/LeaguesScreen";
-import DietSettingsScreen from "../screens/DietSettingsScreen";
-import AllergensSettingsScreen from "../screens/AllergensSettingsScreen";
-import CategoriesScreen from "../screens/CategoriesScreen";
-import DailyTasksScreen from "../screens/DailyTasksScreen";
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import HomeScreen from '../screens/HomeScreen';
+import AddProductScreen from '../screens/AddProductScreen';
+import CameraScreen from '../screens/CameraScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import GroceryListScreen from '../screens/GroceryListScreen';
+import AnalyticsScreen from '../screens/AnalyticsScreen';
+import RecipesScreen from '../screens/RecipesScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
+import DietScreen from '../screens/onboarding/DietScreen';
+import AllergensScreen from '../screens/onboarding/AllergensScreen';
+import GuideScreen from '../screens/onboarding/GuideScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import AchievementsScreen from '../screens/AchievementsScreen';
+import PremiumScreen from '../screens/PremiumScreen';
+import LeaguesScreen from '../screens/LeaguesScreen';
+import DietSettingsScreen from '../screens/DietSettingsScreen';
+import AllergensSettingsScreen from '../screens/AllergensSettingsScreen';
+import CategoriesScreen from '../screens/CategoriesScreen';
+import DailyTasksScreen from '../screens/DailyTasksScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -59,11 +43,7 @@ const Tab = createBottomTabNavigator();
 // Android: 100 мс — коротша, щоб навіть 1-2 кадри затримки JS-потоку
 //          були непомітні (нічого невидимого краще, ніж затемнений кадр)
 // ─────────────────────────────────────────────────────────────────────────────
-const TAB_FADE_DURATION = Platform.select({
-  ios: 160,
-  android: 100,
-  default: 130,
-});
+const TAB_FADE_DURATION = Platform.select({ ios: 160, android: 100, default: 130 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // withTabAnimation — HOC для плавного fade-in при переключенні вкладок.
@@ -125,7 +105,7 @@ const withTabAnimation = (WrappedComponent) => {
             animRef.current = null;
           }
         };
-      }, []), // opacity і animRef — стабільні рефи, залежностей немає
+      }, []) // opacity і animRef — стабільні рефи, залежностей немає
     );
 
     return (
@@ -140,7 +120,7 @@ const withTabAnimation = (WrappedComponent) => {
     );
   });
 
-  AnimatedScreen.displayName = `Animated(${WrappedComponent.displayName || WrappedComponent.name || "Screen"})`;
+  AnimatedScreen.displayName = `Animated(${WrappedComponent.displayName || WrappedComponent.name || 'Screen'})`;
   return AnimatedScreen;
 };
 
@@ -157,16 +137,15 @@ const AnimatedSettingsScreen = withTabAnimation(SettingsScreen);
 // звичайний View з напівпрозорим фоном, який виглядає майже так само.
 // ─────────────────────────────────────────────────────────────────────────────
 const TabBarBackground = ({ theme }) => {
-  if (Platform.OS === "android") {
+  if (Platform.OS === 'android') {
     return (
       <View
         style={[
           StyleSheet.absoluteFillObject,
           {
-            backgroundColor:
-              theme === "dark"
-                ? "rgba(20, 20, 22, 0.97)"
-                : "rgba(252, 252, 252, 0.97)",
+            backgroundColor: theme === 'dark'
+              ? 'rgba(20, 20, 22, 0.97)'
+              : 'rgba(252, 252, 252, 0.97)',
           },
         ]}
       />
@@ -177,19 +156,23 @@ const TabBarBackground = ({ theme }) => {
   // і може спричиняти проблеми на деяких пристроях)
   return (
     <BlurView
-      tint={
-        theme === "dark"
-          ? "systemThickMaterialDark"
-          : "systemThickMaterialLight"
-      }
+      tint={theme === 'dark' ? 'systemThickMaterialDark' : 'systemThickMaterialLight'}
       intensity={60}
-      style={{ ...StyleSheet.absoluteFillObject, overflow: "hidden" }}
+      style={{ ...StyleSheet.absoluteFillObject, overflow: 'hidden' }}
     />
   );
 };
 
 const MainTabs = () => {
+  const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
+
+  const tabLabel = {
+    'Продукти': t('nav.products'),
+    'Покупки': t('nav.grocery'),
+    'Аналітика': t('nav.analytics'),
+    'Параметри': t('nav.settings'),
+  };
 
   return (
     <Tab.Navigator
@@ -197,70 +180,47 @@ const MainTabs = () => {
         headerShown: false,
         tabBarShowLabel: false,
         tabBarStyle: {
-          position: "absolute",
+          position: 'absolute',
           height: 90,
           borderTopWidth: 0,
-          backgroundColor: "transparent",
+          backgroundColor: 'transparent',
           // Прибираємо elevation на Android — воно взаємодіє з BlurView/
           // кастомним фоном і може давати артефакти рендерингу
-          elevation: Platform.OS === "android" ? 0 : 0,
-          shadowColor: "#000",
+          elevation: Platform.OS === 'android' ? 0 : 0,
+          shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.08,
           shadowRadius: 6,
         },
         tabBarBackground: () => <TabBarBackground theme={theme} />,
         tabBarIcon: ({ size, focused }) => {
-          if (route.name === "AddButton") {
+          if (route.name === 'AddButton') {
             return (
               <View style={styles.fabWrapper}>
-                <View
-                  style={[
-                    styles.fabButton,
-                    { backgroundColor: COLORS.primary },
-                  ]}
-                >
-                  <Ionicons
-                    name="add"
-                    size={36}
-                    color={COLORS.surface || "#fff"}
-                  />
+                <View style={[styles.fabButton, { backgroundColor: COLORS.primary }]}>
+                  <Ionicons name="add" size={36} color={COLORS.surface || '#fff'} />
                 </View>
               </View>
             );
           }
 
           let iconName;
-          if (route.name === "Продукти")
-            iconName = focused ? "fast-food" : "fast-food-outline";
-          else if (route.name === "Покупки")
-            iconName = focused ? "cart" : "cart-outline";
-          else if (route.name === "Аналітика")
-            iconName = focused ? "pie-chart" : "pie-chart-outline";
-          else if (route.name === "Параметри")
-            iconName = focused ? "settings" : "settings-outline";
+          if (route.name === 'Продукти') iconName = focused ? 'fast-food' : 'fast-food-outline';
+          else if (route.name === 'Покупки') iconName = focused ? 'cart' : 'cart-outline';
+          else if (route.name === 'Аналітика') iconName = focused ? 'pie-chart' : 'pie-chart-outline';
+          else if (route.name === 'Параметри') iconName = focused ? 'settings' : 'settings-outline';
 
           return (
             <View style={styles.tabItemContainer}>
-              <View
-                style={[
-                  styles.iconPill,
-                  focused && { backgroundColor: COLORS.primary },
-                ]}
-              >
+              <View style={[styles.iconPill, focused && { backgroundColor: COLORS.primary }]}>
                 <Ionicons
                   name={iconName}
                   size={size}
                   color={focused ? COLORS.primaryContainer : COLORS.textLight}
                 />
               </View>
-              <Text
-                style={[
-                  styles.tabLabel,
-                  { color: focused ? COLORS.primary : COLORS.textLight },
-                ]}
-              >
-                {route.name}
+              <Text style={[styles.tabLabel, { color: focused ? COLORS.primary : COLORS.textLight }]}>
+                {tabLabel[route.name] || route.name}
               </Text>
             </View>
           );
@@ -278,7 +238,7 @@ const MainTabs = () => {
         listeners={({ navigation }) => ({
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate("AddProduct");
+            navigation.navigate('AddProduct');
           },
         })}
       />
@@ -291,8 +251,7 @@ const MainTabs = () => {
 
 export default function AppNavigator() {
   const { t } = useTranslation();
-  const { isAuthenticated, isInitializing, needsOnboarding, initialize } =
-    useAuthStore();
+  const { isAuthenticated, isInitializing, needsOnboarding, initialize } = useAuthStore();
   const { theme, colors: COLORS } = useThemeStore();
 
   useEffect(() => {
@@ -300,9 +259,9 @@ export default function AppNavigator() {
   }, [initialize]);
 
   const navigationTheme = {
-    ...(theme === "dark" ? DarkTheme : DefaultTheme),
+    ...(theme === 'dark' ? DarkTheme : DefaultTheme),
     colors: {
-      ...(theme === "dark" ? DarkTheme.colors : DefaultTheme.colors),
+      ...(theme === 'dark' ? DarkTheme.colors : DefaultTheme.colors),
       background: COLORS.background,
       card: COLORS.surface,
       text: COLORS.text,
@@ -313,14 +272,7 @@ export default function AppNavigator() {
 
   if (isInitializing) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: COLORS.background,
-        }}
-      >
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background }}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
     );
@@ -340,7 +292,7 @@ export default function AppNavigator() {
 
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
-          headerTitleStyle: { fontWeight: "600" },
+          headerTitleStyle: { fontWeight: '600' },
         }}
       >
         {!isAuthenticated ? (
@@ -349,12 +301,7 @@ export default function AppNavigator() {
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : needsOnboarding ? (
-          <Stack.Group
-            screenOptions={{
-              headerShown: false,
-              ...TransitionPresets.SlideFromRightIOS,
-            }}
-          >
+          <Stack.Group screenOptions={{ headerShown: false, ...TransitionPresets.SlideFromRightIOS }}>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="Diet" component={DietScreen} />
             <Stack.Screen name="Allergens" component={AllergensScreen} />
@@ -363,76 +310,18 @@ export default function AppNavigator() {
         ) : (
           <>
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen
-              name="AddProduct"
-              component={AddProductScreen}
-              options={{ headerShown: true, title: t("screens.addProduct") }}
-            />
-            <Stack.Screen
-              name="Camera"
-              component={CameraScreen}
-              options={{
-                headerShown: true,
-                title: t("screens.scan"),
-                ...TransitionPresets.ModalSlideFromBottomIOS,
-              }}
-            />
-            <Stack.Screen
-              name="ProductDetail"
-              component={ProductDetailScreen}
-              options={{ headerShown: true, title: t("screens.productDetail") }}
-            />
-            <Stack.Screen
-              name="History"
-              component={HistoryScreen}
-              options={{ headerShown: true, title: t("screens.history") }}
-            />
-            <Stack.Screen
-              name="Recipes"
-              component={RecipesScreen}
-              options={{ headerShown: true, title: t("screens.recipes") }}
-            />
-            <Stack.Screen
-              name="Achievements"
-              component={AchievementsScreen}
-              options={{ headerShown: true, title: t("screens.achievements") }}
-            />
-            <Stack.Screen
-              name="Premium"
-              component={PremiumScreen}
-              options={{
-                headerShown: false,
-                ...TransitionPresets.ModalPresentationIOS,
-              }}
-            />
-            <Stack.Screen
-              name="Leagues"
-              component={LeaguesScreen}
-              options={{ headerShown: false, title: t("screens.leagues") }}
-            />
-            <Stack.Screen
-              name="DietSettings"
-              component={DietSettingsScreen}
-              options={{ headerShown: true, title: t("screens.dietSettings") }}
-            />
-            <Stack.Screen
-              name="AllergensSettings"
-              component={AllergensSettingsScreen}
-              options={{
-                headerShown: true,
-                title: t("screens.allergensSettings"),
-              }}
-            />
-            <Stack.Screen
-              name="Categories"
-              component={CategoriesScreen}
-              options={{ headerShown: true, title: t("screens.categories") }}
-            />
-            <Stack.Screen
-              name="DailyTasks"
-              component={DailyTasksScreen}
-              options={{ headerShown: true, title: t("screens.dailyTasks") }}
-            />
+            <Stack.Screen name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: t('nav.addProduct') }} />
+            <Stack.Screen name="Camera" component={CameraScreen} options={{ headerShown: true, title: t('nav.scan'), ...TransitionPresets.ModalSlideFromBottomIOS }} />
+            <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: true, title: t('nav.productDetail') }} />
+            <Stack.Screen name="History" component={HistoryScreen} options={{ headerShown: true, title: t('nav.history') }} />
+            <Stack.Screen name="Рецепти" component={RecipesScreen} options={{ headerShown: true, title: t('nav.recipes') }} />
+            <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ headerShown: true, title: t('nav.achievements') }} />
+            <Stack.Screen name="Premium" component={PremiumScreen} options={{ headerShown: false, ...TransitionPresets.ModalPresentationIOS }} />
+            <Stack.Screen name="Leagues" component={LeaguesScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="DietSettings" component={DietSettingsScreen} options={{ headerShown: true, title: t('nav.diet') }} />
+            <Stack.Screen name="AllergensSettings" component={AllergensSettingsScreen} options={{ headerShown: true, title: t('nav.allergens') }} />
+            <Stack.Screen name="Categories" component={CategoriesScreen} options={{ headerShown: true, title: t('nav.categories') }} />
+            <Stack.Screen name="DailyTasks" component={DailyTasksScreen} options={{ headerShown: true, title: t('nav.dailyTasks') }} />
           </>
         )}
       </Stack.Navigator>
@@ -442,8 +331,8 @@ export default function AppNavigator() {
 
 const styles = StyleSheet.create({
   tabItemContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
   },
   iconPill: {
@@ -453,21 +342,21 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   fabWrapper: {
-    position: "absolute",
-    justifyContent: "center",
-    alignItems: "center",
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fabButton: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 5,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

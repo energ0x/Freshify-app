@@ -10,141 +10,48 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
 
-// ─── Mock data ──────────────────────────────────────────────────────────────
 const STREAK_DATA = {
   current: 7,
   best: 14,
-  // true = completed that day, false = missed, null = future
   week: [true, true, true, true, true, true, true],
-  weekLabels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
 };
 
-const DAILY_TASKS = [
-  {
-    id: 'd1',
-    title: 'Перевір терміни',
-    desc: 'Відкрий холодильник і позначте прострочені продукти',
-    icon: 'calendar-outline',
-    color: '#E74C3C',
-    xp: 20,
-    completed: true,
-  },
-  {
-    id: 'd2',
-    title: 'Використай продукт',
-    desc: 'Позначте хоча б один продукт як використаний сьогодні',
-    icon: 'restaurant-outline',
-    color: '#2ECC71',
-    xp: 30,
-    completed: true,
-  },
-  {
-    id: 'd3',
-    title: 'Додай новий продукт',
-    desc: 'Відскануй штрихкод або зроби фото нового продукту',
-    icon: 'add-circle-outline',
-    color: '#3498DB',
-    xp: 25,
-    completed: false,
-  },
-  {
-    id: 'd4',
-    title: 'ШІ-рецепт дня',
-    desc: 'Отримай рецепт на основі продуктів з холодильника',
-    icon: 'bulb-outline',
-    color: '#9B59B6',
-    xp: 40,
-    completed: false,
-  },
-  {
-    id: 'd5',
-    title: 'Поділись досягненням',
-    desc: 'Розкажи другу або родичу про свій еко-прогрес',
-    icon: 'share-social-outline',
-    color: '#E67E22',
-    xp: 15,
-    completed: false,
-  },
+const DAILY_TASK_KEYS = [
+  { id: 'd1', titleKey: 'dailyTasks.task1Title', descKey: 'dailyTasks.task1Desc', icon: 'calendar-outline', color: '#E74C3C', xp: 20, completed: true },
+  { id: 'd2', titleKey: 'dailyTasks.task2Title', descKey: 'dailyTasks.task2Desc', icon: 'restaurant-outline', color: '#2ECC71', xp: 30, completed: true },
+  { id: 'd3', titleKey: 'dailyTasks.task3Title', descKey: 'dailyTasks.task3Desc', icon: 'add-circle-outline', color: '#3498DB', xp: 25, completed: false },
+  { id: 'd4', titleKey: 'dailyTasks.task4Title', descKey: 'dailyTasks.task4Desc', icon: 'bulb-outline', color: '#9B59B6', xp: 40, completed: false },
+  { id: 'd5', titleKey: 'dailyTasks.task5Title', descKey: 'dailyTasks.task5Desc', icon: 'share-social-outline', color: '#E67E22', xp: 15, completed: false },
 ];
 
-const WEEKLY_CHALLENGES = [
-  {
-    id: 'w1',
-    title: 'Нуль відходів',
-    desc: 'Не викидайте жодного продукту протягом тижня',
-    icon: 'leaf',
-    color: '#2ECC71',
-    xp: 150,
-    progress: 5,
-    total: 7,
-  },
-  {
-    id: 'w2',
-    title: 'Сканер тижня',
-    desc: 'Відскануйте 15 штрихкодів за тиждень',
-    icon: 'barcode',
-    color: '#3498DB',
-    xp: 100,
-    progress: 9,
-    total: 15,
-  },
-  {
-    id: 'w3',
-    title: 'Кулінарний тиждень',
-    desc: 'Отримайте 5 ШІ-рецептів за тиждень',
-    icon: 'restaurant',
-    color: '#E67E22',
-    xp: 120,
-    progress: 2,
-    total: 5,
-  },
+const WEEKLY_CHALLENGE_KEYS = [
+  { id: 'w1', titleKey: 'dailyTasks.challenge1Title', descKey: 'dailyTasks.challenge1Desc', icon: 'leaf', color: '#2ECC71', xp: 150, progress: 5, total: 7 },
+  { id: 'w2', titleKey: 'dailyTasks.challenge2Title', descKey: 'dailyTasks.challenge2Desc', icon: 'barcode', color: '#3498DB', xp: 100, progress: 9, total: 15 },
+  { id: 'w3', titleKey: 'dailyTasks.challenge3Title', descKey: 'dailyTasks.challenge3Desc', icon: 'restaurant', color: '#E67E22', xp: 120, progress: 2, total: 5 },
 ];
+
+const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 export default function DailyTasksScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
-  const completedCount = DAILY_TASKS.filter((t) => t.completed).length;
-  const totalCount = DAILY_TASKS.length;
-  const todayXP = DAILY_TASKS.filter((t) => t.completed).reduce((s, t) => s + t.xp, 0);
-  const maxXP = DAILY_TASKS.reduce((s, t) => s + t.xp, 0);
+  const completedCount = DAILY_TASK_KEYS.filter((task) => task.completed).length;
+  const totalCount = DAILY_TASK_KEYS.length;
+  const todayXP = DAILY_TASK_KEYS.filter((task) => task.completed).reduce((s, task) => s + task.xp, 0);
+  const maxXP = DAILY_TASK_KEYS.reduce((s, task) => s + task.xp, 0);
   const progressPercent = (completedCount / totalCount) * 100;
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-
-      {/* ── Header ── */}
-      {/* <View style={styles.header}> */}
-        {/* <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: COLORS.text }]}>Щоденні завдання</Text>
-          <View style={{ width: 24 }} />
-        </View> */}
-
-        {/* Streak pills */}
-        {/* <View style={styles.statsRow}>
-          <View style={styles.statPill}>
-            <Ionicons name="flame" size={16} color="#E74C3C" />
-            <Text style={[styles.statPillText, { color: COLORS.text }]}>
-              Стрік: {STREAK_DATA.current} днів
-            </Text>
-          </View>
-          <View style={styles.statPill}>
-            <Ionicons name="star" size={16} color="#F1C40F" />
-            <Text style={[styles.statPillText, { color: COLORS.text }]}>
-              +{todayXP} / {maxXP} XP
-            </Text>
-          </View>
-        </View> */}
-      {/* </View> */}
 
       <ScrollView
         style={styles.scroll}
@@ -159,15 +66,14 @@ export default function DailyTasksScreen({ navigation }) {
             </View>
             <View style={styles.streakInfo}>
               <Text style={styles.streakNumber}>{STREAK_DATA.current}</Text>
-              <Text style={styles.streakLabel}>днів поспіль</Text>
+              <Text style={styles.streakLabel}>{t('dailyTasks.streakLabel')}</Text>
             </View>
             <View style={styles.bestStreakBadge}>
               <Ionicons name="trophy" size={14} color="#F1C40F" />
-              <Text style={styles.bestStreakText}>Рекорд: {STREAK_DATA.best} дн.</Text>
+              <Text style={styles.bestStreakText}>{t('dailyTasks.bestStreak', { days: STREAK_DATA.best })}</Text>
             </View>
           </View>
 
-          {/* Week dots */}
           <View style={styles.weekRow}>
             {STREAK_DATA.week.map((done, i) => (
               <View key={i} style={styles.dayCol}>
@@ -182,7 +88,7 @@ export default function DailyTasksScreen({ navigation }) {
                   {done === true && <Ionicons name="checkmark" size={14} color="#fff" />}
                   {done === false && <Ionicons name="close" size={12} color={COLORS.textLight} />}
                 </View>
-                <Text style={styles.dayLabel}>{STREAK_DATA.weekLabels[i]}</Text>
+                <Text style={styles.dayLabel}>{t(`dailyTasks.${WEEKDAY_KEYS[i]}`)}</Text>
               </View>
             ))}
           </View>
@@ -191,43 +97,25 @@ export default function DailyTasksScreen({ navigation }) {
         {/* ── Daily progress ── */}
         <View style={styles.card}>
           <View style={styles.progressHeader}>
-            <Text style={styles.sectionTitle}>Прогрес сьогодні</Text>
-            <Text style={styles.progressCount}>
-              {completedCount}/{totalCount}
-            </Text>
+            <Text style={styles.sectionTitle}>{t('dailyTasks.todayProgress')}</Text>
+            <Text style={styles.progressCount}>{completedCount}/{totalCount}</Text>
           </View>
           <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${progressPercent}%`, backgroundColor: '#2ECC71' },
-              ]}
-            />
+            <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: '#2ECC71' }]} />
           </View>
           <Text style={styles.progressHint}>
             {completedCount === totalCount
-              ? '🎉 Всі завдання виконано! +' + maxXP + ' XP зараховано'
-              : `Залишилось ${totalCount - completedCount} завдань — зберіть ще +${maxXP - todayXP} XP`}
+              ? t('dailyTasks.allDone', { xp: maxXP })
+              : t('dailyTasks.remaining', { count: totalCount - completedCount, xp: maxXP - todayXP })}
           </Text>
         </View>
 
         {/* ── Daily tasks ── */}
-        <Text style={styles.sectionLabel}>Завдання на сьогодні</Text>
+        <Text style={styles.sectionLabel}>{t('dailyTasks.todayLabel')}</Text>
 
-        {DAILY_TASKS.map((task) => (
-          <View
-            key={task.id}
-            style={[
-              styles.taskCard,
-              task.completed && styles.taskCardDone,
-            ]}
-          >
-            <View
-              style={[
-                styles.taskIcon,
-                { backgroundColor: task.completed ? `${task.color}20` : COLORS.surfaceVariant },
-              ]}
-            >
+        {DAILY_TASK_KEYS.map((task) => (
+          <View key={task.id} style={[styles.taskCard, task.completed && styles.taskCardDone]}>
+            <View style={[styles.taskIcon, { backgroundColor: task.completed ? `${task.color}20` : COLORS.surfaceVariant }]}>
               <Ionicons
                 name={task.completed ? 'checkmark-circle' : task.icon}
                 size={26}
@@ -236,17 +124,10 @@ export default function DailyTasksScreen({ navigation }) {
             </View>
 
             <View style={styles.taskInfo}>
-              <Text
-                style={[
-                  styles.taskTitle,
-                  task.completed && { textDecorationLine: 'line-through', color: COLORS.textLight },
-                ]}
-              >
-                {task.title}
+              <Text style={[styles.taskTitle, task.completed && { textDecorationLine: 'line-through', color: COLORS.textLight }]}>
+                {t(task.titleKey)}
               </Text>
-              <Text style={styles.taskDesc} numberOfLines={2}>
-                {task.desc}
-              </Text>
+              <Text style={styles.taskDesc} numberOfLines={2}>{t(task.descKey)}</Text>
             </View>
 
             <View style={[styles.xpBadge, { backgroundColor: task.completed ? `${task.color}15` : COLORS.surfaceVariant }]}>
@@ -258,9 +139,9 @@ export default function DailyTasksScreen({ navigation }) {
         ))}
 
         {/* ── Weekly challenges ── */}
-        <Text style={[styles.sectionLabel, { marginTop: 32 }]}>Тижневі челенджі</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 32 }]}>{t('dailyTasks.weeklyLabel')}</Text>
 
-        {WEEKLY_CHALLENGES.map((ch) => {
+        {WEEKLY_CHALLENGE_KEYS.map((ch) => {
           const pct = (ch.progress / ch.total) * 100;
           return (
             <View key={ch.id} style={styles.challengeCard}>
@@ -269,8 +150,8 @@ export default function DailyTasksScreen({ navigation }) {
                   <Ionicons name={ch.icon} size={24} color={ch.color} />
                 </View>
                 <View style={styles.challengeInfo}>
-                  <Text style={styles.challengeTitle}>{ch.title}</Text>
-                  <Text style={styles.challengeDesc}>{ch.desc}</Text>
+                  <Text style={styles.challengeTitle}>{t(ch.titleKey)}</Text>
+                  <Text style={styles.challengeDesc}>{t(ch.descKey)}</Text>
                 </View>
                 <View style={[styles.xpBadge, { backgroundColor: `${ch.color}15` }]}>
                   <Text style={[styles.xpBadgeText, { color: ch.color }]}>+{ch.xp} XP</Text>
@@ -279,13 +160,9 @@ export default function DailyTasksScreen({ navigation }) {
 
               <View style={styles.challengeProgressRow}>
                 <View style={styles.challengeTrack}>
-                  <View
-                    style={[styles.challengeFill, { width: `${pct}%`, backgroundColor: ch.color }]}
-                  />
+                  <View style={[styles.challengeFill, { width: `${pct}%`, backgroundColor: ch.color }]} />
                 </View>
-                <Text style={styles.challengeCount}>
-                  {ch.progress}/{ch.total}
-                </Text>
+                <Text style={styles.challengeCount}>{ch.progress}/{ch.total}</Text>
               </View>
             </View>
           );
@@ -301,7 +178,6 @@ const getStyles = (COLORS, isDark, insets) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
 
-    // ── Header ──
     header: {
       backgroundColor: COLORS.surface,
       paddingTop: insets.top + 10,
@@ -335,11 +211,9 @@ const getStyles = (COLORS, isDark, insets) =>
     },
     statPillText: { fontSize: 14, fontWeight: '600' },
 
-    // ── Scroll / content ──
     scroll: { flex: 1 },
     content: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 40 },
 
-    // ── Generic card ──
     card: {
       backgroundColor: COLORS.surface,
       borderRadius: 24,
@@ -352,12 +226,7 @@ const getStyles = (COLORS, isDark, insets) =>
       elevation: 2,
     },
 
-    // ── Streak ──
-    streakHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
+    streakHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
     streakFlame: {
       width: 60,
       height: 60,
@@ -380,10 +249,7 @@ const getStyles = (COLORS, isDark, insets) =>
       borderRadius: 100,
     },
     bestStreakText: { fontSize: 12, fontWeight: '700', color: '#F1C40F' },
-    weekRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
+    weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
     dayCol: { alignItems: 'center', gap: 6 },
     dayDot: {
       width: 36,
@@ -397,7 +263,6 @@ const getStyles = (COLORS, isDark, insets) =>
     dayDotMissed: { backgroundColor: COLORS.surfaceVariant },
     dayLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textLight },
 
-    // ── Progress ──
     progressHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -416,7 +281,6 @@ const getStyles = (COLORS, isDark, insets) =>
     progressFill: { height: '100%', borderRadius: 6 },
     progressHint: { fontSize: 13, color: COLORS.textLight, textAlign: 'center' },
 
-    // ── Section label ──
     sectionLabel: {
       fontSize: 12,
       fontWeight: '700',
@@ -427,7 +291,6 @@ const getStyles = (COLORS, isDark, insets) =>
       marginLeft: 4,
     },
 
-    // ── Task cards ──
     taskCard: {
       backgroundColor: COLORS.surface,
       borderRadius: 20,
@@ -454,15 +317,9 @@ const getStyles = (COLORS, isDark, insets) =>
     taskTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
     taskDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 16 },
 
-    xpBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderRadius: 100,
-      alignSelf: 'center',
-    },
+    xpBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 100, alignSelf: 'center' },
     xpBadgeText: { fontSize: 12, fontWeight: '800' },
 
-    // ── Weekly challenge cards ──
     challengeCard: {
       backgroundColor: COLORS.surface,
       borderRadius: 20,
@@ -486,11 +343,7 @@ const getStyles = (COLORS, isDark, insets) =>
     challengeInfo: { flex: 1, marginRight: 8 },
     challengeTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
     challengeDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 16 },
-    challengeProgressRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
+    challengeProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     challengeTrack: {
       flex: 1,
       height: 8,

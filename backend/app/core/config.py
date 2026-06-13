@@ -1,6 +1,10 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
 from functools import lru_cache
+
+# Resolve .env relative to this file so it loads correctly regardless of cwd
+_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 
 
 class Settings(BaseSettings):
@@ -28,7 +32,7 @@ class Settings(BaseSettings):
         return v
 
     class Config:
-        env_file = "../.env"
+        env_file = str(_ENV_FILE)
         extra = "ignore"
 
 

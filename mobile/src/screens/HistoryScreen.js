@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 
 export default function HistoryScreen() {
+  const { t } = useTranslation();
   const { consumedProducts, fetchConsumedProducts } = useProductStore();
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -67,7 +69,7 @@ export default function HistoryScreen() {
           <Ionicons name="search" size={20} color={COLORS.onSurfaceVariant} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Пошук у історії..."
+            placeholder={t('history.searchPlaceholder')}
             placeholderTextColor={COLORS.onSurfaceVariant}
             value={search}
             onChangeText={setSearch}
@@ -93,8 +95,8 @@ export default function HistoryScreen() {
             <View style={styles.emptyIconContainer}>
                <Ionicons name="time-outline" size={48} color={COLORS.primary} />
             </View>
-            <Text style={styles.emptyTitle}>Історія порожня</Text>
-            <Text style={styles.emptyText}>Тут з'являться продукти, які ви спожили</Text>
+            <Text style={styles.emptyTitle}>{t('history.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('history.emptyText')}</Text>
           </View>
         }
       />

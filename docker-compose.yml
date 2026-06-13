@@ -1,6 +1,30 @@
 version: '3.8'
 
 services:
+  setup:
+    image: python:3.12-slim
+    container_name: freshify_setup
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: python setup.py --docker
+    profiles:
+      - setup
+
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: freshify_seed
+    restart: "no"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    command: python seed_premium_user.py
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     image: postgres:15-alpine
     container_name: freshify_db

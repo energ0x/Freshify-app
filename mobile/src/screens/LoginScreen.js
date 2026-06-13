@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/authStore';
 import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
 
 export default function LoginScreen({ navigation }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading } = useAuthStore();
 
   const handleLogin = async () => {
-    if (!email || !password) return Alert.alert('Помилка', 'Введіть email та пароль');
+    if (!email || !password) return Alert.alert(t('common.error'), t('login.required'));
     const res = await login(email, password);
-    if (!res.success) Alert.alert('Помилка', res.error);
+    if (!res.success) Alert.alert(t('common.error'), res.error);
   };
 
   return (
@@ -28,13 +30,13 @@ export default function LoginScreen({ navigation }) {
       />
       <TextInput
         style={styles.input}
-        placeholder="Пароль"
+        placeholder={t('login.passwordPlaceholder')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
-      <CustomButton title="Увійти" onPress={handleLogin} loading={isLoading} style={styles.button} />
-      <CustomButton title="Реєстрація" variant="outline" onPress={() => navigation.navigate('Register')} disabled={isLoading} />
+      <CustomButton title={t('login.btnLogin')} onPress={handleLogin} loading={isLoading} style={styles.button} />
+      <CustomButton title={t('login.btnRegister')} variant="outline" onPress={() => navigation.navigate('Register')} disabled={isLoading} />
     </View>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { aiAPI, productsAPI } from '../services/api';
 import { COLORS } from '../utils/constants';
 import CustomButton from '../components/CustomButton';
@@ -23,7 +24,7 @@ export default function CameraScreen({ navigation, route }) {
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
-        <Text style={styles.permissionText}>{t('camera.permissionRequired')}</Text>
+        <Text style={styles.permissionText}>{t('camera.permissionMsg')}</Text>
         <CustomButton title={t('camera.grantPermission')} onPress={requestPermission} />
       </View>
     );
@@ -46,7 +47,7 @@ export default function CameraScreen({ navigation, route }) {
 
       navigation.navigate('AddProduct', { aiResult: response.data });
     } catch (error) {
-      Alert.alert(t('common.error'), t('camera.unrecognizedBarcode'));
+      Alert.alert(t('common.error'), t('camera.barcodeError'));
       setScanned(false);
       setLoading(false);
     }
@@ -68,14 +69,14 @@ export default function CameraScreen({ navigation, route }) {
 
       navigation.navigate('AddProduct', { aiResult: response.data, imageUri: photo.uri });
     } catch (error) {
-      Alert.alert(t('common.error'), t('camera.unrecognizedImage'));
+      Alert.alert(t('common.error'), t('camera.imageRecognizeError'));
       setLoading(false);
     }
   };
 
   const getInstructionText = () => {
-    if (mode === 'barcode') return t('camera.pointAtBarcode');
-    if (mode === 'receipt') return t('camera.photoReceipt');
+    if (mode === 'barcode') return t('camera.pointCameraAtBarcode');
+    if (mode === 'receipt') return t('camera.photoEntireReceipt');
     return t('camera.photoProductClose');
   };
 
@@ -106,7 +107,7 @@ export default function CameraScreen({ navigation, route }) {
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
                 <Text style={styles.loadingText}>
-                  {mode === 'barcode' ? t('camera.searchingProduct') : t('camera.aiAnalyzing')}
+                  {mode === 'barcode' ? t('camera.searchingProduct') : t('camera.aiAnalyzingPhoto')}
                 </Text>
               </View>
             ) : (
