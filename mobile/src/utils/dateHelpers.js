@@ -26,10 +26,10 @@ export const getExpiryLabel = (expiryDateStr) => {
   if (!expiryDateStr) return '';
   const days = getDaysUntilExpiry(expiryDateStr);
   if (days < 0) return `Прострочено ${Math.abs(days)} дн. тому`;
-  if (days === 0) return 'Закінчується сьогодні';
-  if (days === 1) return 'Закінчується завтра';
-  if (days <= 3) return `Залишилось ${days} дні`;
-  return `Залишилось ${days} днів`;
+  if (days === 0) return 'Сьогодні';
+  if (days === 1) return 'Завтра';
+  if (days <= 3) return `${days} дні`;
+  return `${days} днів`;
 };
 
 export const getExpiryColor = (expiryDateStr, colors) => {
