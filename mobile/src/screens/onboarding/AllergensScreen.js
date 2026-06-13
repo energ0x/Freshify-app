@@ -6,14 +6,22 @@ import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
 import useAuthStore from '../../store/authStore';
 
-const INITIAL_ALLERGENS = [
-  'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
+const ALLERGEN_DEFS = [
+  { labelKey: 'allergens.milk',    emoji: '🥛' },
+  { labelKey: 'allergens.nuts',    emoji: '🥜' },
+  { labelKey: 'allergens.eggs',    emoji: '🥚' },
+  { labelKey: 'allergens.gluten',  emoji: '🌾' },
+  { labelKey: 'allergens.fish',    emoji: '🐟' },
+  { labelKey: 'allergens.seafood', emoji: '🦀' },
+  { labelKey: 'allergens.soy',     emoji: '🌱' },
+  { labelKey: 'allergens.citrus',  emoji: '🍊' },
+  { labelKey: 'allergens.honey',   emoji: '🍯' },
 ];
 
 export default function AllergensScreen({ navigation }) {
   const { t } = useTranslation();
   const { updateProfile } = useAuthStore();
-  const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
+  const [allergens, setAllergens] = useState(() => ALLERGEN_DEFS.map(a => `${t(a.labelKey)}${a.emoji}`));
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);

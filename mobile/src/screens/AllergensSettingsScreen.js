@@ -6,14 +6,23 @@ import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
 
-const INITIAL_ALLERGENS = [
-  'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
+const ALLERGEN_DEFS = [
+  { labelKey: 'allergens.milk',    emoji: '🥛' },
+  { labelKey: 'allergens.nuts',    emoji: '🥜' },
+  { labelKey: 'allergens.eggs',    emoji: '🥚' },
+  { labelKey: 'allergens.gluten',  emoji: '🌾' },
+  { labelKey: 'allergens.fish',    emoji: '🐟' },
+  { labelKey: 'allergens.seafood', emoji: '🦀' },
+  { labelKey: 'allergens.soy',     emoji: '🌱' },
+  { labelKey: 'allergens.citrus',  emoji: '🍊' },
+  { labelKey: 'allergens.honey',   emoji: '🍯' },
 ];
 
 export default function AllergensSettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
-  const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
+  const initList = ALLERGEN_DEFS.map(a => `${t(a.labelKey)}${a.emoji}`);
+  const [allergens, setAllergens] = useState(initList);
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,14 +30,14 @@ export default function AllergensSettingsScreen({ navigation }) {
   useEffect(() => {
     if (user?.allergens) {
       const mappedSelected = user.allergens.map(backendAllergen => {
-        const found = INITIAL_ALLERGENS.find(
-          ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() === backendAllergen
+        const found = initList.find(
+          ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim().toLowerCase() === backendAllergen.toLowerCase()
         );
         return found || backendAllergen;
       });
 
-      const remoteAllergens = mappedSelected.filter(a => !INITIAL_ALLERGENS.includes(a));
-      setAllergens([...INITIAL_ALLERGENS, ...remoteAllergens]);
+      const remoteAllergens = mappedSelected.filter(a => !initList.includes(a));
+      setAllergens([...initList, ...remoteAllergens]);
       setSelected(mappedSelected);
     }
   }, [user]);
