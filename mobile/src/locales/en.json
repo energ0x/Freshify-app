@@ -15,7 +15,10 @@
     "info": "Info",
     "undo": "UNDO",
     "apply": "Apply",
-    "resetAll": "Reset all"
+    "resetAll": "Reset all",
+    "add": "Add",
+    "other": "Other...",
+    "continue": "Continue"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -56,7 +59,8 @@
     "footer": "The subscription renews automatically. You can cancel at any time in your account settings. By continuing, you agree to the Terms of Use and Privacy Policy.",
     "successTitle": "Welcome to Freshify Premium! 🎉",
     "successMsg": "Payment was successful. You now have access to all app features.",
-    "cool": "Cool!"
+    "cool": "Cool!",
+    "activationError": "Failed to activate premium. Please try again later."
   },
   "productDetail": {
     "notFound": "Product not found",
@@ -84,6 +88,19 @@
   },
   "addProduct": {
     "screenTitle": "Add Product",
+    "scanLabel": "Add with AI / Barcode",
+    "productNumber": "Product {{number}}",
+    "addPhoto": "Add product photo",
+    "nameLabel": "Product Name",
+    "quantityLabel": "Quantity",
+    "unitLabel": "Unit",
+    "categoryLabel": "Category",
+    "addMore": "Add another product",
+    "saveWithCount": "Save ({{count}})",
+    "allergenWarning": "Product \"{{name}}\" may contain allergen!",
+    "nameRequiredNumber": "Enter name for product #{{number}}",
+    "someNotSaved": "Some products could not be saved.",
+    "saveFailed": "Failed to save products.",
     "attentionAllergenTitle": "Allergen Warning!",
     "attentionAllergenMsg": "You might be allergic to this product. Add it anyway?",
     "categoryNotFoundTitle": "Category not found",
@@ -135,7 +152,10 @@
     "sortAlphabet": "Alphabetically",
     "sortQuantity": "Quantity",
     "filterCategory": "Category",
-    "all": "All"
+    "all": "All",
+    "consume": "Consume",
+    "invalidQty": "Enter a valid quantity",
+    "qtyExceeds": "You cannot use more than is available"
   },
   "login": {
     "passwordPlaceholder": "Password",
@@ -176,9 +196,12 @@
     "emptyText": "Products you consume will appear here"
   },
   "diet": {
+    "title": "Do you follow any diet?",
     "subtitle": "This will help us analyze products more accurately and suggest relevant recipes.",
+    "subtitleOnboarding": "This will help us analyze products more accurately.",
     "savedSuccess": "Your diet settings have been saved.",
     "saveError": "Failed to save settings.",
+    "saveErrorOnboarding": "Failed to save preferences. Please try again.",
     "noneTitle": "Omnivore (No diet)",
     "noneDesc": "I eat without excluding food categories",
     "vegetarianTitle": "Vegetarian 🥦",
@@ -198,7 +221,24 @@
     "slide2Title": "Track Freshness",
     "slide2Desc": "Get notifications before products go bad",
     "slide3Title": "Smart Lists",
-    "slide3Desc": "Build shopping lists based on what has run out in your fridge"
+    "slide3Desc": "Build shopping lists based on what has run out in your fridge",
+    "allergensTitle": "Are you allergic to any products?",
+    "allergensSubtitle": "AI will warn you if it finds dangerous ingredients.",
+    "noAllergens": "No allergies",
+    "guide1Title": "Scan Receipts or Products",
+    "guide1Desc": "Just take a photo with the built-in camera. Our AI will recognize the name and automatically set the expiry date.",
+    "guide2Title": "Control Freshness",
+    "guide2Desc": "Freshify will send you push notifications in advance about products nearing expiry, so you have time to use them.",
+    "guide3Title": "Smart Recipes and Lists",
+    "guide3Desc": "Generate meal ideas using only what's already in your fridge, and automatically create shopping lists."
+  },
+  "welcome": {
+    "subtitle": "Welcome to Freshify! 🌱",
+    "title": "What should we call you?",
+    "namePlaceholder": "Your name",
+    "saving": "Saving...",
+    "nameRequired": "Please enter your name",
+    "saveError": "Failed to save name"
   },
   "settings": {
     "title": "Profile",
@@ -252,7 +292,8 @@
     "allergensSaved": "Allergen settings saved.",
     "allergensSaveError": "Failed to save settings.",
     "subtitle": "Add products to avoid. Our AI will automatically exclude them from your recipes.",
-    "addCustomPlaceholder": "Add custom allergen..."
+    "addCustomPlaceholder": "Add custom allergen...",
+    "customInputPlaceholder": "Enter your option..."
   },
   "analytics": {
     "title": "Analytics",
@@ -298,5 +339,57 @@
     "savedProducts": "Saved\nproducts",
     "donatedUAF": "Donated\nto UAF",
     "yourAchievements": "Your Achievements"
+  },
+  "dailyTasks": {
+    "streakLabel": "days in a row",
+    "bestStreak": "Record: {{days}} d.",
+    "todayProgress": "Today's Progress",
+    "allDone": "🎉 All tasks done! +{{xp}} XP earned",
+    "remaining": "{{count}} tasks left — earn +{{xp}} more XP",
+    "todayLabel": "Today's Tasks",
+    "weeklyLabel": "Weekly Challenges",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat",
+    "sun": "Sun",
+    "task1Title": "Check Expiry",
+    "task1Desc": "Open the fridge and mark expired products",
+    "task2Title": "Use a Product",
+    "task2Desc": "Mark at least one product as used today",
+    "task3Title": "Add New Product",
+    "task3Desc": "Scan a barcode or take a photo of a new product",
+    "task4Title": "AI Recipe of the Day",
+    "task4Desc": "Get a recipe based on products in your fridge",
+    "task5Title": "Share an Achievement",
+    "task5Desc": "Tell a friend or family member about your eco progress",
+    "challenge1Title": "Zero Waste",
+    "challenge1Desc": "Don't throw away any product during the week",
+    "challenge2Title": "Scanner of the Week",
+    "challenge2Desc": "Scan 15 barcodes this week",
+    "challenge3Title": "Culinary Week",
+    "challenge3Desc": "Get 5 AI recipes this week"
+  },
+  "leagues": {
+    "title": "Level Map",
+    "myLevel": "My level: {{level}}",
+    "goToMyLevel": "My Level",
+    "levelBadge": "Level {{level}}",
+    "item1Title": "Green Sprouts",
+    "item1Desc": "Your journey begins!\n1 AI recipe, 3 photos, 5 barcodes, 10 manual additions per month.",
+    "item2Title": "Advanced Beginner",
+    "item2Desc": "You're getting into it:\n2 AI recipes, 5 photos, 10 barcodes, 20 manual additions.",
+    "item3Title": "Experienced",
+    "item3Desc": "Your eco footprint is shrinking:\n5 AI recipes, 15 photos, 30 barcodes, 50 manual additions.",
+    "item4Title": "Freshness Masters",
+    "item4Desc": "You're in a new league!\n10 AI recipes, 30 photos, 50 barcodes, 100 manual additions.",
+    "item5Title": "Head Chef",
+    "item5Desc": "Cooking smart:\n15 AI recipes, 40 photos, 80 barcodes, 150 manual additions.",
+    "item6Title": "Eco Heroes",
+    "item6Desc": "Elite Planet league!\n20 AI recipes, 50 photos, 100 barcodes, unlimited manual additions.",
+    "item7Title": "Absolute Guru",
+    "item7Desc": "Maximum level!\nYou have achieved perfection in the Zero Waste lifestyle."
   }
 }
