@@ -5,10 +5,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Alert } from 'react-native';
 import { useNavigationContainerRef } from '@react-navigation/native';
-import NetInfo from '@react-native-community/netinfo';
 import AppNavigator from './src/navigation/AppNavigator';
 import useThemeStore from './src/store/themeStore';
-import useProductStore from './src/store/productStore';
 import { premiumLimitListeners, notifyPremiumLimitReached } from './src/services/api';
 import './src/locales/i18n';
 
@@ -19,26 +17,6 @@ export default function App() {
   useEffect(() => {
     initializeTheme();
   }, [initializeTheme]);
-
-  // Слухач зміни стану мережі для синхронізації офлайн-черги
-  useEffect(() => {
-    const syncIfOnline = (state) => {
-      // isInternetReachable може бути null в деяких випадках на Android, тому перевіряємо isConnected
-      if (state.isConnected && state.isInternetReachable !== false) {
-        useProductStore.getState().syncOfflineQueue();
-      }
-    };
-
-    // Перевірка при старті
-    NetInfo.fetch().then(syncIfOnline);
-
-    // Підписка на зміни
-    const unsubscribeNetInfo = NetInfo.addEventListener(syncIfOnline);
-
-    return () => {
-      unsubscribeNetInfo();
-    };
-  }, []);
 
   useEffect(() => {
     const handleLimitReached = (message) => {

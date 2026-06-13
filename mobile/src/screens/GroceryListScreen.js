@@ -124,7 +124,7 @@ export default function GroceryListScreen() {
     return (
       <Swipeable
         ref={swipeableRef}
-        containerStyle={{ marginBottom: 12, overflow: 'visible' }}
+        containerStyle={{ marginBottom: 12 }}
         renderLeftActions={renderLeftActions}
         renderRightActions={renderRightActions}
         overshootLeft={false}
@@ -312,11 +312,11 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 16,
-    elevation: 3,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
   checkboxContainer: {
     flexDirection: 'row',

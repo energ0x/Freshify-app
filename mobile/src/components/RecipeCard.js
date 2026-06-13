@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
-import { groceryAPI } from '../services/api';
 
 const RecipeCard = ({ content }) => {
   const { colors: COLORS } = useThemeStore();
   const styles = getStyles(COLORS);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [addingToGrocery, setAddingToGrocery] = useState(false);
-  const [addedToGrocery, setAddedToGrocery] = useState(false);
 
   const parseContent = () => {
     const lines = content.split('\n').filter(line => line.trim() !== '');
@@ -47,33 +44,6 @@ const RecipeCard = ({ content }) => {
     return null;
   }
 
-  const handleAddMissingToGrocery = async () => {
-    if (addedToGrocery || recipe.missingIngredients.length === 0) {
-      return;
-    }
-    
-    setAddingToGrocery(true);
-    let successCount = 0;
-    
-    try {
-      for (const ingredient of recipe.missingIngredients) {
-        await groceryAPI.create({
-          name: ingredient,
-          quantity: 1,
-        });
-        successCount++;
-      }
-      
-      Alert.alert("Успіх", `Додано ${successCount} ${successCount === 1 ? 'продукт' : 'продуктів'} до списку покупок!`);
-      setAddedToGrocery(true);
-    } catch (error) {
-      console.error("Error adding to grocery list:", error);
-      Alert.alert("Помилка", "Не вдалося додати деякі продукти до списку покупок.");
-    } finally {
-      setAddingToGrocery(false);
-    }
-  };
-
   return (
     <View style={styles.recipeCard}>
       <TouchableOpacity style={styles.recipeHeader} onPress={() => setIsExpanded(!isExpanded)} activeOpacity={0.7}>
@@ -103,40 +73,13 @@ const RecipeCard = ({ content }) => {
 
           {recipe.missingIngredients.length > 0 && (
             <>
-              <View style={styles.missingHeaderContainer}>
-                <Text style={[styles.sectionTitle, { color: COLORS.warning, marginBottom: 0 }]}>Треба докупити:</Text>
-                <TouchableOpacity 
-                  style={[
-                    styles.addToGroceryButton, 
-                    (addedToGrocery || addingToGrocery) && styles.addToGroceryButtonDisabled
-                  ]} 
-                  onPress={handleAddMissingToGrocery}
-                  disabled={addingToGrocery || addedToGrocery}
-                >
-                  {addingToGrocery ? (
-                    <ActivityIndicator size="small" color={COLORS.onPrimary} />
-                  ) : addedToGrocery ? (
-                    <>
-                      <Ionicons name="checkmark-outline" size={16} color={COLORS.onPrimary} />
-                      <Text style={styles.addToGroceryText}>Додано!</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Ionicons name="cart-outline" size={16} color={COLORS.onPrimary} />
-                      <Text style={styles.addToGroceryText}>Додати всі</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-              
-              <View style={{ marginTop: 8 }}>
-                {recipe.missingIngredients.map((ing, idx) => (
-                  <View key={idx} style={styles.listItem}>
-                    <Ionicons name="close-circle-outline" size={18} color={COLORS.danger} style={styles.listIcon} />
-                    <Text style={styles.listText}>{ing}</Text>
-                  </View>
-                ))}
-              </View>
+              <Text style={[styles.sectionTitle, { color: COLORS.warning, marginTop: 8 }]}>Треба докупити:</Text>
+              {recipe.missingIngredients.map((ing, idx) => (
+                <View key={idx} style={styles.listItem}>
+                  <Ionicons name="close-circle-outline" size={18} color={COLORS.danger} style={styles.listIcon} />
+                  <Text style={styles.listText}>{ing}</Text>
+                </View>
+              ))}
             </>
           )}
 
@@ -201,29 +144,6 @@ const getStyles = (COLORS) => StyleSheet.create({
     fontWeight: '600', 
     color: COLORS.text, 
     marginBottom: 8 
-  },
-  missingHeaderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addToGroceryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  addToGroceryButtonDisabled: {
-    backgroundColor: COLORS.surfaceVariant,
-  },
-  addToGroceryText: {
-    color: COLORS.onPrimary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
   },
   listItem: {
     flexDirection: 'row',

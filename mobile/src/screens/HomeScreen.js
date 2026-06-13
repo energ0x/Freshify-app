@@ -4,11 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import ProductCard from '../components/ProductCard';
 import CustomButton from '../components/CustomButton';
-import { useCategories } from '../hooks/useCategories';
+import DailyTasksWidget from '../components/DailyTasksWidget';
 import { useTranslation } from 'react-i18next';
 import { getDaysUntilExpiry } from '../utils/dateHelpers';
 
@@ -40,6 +41,8 @@ export default function HomeScreen({ navigation }) {
   const [productToConsume, setProductToConsume] = useState(null);
   const [consumeAmount, setConsumeAmount] = useState('');
 
+  const [showDailyWidget, setShowDailyWidget] = useState(false);
+
   const loadData = useCallback(async () => {
     setRefreshing(true);
     await fetchProducts();
@@ -48,7 +51,34 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     loadData();
+    checkWidgetVisibility();
   }, [loadData]);
+
+  const checkWidgetVisibility = async () => {
+    try {
+      const closedDate = await AsyncStorage.getItem('daily_widget_closed_date');
+      const today = new Date().toISOString().split('T')[0];
+      
+      if (closedDate !== today) {
+        setShowDailyWidget(true);
+      }
+    } catch (e) {
+      console.log('Помилка перевірки віджета', e);
+      setShowDailyWidget(true);
+    }
+  };
+
+  const handleCloseWidget = async () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowDailyWidget(false);
+    
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      await AsyncStorage.setItem('daily_widget_closed_date', today);
+    } catch (e) {
+      console.log('Помилка збереження стану віджета', e);
+    }
+  };
 
   const handleSortPress = (type) => {
     if (sortBy === type) {
@@ -114,15 +144,10 @@ export default function HomeScreen({ navigation }) {
     setPendingDelete(null);
   };
 
-  const handleConsumeTrigger = async (item) => {
-    const qty = Number(item.quantity);
-    if (qty <= 1) {
-      await consumeProduct(item.id, qty);
-    } else {
-      setProductToConsume(item);
-      setConsumeAmount(qty.toString());
-      setConsumeModalVisible(true);
-    }
+  const handleConsumeTrigger = (item) => {
+    setProductToConsume(item);
+    setConsumeAmount('');
+    setConsumeModalVisible(true);
   };
 
   const submitConsume = async () => {
@@ -201,7 +226,7 @@ export default function HomeScreen({ navigation }) {
     return (
       <Swipeable
         ref={swipeableRef}
-        containerStyle={{ marginBottom: 12, overflow: 'visible' }}
+        containerStyle={{ marginBottom: 12 }}
         renderLeftActions={renderLeftActions}
         renderRightActions={renderRightActions}
         overshootLeft={false}
@@ -279,6 +304,15 @@ export default function HomeScreen({ navigation }) {
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => <SwipeableProductItem item={item} />}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          showDailyWidget ? (
+            <DailyTasksWidget 
+              navigation={navigation} 
+              isClosable={true} 
+              onClose={handleCloseWidget} 
+            />
+          ) : null
+        }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} tintColor={COLORS.primary} />}
         ListEmptyComponent={
           <View style={styles.empty}>
