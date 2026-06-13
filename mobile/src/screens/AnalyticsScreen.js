@@ -92,14 +92,14 @@ export default function AnalyticsScreen({ navigation }) {
 
       ws.onerror = (e) => {
         console.log("WebSocket Error:", e.message);
-        setStreamedText(t('analytics.loadError'));
+        setStreamedText(t('analytics.loadRecsError'));
         setLoadingAi(false);
         Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
       };
 
     } catch (error) {
       console.log('Помилка ініціалізації WebSocket', error);
-      setStreamedText(t('analytics.loadError'));
+      setStreamedText(t('analytics.loadRecsError'));
       setLoadingAi(false);
       Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
     }
@@ -178,7 +178,7 @@ export default function AnalyticsScreen({ navigation }) {
               absolute
             />
           ) : (
-            <Text style={styles.emptyText}>{t('analytics.noData')}</Text>
+            <Text style={styles.emptyText}>{t('analytics.noConsumptionData')}</Text>
           )}
         </View>
 
@@ -192,7 +192,7 @@ export default function AnalyticsScreen({ navigation }) {
             <Animated.View style={animatedStyle}>
               <Ionicons name={loadingAi ? "close" : "sparkles-outline"} size={24} color={COLORS.onPrimary} />
             </Animated.View>
-            <Text style={styles.generateButtonText}>{loadingAi ? t('analytics.cancel') : t('analytics.getAdvice')}</Text>
+            <Text style={styles.generateButtonText}>{loadingAi ? t('common.cancel') : t('analytics.getAdvice')}</Text>
           </TouchableOpacity>
 
           {streamedText ? (

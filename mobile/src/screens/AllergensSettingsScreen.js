@@ -45,7 +45,7 @@ export default function AllergensSettingsScreen({ navigation }) {
     const text = customInput.trim();
     if (!text) return;
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
-      return Alert.alert(t('common.attention'), t('allergens.alreadyInList'));
+      return Alert.alert(t('common.attention'), t('allergens.allergenExists'));
     }
     setAllergens([...allergens, text]);
     setSelected([...selected, text]);
@@ -58,14 +58,14 @@ export default function AllergensSettingsScreen({ navigation }) {
       const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
       const res = await updateProfile({ allergens: cleanedAllergens });
       if (res.success) {
-        Alert.alert(t('common.success'), t('allergens.saveSuccess'), [
+        Alert.alert(t('common.success'), t('allergens.allergensSaved'), [
           { text: t('common.ok'), onPress: () => navigation.goBack() }
         ]);
       } else {
-        Alert.alert(t('common.error'), res.error || t('allergens.saveError'));
+        Alert.alert(t('common.error'), res.error || t('allergens.allergensSaveError'));
       }
     } catch (error) {
-      Alert.alert(t('common.error'), t('allergens.saveError'));
+      Alert.alert(t('common.error'), t('allergens.allergensSaveError'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -75,7 +75,7 @@ export default function AllergensSettingsScreen({ navigation }) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <Text style={styles.subtitle}>
-        {t('allergens.description')}
+        {t('allergens.subtitle')}
       </Text>
 
       <View style={styles.inputContainer}>
