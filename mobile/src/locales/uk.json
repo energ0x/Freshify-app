@@ -10,7 +10,9 @@
     "delete": "Видалити",
     "restore": "Скинути",
     "attention": "Увага",
-    "ok": "ОК"
+    "ok": "ОК",
+    "resetAll": "Скинути все",
+    "apply": "Застосувати"
   },
   "categories": {
     "deleteTitle": "Видалення категорії",
@@ -112,7 +114,15 @@
   "home": {
     "title": "Мої продукти",
     "search": "Пошук продуктів...",
-    "empty": "Список порожній"
+    "empty": "Список порожній",
+    "recipesIdea": "Що з цього приготувати?",
+    "filtersTitle": "Фільтри",
+    "filterCategory": "Категорія",
+    "all": "Всі",
+    "sortBy": "Сортувати за",
+    "sortExpiry": "Терміном",
+    "sortAlphabet": "Алфавітом",
+    "sortQuantity": "Кількістю"
   },
   "settings": {
     "title": "Профіль",

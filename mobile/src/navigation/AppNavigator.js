@@ -48,6 +48,8 @@ import DietSettingsScreen from "../screens/DietSettingsScreen";
 import AllergensSettingsScreen from "../screens/AllergensSettingsScreen";
 import CategoriesScreen from "../screens/CategoriesScreen";
 import DailyTasksScreen from "../screens/DailyTasksScreen";
+import ProductFiltersScreen from "../screens/ProductFiltersScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -432,6 +434,22 @@ export default function AppNavigator() {
               name="DailyTasks"
               component={DailyTasksScreen}
               options={{ headerShown: true, title: t("screens.dailyTasks") }}
+            />
+            <Stack.Screen
+              name="ProductFilters"
+              component={ProductFiltersScreen}
+              options={{
+                headerShown: false,
+                ...TransitionPresets.ModalPresentationIOS,
+              }}
+            />
+            <Stack.Screen
+              name="EditProfile"
+              component={EditProfileScreen}
+              options={{
+                headerShown: false,
+                ...TransitionPresets.ModalPresentationIOS,
+              }}
             />
           </>
         )}

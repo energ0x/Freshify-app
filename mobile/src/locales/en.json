@@ -10,7 +10,9 @@
     "delete": "Delete",
     "restore": "Restore",
     "attention": "Attention",
-    "ok": "OK"
+    "ok": "OK",
+    "resetAll": "Reset all",
+    "apply": "Apply"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -112,7 +114,15 @@
   "home": {
     "title": "My Products",
     "search": "Search products...",
-    "empty": "List is empty"
+    "empty": "List is empty",
+    "recipesIdea": "What can I make with this?",
+    "filtersTitle": "Filters",
+    "filterCategory": "Category",
+    "all": "All",
+    "sortBy": "Sort by",
+    "sortExpiry": "Expiry date",
+    "sortAlphabet": "Alphabet",
+    "sortQuantity": "Quantity"
   },
   "settings": {
     "title": "Profile",

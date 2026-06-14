@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, LayoutAnimation, UIManager, Animated } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, Modal, Alert, KeyboardAvoidingView, Platform, StatusBar, LayoutAnimation, UIManager, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
   const { t } = useTranslation();
   const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore();
   const { colors: COLORS, theme } = useThemeStore();
@@ -30,7 +30,6 @@ export default function HomeScreen({ navigation }) {
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [sortBy, setSortBy] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
-  const [showFilterModal, setShowFilterModal] = useState(false);
 
   const [pendingDelete, setPendingDelete] = useState(null);
   const deleteTimeoutRef = useRef(null);
@@ -38,6 +37,16 @@ export default function HomeScreen({ navigation }) {
   const [consumeModalVisible, setConsumeModalVisible] = useState(false);
   const [productToConsume, setProductToConsume] = useState(null);
   const [consumeAmount, setConsumeAmount] = useState('');
+
+  // Слухаємо оновлені фільтри з FilterScreen
+  useEffect(() => {
+    if (route?.params?.appliedFilters) {
+      const { selectedCategoryId: catId, sortBy: sort, sortDirection: dir } = route.params.appliedFilters;
+      setSelectedCategoryId(catId);
+      setSortBy(sort);
+      setSortDirection(dir);
+    }
+  }, [route?.params?.appliedFilters]);
 
   const loadData = useCallback(async () => {
     setRefreshing(true);
@@ -48,15 +57,6 @@ export default function HomeScreen({ navigation }) {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  const handleSortPress = (type) => {
-    if (sortBy === type) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(type);
-      setSortDirection('asc');
-    }
-  };
 
   const resetFilters = () => {
     setSelectedCategoryId(null);
@@ -241,9 +241,13 @@ export default function HomeScreen({ navigation }) {
               </TouchableOpacity>
             )}
           </View>
+          
           <TouchableOpacity
             style={[styles.filterButton, isFilterActive && styles.filterButtonActive]}
-            onPress={() => setShowFilterModal(true)}
+            onPress={() => navigation.navigate('ProductFilters', {
+              currentFilters: { selectedCategoryId, sortBy, sortDirection },
+              presentCategories
+            })}
           >
             <Ionicons
               name={isFilterActive ? "options" : "options-outline"}
@@ -321,53 +325,6 @@ export default function HomeScreen({ navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-
-      <Modal animationType="fade" transparent={true} visible={showFilterModal} onRequestClose={() => setShowFilterModal(false)}>
-        <View style={styles.bottomModalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('home.filtersTitle')}</Text>
-              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                <Ionicons name="close" size={24} color={COLORS.text} />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.sectionTitle}>{t('home.sortBy')}</Text>
-            <View style={styles.optionsRow}>
-              <TouchableOpacity style={[styles.optionChip, sortBy === 'expiry' && styles.optionChipActive]} onPress={() => handleSortPress('expiry')}>
-                <Text style={[styles.optionChipText, sortBy === 'expiry' && styles.optionChipTextActive]}>{t('home.sortExpiry')}{renderSortArrow('expiry')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.optionChip, sortBy === 'alphabet' && styles.optionChipActive]} onPress={() => handleSortPress('alphabet')}>
-                <Text style={[styles.optionChipText, sortBy === 'alphabet' && styles.optionChipTextActive]}>{t('home.sortAlphabet')}{renderSortArrow('alphabet')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.optionChip, sortBy === 'quantity' && styles.optionChipActive]} onPress={() => handleSortPress('quantity')}>
-                <Text style={[styles.optionChipText, sortBy === 'quantity' && styles.optionChipTextActive]}>{t('home.sortQuantity')}{renderSortArrow('quantity')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.sectionTitle}>{t('home.filterCategory')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
-              <TouchableOpacity style={[styles.categoryChip, selectedCategoryId === null && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(null)}>
-                <Text style={[styles.categoryChipText, selectedCategoryId === null && styles.categoryChipTextActive]}>{t('home.all')}</Text>
-              </TouchableOpacity>
-              {presentCategories.map(category => (
-                <TouchableOpacity key={category.id} style={[styles.categoryChip, selectedCategoryId === category.id && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(category.id)}>
-                  <Text style={[styles.categoryChipText, selectedCategoryId === category.id && styles.categoryChipTextActive]}>{category.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <View style={styles.modalActionsRow}>
-              <TouchableOpacity style={styles.modalResetButton} onPress={resetFilters}>
-                <Text style={styles.modalResetButtonText}>{t('common.resetAll')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.applyButton} onPress={() => setShowFilterModal(false)}>
-                <Text style={styles.applyButtonText}>{t('common.apply')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -377,8 +334,6 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-
-  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -465,14 +420,10 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-
-  // ─── List ──────────────────────────────────────────────────────────────────
   list: {
     padding: 20,
     paddingBottom: tabBarHeight + 40,
   },
-
-  // ─── Empty state ───────────────────────────────────────────────────────────
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -500,8 +451,6 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-
-  // ─── Swipe actions ─────────────────────────────────────────────────────────
   swipeAction: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -523,8 +472,6 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
   },
-
-  // ─── Snackbar ──────────────────────────────────────────────────────────────
   snackbar: {
     position: 'absolute',
     bottom: tabBarHeight + 80,
@@ -552,8 +499,6 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
-
-  // ─── Consume modal ─────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -587,120 +532,10 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
   modalButton: {
     flex: 1,
   },
-
-  // ─── Filter modal ──────────────────────────────────────────────────────────
-  bottomModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: COLORS.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: '80%',
-    width: '100%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.text,
-    textAlign: 'center',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginTop: 12,
-    marginBottom: 12,
-  },
-  optionsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  optionChip: {
-    backgroundColor: COLORS.surfaceVariant,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  optionChipActive: {
-    backgroundColor: COLORS.primary,
-  },
-  optionChipText: {
-    color: COLORS.text,
-    fontSize: 13,
-  },
-  optionChipTextActive: {
-    color: COLORS.onPrimary,
-    fontWeight: '600',
-  },
-  categoriesScroll: {
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  categoryChip: {
-    backgroundColor: COLORS.surfaceVariant,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    height: 36,
-    justifyContent: 'center',
-  },
-  categoryChipActive: {
-    backgroundColor: COLORS.primary,
-  },
-  categoryChipText: {
-    color: COLORS.text,
-    fontSize: 13,
-  },
-  categoryChipTextActive: {
-    color: COLORS.onPrimary,
-    fontWeight: '600',
-  },
   modalActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-  },
-  modalResetButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.outline,
-    backgroundColor: COLORS.background,
-  },
-  modalResetButtonText: {
-    color: COLORS.danger,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  applyButton: {
-    flex: 2,
-    backgroundColor: COLORS.primary,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  applyButtonText: {
-    color: COLORS.onPrimary,
-    fontSize: 16,
-    fontWeight: '700',
   },
 });
