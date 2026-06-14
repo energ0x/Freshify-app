@@ -56,10 +56,6 @@ const Tab = createBottomTabNavigator();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Тривалість анімації по платформах.
-//
-// iOS:     160 мс — трохи довша, відповідає плавній iOS-естетиці
-// Android: 100 мс — коротша, щоб навіть 1-2 кадри затримки JS-потоку
-//          були непомітні (нічого невидимого краще, ніж затемнений кадр)
 // ─────────────────────────────────────────────────────────────────────────────
 const TAB_FADE_DURATION = Platform.select({
   ios: 160,
@@ -69,49 +65,26 @@ const TAB_FADE_DURATION = Platform.select({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // withTabAnimation — HOC для плавного fade-in при переключенні вкладок.
-//
-// Чому попередній код мигав на Android:
-//   1. `new Animated.Value(0.3)` — екран рендерився видимим (30% opacity)
-//      ще до того, як анімація починалась → видимий "тьмяний" кадр.
-//   2. `opacity.setValue(0.3)` у cleanup — при виході з вкладки opacity
-//      стрибала до 0.3, що теж давало мигання.
-//
-// Рішення:
-//   • Стартуємо з opacity = 0 (повністю невидимий).
-//   • У useFocusEffect синхронно скидаємо до 0, потім анімуємо до 1.
-//   • У cleanup тільки зупиняємо анімацію — opacity лишається 1.
-//     React Navigation сам ховає вкладку через display:none, тому
-//     opacity:1 на схованій вкладці не призводить до артефактів.
-//   • useNativeDriver: true — анімація крутиться на UI-потоці без JS-bridge.
-//   • React.memo — запобігає зайвим ре-рендерам при навігації.
 // ─────────────────────────────────────────────────────────────────────────────
 const withTabAnimation = (WrappedComponent) => {
   const AnimatedScreen = React.memo((props) => {
-    // Починаємо з 0 — екран невидимий при першому маунті.
-    // Будь-яка затримка JS-потоку буде виглядати як "ще не появився",
-    // а не як "мигнув і зник".
     const opacity = useRef(new Animated.Value(0)).current;
     const animRef = useRef(null);
 
     useFocusEffect(
       useCallback(() => {
-        // Скасовуємо попередню анімацію, якщо юзер швидко перемикає вкладки
         if (animRef.current) {
           animRef.current.stop();
           animRef.current = null;
         }
 
-        // Синхронний скид до 0 — відбувається до того,
-        // як React Native малює наступний кадр
         opacity.setValue(0);
 
-        // Плавна появa з Easing.out(Easing.ease) —
-        // швидкий старт, плавне завершення, як у нативних iOS-переходах
         animRef.current = Animated.timing(opacity, {
           toValue: 1,
           duration: TAB_FADE_DURATION,
           easing: Easing.out(Easing.ease),
-          useNativeDriver: true, // UI-потік, без JS-bridge
+          useNativeDriver: true,
         });
 
         animRef.current.start(({ finished }) => {
@@ -119,20 +92,15 @@ const withTabAnimation = (WrappedComponent) => {
         });
 
         return () => {
-          // Тільки зупиняємо анімацію — НЕ скидаємо opacity.
-          // Якщо скинути до 0.3 (як було раніше), вкладка мигає при
-          // поверненні, бо стає видимою на 30% до початку анімації.
           if (animRef.current) {
             animRef.current.stop();
             animRef.current = null;
           }
         };
-      }, []), // opacity і animRef — стабільні рефи, залежностей немає
+      }, []),
     );
 
     return (
-      // renderToHardwareTextureAndroid: анімація opacity виконується
-      // через апаратний шар на Android — усуває "дьоргання" при первому показі
       <Animated.View
         style={{ flex: 1, opacity }}
         renderToHardwareTextureAndroid
@@ -152,11 +120,7 @@ const AnimatedAnalyticsScreen = withTabAnimation(AnalyticsScreen);
 const AnimatedSettingsScreen = withTabAnimation(SettingsScreen);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TabBarBackground — різний для iOS та Android.
-//
-// BlurView на Android викликає дорогу GPU-операцію кожен кадр і є
-// основною причиною лагів при рендерингу. Натомість використовуємо
-// звичайний View з напівпрозорим фоном, який виглядає майже так само.
+// TabBarBackground
 // ─────────────────────────────────────────────────────────────────────────────
 const TabBarBackground = ({ theme }) => {
   if (Platform.OS === "android") {
@@ -175,8 +139,6 @@ const TabBarBackground = ({ theme }) => {
     );
   }
 
-  // iOS: нативний blur без experimentalBlurMethod (він не потрібен
-  // і може спричиняти проблеми на деяких пристроях)
   return (
     <BlurView
       tint={
@@ -192,6 +154,7 @@ const TabBarBackground = ({ theme }) => {
 
 const MainTabs = () => {
   const { colors: COLORS, theme } = useThemeStore();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -203,8 +166,6 @@ const MainTabs = () => {
           height: 90,
           borderTopWidth: 0,
           backgroundColor: "transparent",
-          // Прибираємо elevation на Android — воно взаємодіє з BlurView/
-          // кастомним фоном і може давати артефакти рендерингу
           elevation: Platform.OS === "android" ? 0 : 0,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: -2 },
@@ -233,14 +194,21 @@ const MainTabs = () => {
           }
 
           let iconName;
-          if (route.name === "Продукти")
+          let labelText = "";
+
+          if (route.name === "Products") {
             iconName = focused ? "fast-food" : "fast-food-outline";
-          else if (route.name === "Покупки")
+            labelText = t("tabs.products");
+          } else if (route.name === "Grocery") {
             iconName = focused ? "cart" : "cart-outline";
-          else if (route.name === "Аналітика")
+            labelText = t("tabs.grocery");
+          } else if (route.name === "Analytics") {
             iconName = focused ? "pie-chart" : "pie-chart-outline";
-          else if (route.name === "Параметри")
-            iconName = focused ? "settings" : "settings-outline";
+            labelText = t("tabs.analytics");
+          } else if (route.name === "Profile") {
+            iconName = focused ? "person" : "person-outline";
+            labelText = t("tabs.profile");
+          }
 
           return (
             <View style={styles.tabItemContainer}>
@@ -262,7 +230,7 @@ const MainTabs = () => {
                   { color: focused ? COLORS.primary : COLORS.textLight },
                 ]}
               >
-                {route.name}
+                {labelText}
               </Text>
             </View>
           );
@@ -271,8 +239,8 @@ const MainTabs = () => {
         tabBarInactiveTintColor: COLORS.textLight,
       })}
     >
-      <Tab.Screen name="Продукти" component={AnimatedHomeScreen} />
-      <Tab.Screen name="Покупки" component={AnimatedGroceryListScreen} />
+      <Tab.Screen name="Products" component={AnimatedHomeScreen} />
+      <Tab.Screen name="Grocery" component={AnimatedGroceryListScreen} />
 
       <Tab.Screen
         name="AddButton"
@@ -285,8 +253,8 @@ const MainTabs = () => {
         })}
       />
 
-      <Tab.Screen name="Аналітика" component={AnimatedAnalyticsScreen} />
-      <Tab.Screen name="Параметри" component={AnimatedSettingsScreen} />
+      <Tab.Screen name="Analytics" component={AnimatedAnalyticsScreen} />
+      <Tab.Screen name="Profile" component={AnimatedSettingsScreen} />
     </Tab.Navigator>
   );
 };

@@ -34,7 +34,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
     // Повертаємося назад і передаємо нові фільтри через params. 
     // Замість "Home" вкажи назву твого роуту головного екрана, якщо вона інша
     navigation.navigate({
-      name: 'Продукти', // Переконайся, що це правильне ім'я екрана
+      name: 'Products', // Переконайся, що це правильне ім'я екрана
       params: { appliedFilters: { selectedCategoryId, sortBy, sortDirection } },
       merge: true,
     });

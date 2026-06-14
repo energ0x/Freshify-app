@@ -16,6 +16,25 @@
     "info": "Інформація",
     "undo": "Скасувати"
   },
+  "tabs": {
+    "products": "Продукти",
+    "grocery": "Покупки",
+    "analytics": "Аналітика",
+    "profile": "Профіль"
+  },
+  "screens": {
+    "addProduct": "Додати продукт",
+    "scan": "Сканування",
+    "productDetail": "Деталі продукту",
+    "history": "Історія",
+    "recipes": "Рецепти",
+    "achievements": "Досягнення",
+    "leagues": "Ліги",
+    "dietSettings": "Моя дієта",
+    "allergensSettings": "Мої алергени",
+    "categories": "Категорії",
+    "dailyTasks": "Щоденні завдання"
+  },
   "categories": {
     "deleteTitle": "Видалення категорії",
     "deleteMessage": "Ви впевнені, що хочете видалити цю категорію?",

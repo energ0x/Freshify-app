@@ -16,6 +16,25 @@
     "info": "Information",
     "undo": "Undo"
   },
+  "tabs": {
+    "products": "Products",
+    "grocery": "Grocery",
+    "analytics": "Analytics",
+    "profile": "Profile"
+  },
+  "screens": {
+    "addProduct": "Add Product",
+    "scan": "Scan",
+    "productDetail": "Product Detail",
+    "history": "History",
+    "recipes": "Recipes",
+    "achievements": "Achievements",
+    "leagues": "Leagues",
+    "dietSettings": "My Diet",
+    "allergensSettings": "My Allergens",
+    "categories": "Categories",
+    "dailyTasks": "Daily Tasks"
+  },
   "categories": {
     "deleteTitle": "Delete Category",
     "deleteMessage": "Are you sure you want to delete this category?",
