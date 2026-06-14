@@ -52,7 +52,7 @@ async def clean_stream(response_stream):
             yield buffer
 
 
-def analyze_product_image(
+async def analyze_product_image(
         image_bytes: bytes,
         mime_type: str = "image/jpeg",
         user_allergens: list[str] | None = None,
@@ -94,7 +94,7 @@ If the image does not contain any food products, return:
         image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
         config = types.GenerateContentConfig(response_mime_type="application/json")
 
-        response = client.models.generate_content(
+        response = await client.aio.models.generate_content(
             model=VISION_MODEL_NAME,
             contents=[prompt, image_part],
             config=config
