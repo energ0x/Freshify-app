@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useTranslation } from 'react-i18next';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -13,6 +14,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export default function GroceryListScreen() {
+  const { t } = useTranslation();
   const { groceryItems, fetchGrocery, addGroceryItem, toggleGroceryItem, deleteGroceryItem, addFromFridge, products } = useProductStore();
   const { colors: COLORS, theme } = useThemeStore();
   const [newItemName, setNewItemName] = useState('');
@@ -45,7 +47,7 @@ export default function GroceryListScreen() {
 
   const handleAddItem = async () => {
     if (!newItemName.trim()) return;
-    const res = await addGroceryItem({ name: newItemName.trim(), quantity: 1, unit: 'шт' });
+    const res = await addGroceryItem({ name: newItemName.trim(), quantity: 1, unit: t('grocery.defaultUnit') });
     if (res.success) setNewItemName('');
   };
 
@@ -53,12 +55,12 @@ export default function GroceryListScreen() {
     const lowStockIds = products.filter(p => p.quantity < 2).map(p => p.id);
 
     if (lowStockIds.length === 0) {
-      return Alert.alert('Інформація', 'У вас достатньо всіх продуктів.');
+      return Alert.alert(t('common.info'), t('grocery.enoughProducts'));
     }
 
     const res = await addFromFridge(lowStockIds);
     if (res.success) {
-      Alert.alert('Успіх', 'Продукти, що закінчуються, додано до списку.');
+      Alert.alert(t('common.success'), t('grocery.lowStockAdded'));
       loadData();
     }
   };
@@ -100,7 +102,7 @@ export default function GroceryListScreen() {
       return (
         <Animated.View style={[styles.swipeAction, styles.buyAction, { opacity }]}>
           <Ionicons name="cart" size={24} color={COLORS.onPrimaryContainer} />
-          <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>Куплено</Text>
+          <Text style={[styles.swipeText, { color: COLORS.onPrimaryContainer }]}>{t('grocery.purchased')}</Text>
         </Animated.View>
       );
     };
@@ -114,7 +116,7 @@ export default function GroceryListScreen() {
       return (
         <Animated.View style={[styles.swipeAction, styles.deleteAction, { opacity }]}>
           <Ionicons name="trash" size={24} color={COLORS.onErrorContainer} />
-          <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>Видалити</Text>
+          <Text style={[styles.swipeText, { color: COLORS.onErrorContainer }]}>{t('common.delete')}</Text>
         </Animated.View>
       );
     };
@@ -160,14 +162,14 @@ export default function GroceryListScreen() {
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
 
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Список покупок</Text>
+        <Text style={styles.headerTitle}>{t('grocery.title')}</Text>
 
           <View style={styles.inputContainer}>
             <View style={styles.inputWrapper}>
               <Ionicons name="add-outline" size={20} color={COLORS.onSurfaceVariant} />
               <TextInput
                 style={styles.input}
-                placeholder="Що потрібно купити?"
+                placeholder={t('grocery.inputPlaceholder')}
                 placeholderTextColor={COLORS.onSurfaceVariant}
                 value={newItemName}
                 onChangeText={setNewItemName}
@@ -194,7 +196,7 @@ export default function GroceryListScreen() {
 
         <TouchableOpacity style={styles.autoAddBtn} onPress={handleAddLowStock}>
           <Ionicons name="sync-outline" size={18} color={COLORS.onPrimary} style={{ marginRight: 8 }} />
-          <Text style={styles.autoAddText}>Додати те, що закінчується</Text>
+          <Text style={styles.autoAddText}>{t('grocery.addLowStock')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -209,17 +211,17 @@ export default function GroceryListScreen() {
             <View style={styles.emptyIconContainer}>
               <Ionicons name="cart-outline" size={48} color={COLORS.primary} />
             </View>
-            <Text style={styles.emptyTitle}>Список порожній</Text>
-            <Text style={styles.emptyText}>Додайте продукти, які потрібно купити у магазині</Text>
+            <Text style={styles.emptyTitle}>{t('grocery.emptyTitle')}</Text>
+            <Text style={styles.emptyText}>{t('grocery.emptyText')}</Text>
           </View>
         }
       />
 
       {pendingDelete && (
         <View style={styles.snackbar}>
-          <Text style={styles.snackbarText}>Елемент видалено</Text>
+          <Text style={styles.snackbarText}>{t('grocery.itemDeleted')}</Text>
           <TouchableOpacity onPress={handleUndoDelete}>
-            <Text style={styles.snackbarAction}>СКАСУВАТИ</Text>
+            <Text style={styles.snackbarAction}>{t('common.undo')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -232,8 +234,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-
-  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -296,8 +296,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-
-  // ─── List ──────────────────────────────────────────────────────────────────
   list: {
     padding: 20,
     paddingBottom: tabBarHeight + 40,
@@ -332,8 +330,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     textDecorationLine: 'line-through',
     color: COLORS.onSurfaceVariant,
   },
-
-  // ─── Empty state ───────────────────────────────────────────────────────────
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -361,8 +357,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-
-  // ─── Swipe actions ─────────────────────────────────────────────────────────
   swipeAction: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -384,8 +378,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
   },
-
-  // ─── Snackbar ──────────────────────────────────────────────────────────────
   snackbar: {
     position: 'absolute',
     bottom: tabBarHeight + 80,
@@ -412,5 +404,6 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     color: COLORS.primary,
     fontWeight: 'bold',
     fontSize: 14,
+    textTransform: 'uppercase', // Зроблено через стилі, щоб текст завжди був великими літерами
   },
 });

@@ -9,6 +9,8 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 import { settingsAPI, achievementsAPI } from '../services/api';
@@ -34,7 +36,9 @@ export default function SettingsScreen({ navigation }) {
   const { theme, toggleTheme, colors: COLORS, isSystemTheme, setSystemTheme } = useThemeStore();
 
   const [donationSettings, setDonationSettings] = useState({ auto_donate: false });
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [achievements, setAchievements] = useState([]);
+  
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
@@ -48,6 +52,7 @@ export default function SettingsScreen({ navigation }) {
 
   useEffect(() => {
     loadSettings();
+    checkNotificationStatus();
   }, []);
 
   useFocusEffect(
@@ -70,6 +75,44 @@ export default function SettingsScreen({ navigation }) {
       if (res.data) setDonationSettings(res.data);
     } catch (e) {
       console.log('Settings load error', e);
+    }
+  };
+
+  const checkNotificationStatus = async () => {
+    try {
+      const storedPreference = await AsyncStorage.getItem('notifications_enabled');
+      if (storedPreference === 'true') {
+        const { status } = await Notifications.getPermissionsAsync();
+        setNotificationsEnabled(status === 'granted');
+      } else {
+        setNotificationsEnabled(false);
+      }
+    } catch (e) {
+      console.log('Error checking notification status', e);
+    }
+  };
+
+  const handleToggleNotifications = async (value) => {
+    if (value) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus === 'granted') {
+        setNotificationsEnabled(true);
+        await AsyncStorage.setItem('notifications_enabled', 'true');
+      } else {
+        Alert.alert(t('common.attention'), t('settings.notificationsDenied'));
+        setNotificationsEnabled(false);
+      }
+    } else {
+      setNotificationsEnabled(false);
+      await AsyncStorage.setItem('notifications_enabled', 'false');
+      await Notifications.cancelAllScheduledNotificationsAsync();
     }
   };
 
@@ -238,6 +281,20 @@ export default function SettingsScreen({ navigation }) {
                 <Text style={styles.charityChipText} numberOfLines={1}>{currentLangName}</Text>
                 <Ionicons name="chevron-down" size={16} color={COLORS.outline} />
               </View>
+            }
+          />
+          <View style={styles.divider} />
+          <SettingItem
+            icon="notifications-outline"
+            title={t('settings.notifications')}
+            iconBgColor="#FF2D55"
+            rightComponent={
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: COLORS.surfaceVariant, true: COLORS.primary }}
+                thumbColor={COLORS.onPrimary ?? '#fff'}
+              />
             }
           />
           <View style={styles.divider} />

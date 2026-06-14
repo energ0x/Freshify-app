@@ -58,7 +58,7 @@ export default function ProductCard({ item, onPress, style }) {
         <View style={styles.expiryBadge}>
           <Ionicons name="time" size={14} color={expiryColor} />
           <Text style={styles.expiryText}>
-            {getExpiryLabel(item.expiry_date) || 'Не вказано'}
+            {getExpiryLabel(item.expiry_date) || t('productCard.notSpecified')}
           </Text>
         </View>
       </View>

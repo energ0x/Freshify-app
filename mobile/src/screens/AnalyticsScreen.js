@@ -192,7 +192,7 @@ export default function AnalyticsScreen({ navigation }) {
             <Animated.View style={animatedStyle}>
               <Ionicons name={loadingAi ? "close" : "sparkles-outline"} size={24} color={COLORS.onPrimary} />
             </Animated.View>
-            <Text style={styles.generateButtonText}>{loadingAi ? t('analytics.cancel') : t('analytics.getAdvice')}</Text>
+            <Text style={styles.generateButtonText}>{loadingAi ? t('common.cancel') : t('analytics.getAdvice')}</Text>
           </TouchableOpacity>
 
           {streamedText ? (

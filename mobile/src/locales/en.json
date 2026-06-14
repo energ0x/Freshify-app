@@ -12,7 +12,9 @@
     "attention": "Attention",
     "ok": "OK",
     "resetAll": "Reset all",
-    "apply": "Apply"
+    "apply": "Apply",
+    "info": "Information",
+    "undo": "Undo"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -103,6 +105,18 @@
     "emptyTitle": "Generate recipes",
     "emptyText": "Tap the button to get meal ideas based on the products in your fridge"
   },
+  "grocery": {
+    "title": "Grocery List",
+    "inputPlaceholder": "What do you need to buy?",
+    "addLowStock": "Add low stock items",
+    "emptyTitle": "List is empty",
+    "emptyText": "Add products you need to buy at the store",
+    "enoughProducts": "You have enough of all products.",
+    "lowStockAdded": "Low stock products added to the list.",
+    "purchased": "Bought",
+    "itemDeleted": "Item deleted",
+    "defaultUnit": "pcs"
+  },
   "register": {
     "title": "Create Account",
     "emailPlaceholder": "Email *",
@@ -178,7 +192,9 @@
     "chooseLanguageTitle": "Choose language",
     "profileUpdated": "Profile updated successfully",
     "profileUpdateError": "Failed to update profile",
-    "settingsSaveError": "Failed to save settings"
+    "settingsSaveError": "Failed to save settings",
+    "notifications": "Notifications",
+    "notificationsDenied": "Notification permissions denied. Please enable them in your device settings."
   },
   "allergens": {
     "allergenExists": "This allergen is already in the list",
@@ -218,6 +234,18 @@
     "searchingProduct": "Searching for product...",
     "aiAnalyzingPhoto": "AI is analyzing the photo...",
     "aiAnalyzing": "AI is analyzing the photo..."
+  },
+  "dateHelpers": {
+    "notSpecified": "Not specified",
+    "expiredDaysAgo": "Expired {{count}} days ago",
+    "expiresToday": "Expires today",
+    "expiresTomorrow": "Expires tomorrow",
+    "expiresInDays_one": "Expires in {{count}} day",
+    "expiresInDays_other": "Expires in {{count}} days"
+  },
+  "productCard": {
+    "other": "Other",
+    "notSpecified": "Not specified"
   },
   "validation": {
     "nameShort": "Name must be at least 2 characters",

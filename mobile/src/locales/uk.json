@@ -12,7 +12,9 @@
     "attention": "Увага",
     "ok": "ОК",
     "resetAll": "Скинути все",
-    "apply": "Застосувати"
+    "apply": "Застосувати",
+    "info": "Інформація",
+    "undo": "Скасувати"
   },
   "categories": {
     "deleteTitle": "Видалення категорії",
@@ -103,6 +105,18 @@
     "emptyTitle": "Згенеруйте рецепти",
     "emptyText": "Натисніть кнопку, щоб отримати ідеї страв на основі продуктів у вашому холодильнику"
   },
+  "grocery": {
+    "title": "Список покупок",
+    "inputPlaceholder": "Що потрібно купити?",
+    "addLowStock": "Додати те, що закінчується",
+    "emptyTitle": "Список порожній",
+    "emptyText": "Додайте продукти, які потрібно купити у магазині",
+    "enoughProducts": "У вас достатньо всіх продуктів.",
+    "lowStockAdded": "Продукти, що закінчуються, додано до списку.",
+    "purchased": "Куплено",
+    "itemDeleted": "Елемент видалено",
+    "defaultUnit": "шт"
+  },
   "register": {
     "title": "Створити акаунт",
     "emailPlaceholder": "Email *",
@@ -178,7 +192,9 @@
     "chooseLanguageTitle": "Оберіть мову",
     "profileUpdated": "Профіль оновлено",
     "profileUpdateError": "Не вдалося оновити профіль",
-    "settingsSaveError": "Не вдалося зберегти налаштування"
+    "settingsSaveError": "Не вдалося зберегти налаштування",
+    "notifications": "Сповіщення",
+    "notificationsDenied": "Немає дозволу на сповіщення. Будь ласка, увімкніть їх у налаштуваннях вашого пристрою."
   },
   "allergens": {
     "allergenExists": "Цей алерген уже є у списку",
@@ -218,6 +234,23 @@
     "searchingProduct": "Шукаємо продукт...",
     "aiAnalyzingPhoto": "ШІ аналізує фото...",
     "aiAnalyzing": "ШІ аналізує фото..."
+  },
+  "dateHelpers": {
+    "notSpecified": "Не вказано",
+    "expiredDaysAgo_one": "Прострочено {{count}} день тому",
+    "expiredDaysAgo_few": "Прострочено {{count}} дні тому",
+    "expiredDaysAgo_many": "Прострочено {{count}} днів тому",
+    "expiredDaysAgo_other": "Прострочено {{count}} днів тому",
+    "expiresToday": "Закінчується сьогодні",
+    "expiresTomorrow": "Закінчується завтра",
+    "expiresInDays_one": "Залишилось {{count}} день",
+    "expiresInDays_few": "Залишилось {{count}} дні",
+    "expiresInDays_many": "Залишилось {{count}} днів",
+    "expiresInDays_other": "Залишилось {{count}} днів"
+  },
+  "productCard": {
+    "other": "Інше",
+    "notSpecified": "Не вказано"
   },
   "validation": {
     "nameShort": "Ім'я повинно мати мінімум 2 символи",
