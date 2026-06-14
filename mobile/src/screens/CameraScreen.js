@@ -91,9 +91,6 @@ export default function CameraScreen({ navigation, route }) {
         }}
       >
         <View style={styles.overlay}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="close" size={30} color="#fff" />
-          </TouchableOpacity>
 
           <Text style={styles.instructionText}>{getInstructionText()}</Text>
 
