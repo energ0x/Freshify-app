@@ -7,7 +7,7 @@ import { COLORS } from '../utils/constants';
 
 export default function RegisterScreen({ navigation }) {
   const { t } = useTranslation();
-  const [name, setName] = useState('');
+  const [name, setName] = useState('1');  // це костиль!=) бекенд очікує що людина надішле ім'я
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { register, isLoading } = useAuthStore();
