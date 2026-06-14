@@ -122,7 +122,16 @@
     "sortBy": "Sort by",
     "sortExpiry": "Expiry date",
     "sortAlphabet": "Alphabet",
-    "sortQuantity": "Quantity"
+    "sortQuantity": "Quantity",
+    "invalidQty": "Invalid quantity entered.",
+    "qtyExceeds": "Quantity exceeds available stock.",
+    "consume": "Consume",
+    "filtersApplied": "Filters applied",
+    "sorting": "Sorting",
+    "emptyText": "Add your first product to start tracking your food.",
+    "productDeleted": "Product deleted",
+    "consumeTitle": "Consume Product",
+    "consumeAvailable": "Available: {{quantity}} {{unit}}"
   },
   "settings": {
     "title": "Profile",
@@ -193,16 +202,22 @@
   },
   "camera": {
     "permissionMsg": "The app needs camera access to recognize products.",
+    "permissionRequired": "The app needs camera access to recognize products.",
     "grantPermission": "Grant permission",
     "productByCode": "Product by code {{code}}",
     "other": "Other",
     "barcodeError": "Failed to recognize the barcode.",
+    "unrecognizedBarcode": "Failed to recognize the barcode.",
     "imageRecognizeError": "Failed to recognize the image. Please try again.",
+    "unrecognizedImage": "Failed to recognize the image. Please try again.",
     "pointCameraAtBarcode": "Point the camera at the barcode",
+    "pointAtBarcode": "Point the camera at the barcode",
     "photoEntireReceipt": "Photograph the entire receipt",
+    "photoReceipt": "Photograph the entire receipt",
     "photoProductClose": "Take a close-up photo of the product",
     "searchingProduct": "Searching for product...",
-    "aiAnalyzingPhoto": "AI is analyzing the photo..."
+    "aiAnalyzingPhoto": "AI is analyzing the photo...",
+    "aiAnalyzing": "AI is analyzing the photo..."
   },
   "validation": {
     "nameShort": "Name must be at least 2 characters",

@@ -122,7 +122,16 @@
     "sortBy": "Сортувати за",
     "sortExpiry": "Терміном",
     "sortAlphabet": "Алфавітом",
-    "sortQuantity": "Кількістю"
+    "sortQuantity": "Кількістю",
+    "invalidQty": "Введено неправильну кількість.",
+    "qtyExceeds": "Кількість перевищує наявний залишок.",
+    "consume": "Спожити",
+    "filtersApplied": "Фільтри застосовано",
+    "sorting": "Сортування",
+    "emptyText": "Додайте свій перший продукт, щоб почати відстежувати їжу.",
+    "productDeleted": "Продукт видалено",
+    "consumeTitle": "Спожити продукт",
+    "consumeAvailable": "Доступно: {{quantity}} {{unit}}"
   },
   "settings": {
     "title": "Профіль",
@@ -193,16 +202,22 @@
   },
   "camera": {
     "permissionMsg": "Додаток потребує доступу до камери для розпізнавання продуктів.",
+    "permissionRequired": "Додаток потребує доступу до камери для розпізнавання продуктів.",
     "grantPermission": "Надати дозвіл",
     "productByCode": "Продукт за кодом {{code}}",
     "other": "Інше",
     "barcodeError": "Не вдалося розпізнати штрихкод.",
+    "unrecognizedBarcode": "Не вдалося розпізнати штрихкод.",
     "imageRecognizeError": "Не вдалося розпізнати зображення. Спробуйте ще раз.",
+    "unrecognizedImage": "Не вдалося розпізнати зображення. Спробуйте ще раз.",
     "pointCameraAtBarcode": "Наведіть камеру на штрихкод",
+    "pointAtBarcode": "Наведіть камеру на штрихкод",
     "photoEntireReceipt": "Сфотографуйте весь чек",
+    "photoReceipt": "Сфотографуйте весь чек",
     "photoProductClose": "Сфотографуйте продукт крупним планом",
     "searchingProduct": "Шукаємо продукт...",
-    "aiAnalyzingPhoto": "ШІ аналізує фото..."
+    "aiAnalyzingPhoto": "ШІ аналізує фото...",
+    "aiAnalyzing": "ШІ аналізує фото..."
   },
   "validation": {
     "nameShort": "Ім'я повинно мати мінімум 2 символи",
