@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import { authAPI } from '../services/api';
+import * as syncQueue from '../services/syncQueue';
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -74,6 +75,7 @@ const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     await SecureStore.deleteItemAsync('auth_token');
+    await syncQueue.clear();
     set({ token: null, user: null, isAuthenticated: false, needsOnboarding: false });
   },
 
