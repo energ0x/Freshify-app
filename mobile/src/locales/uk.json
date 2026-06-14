@@ -270,5 +270,15 @@
     "savedProducts": "Врятовано\nпродуктів",
     "donatedUAF": "Передано\nна ЗСУ",
     "yourAchievements": "Ваші Досягнення"
+  },
+  "notifications": {
+    "expiringSoonTitle": "⏰ Термін придатності скоро закінчується",
+    "expiringSoonBody": "{{name}} — залишилось 3 дні",
+    "expiresTodayTitle": "🚨 Продукт закінчується сьогодні",
+    "expiresTodayBody": "{{name}} — вживіть або викиньте",
+    "expiredTitle": "❌ Продукт прострочений",
+    "expiredBody": "{{name}} — термін придатності минув",
+    "lowQuantityTitle": "📦 Продукт закінчується",
+    "lowQuantityBody": "{{name}} — залишилось мало ({{quantity}} {{unit}})"
   }
 }

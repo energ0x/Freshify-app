@@ -265,5 +265,15 @@
     "savedProducts": "Saved\nproducts",
     "donatedUAF": "Donated\nto UAF",
     "yourAchievements": "Your Achievements"
+  },
+  "notifications": {
+    "expiringSoonTitle": "⏰ Expiry date is approaching",
+    "expiringSoonBody": "{{name}} — 3 days left",
+    "expiresTodayTitle": "🚨 Product expires today",
+    "expiresTodayBody": "{{name}} — consume or discard",
+    "expiredTitle": "❌ Product expired",
+    "expiredBody": "{{name}} — expiry date has passed",
+    "lowQuantityTitle": "📦 Product running low",
+    "lowQuantityBody": "{{name}} — running low ({{quantity}} {{unit}})"
   }
 }

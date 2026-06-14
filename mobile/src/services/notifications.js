@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import i18next from 'i18next'; // Звертаємось напряму до i18next поза React-компонентами
 import { getDaysUntilExpiry } from '../utils/dateHelpers';
 
 Notifications.setNotificationHandler({
@@ -46,8 +47,8 @@ export async function scheduleExpiryNotifications(products) {
     if (days === 3) {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '⏰ Термін придатності скоро закінчується',
-          body: `${product.name} — залишилось 3 дні`,
+          title: i18next.t('notifications.expiringSoonTitle'),
+          body: i18next.t('notifications.expiringSoonBody', { name: product.name }),
           data: { productId: product.id, type: 'expiring_soon' },
         },
         trigger: { seconds: 5 },
@@ -55,8 +56,8 @@ export async function scheduleExpiryNotifications(products) {
     } else if (days === 0) {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🚨 Продукт закінчується сьогодні',
-          body: `${product.name} — вживіть або викиньте`,
+          title: i18next.t('notifications.expiresTodayTitle'),
+          body: i18next.t('notifications.expiresTodayBody', { name: product.name }),
           data: { productId: product.id, type: 'expires_today' },
         },
         trigger: { seconds: 5 },
@@ -64,8 +65,8 @@ export async function scheduleExpiryNotifications(products) {
     } else if (days < 0) {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '❌ Продукт прострочений',
-          body: `${product.name} — термін придатності минув`,
+          title: i18next.t('notifications.expiredTitle'),
+          body: i18next.t('notifications.expiredBody', { name: product.name }),
           data: { productId: product.id, type: 'expired' },
         },
         trigger: { seconds: 5 },
@@ -78,8 +79,12 @@ export async function scheduleLowQuantityNotification(product) {
   if (product.quantity < 2) {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '📦 Продукт закінчується',
-        body: `${product.name} — залишилось мало (${product.quantity} ${product.unit})`,
+        title: i18next.t('notifications.lowQuantityTitle'),
+        body: i18next.t('notifications.lowQuantityBody', { 
+          name: product.name, 
+          quantity: product.quantity, 
+          unit: product.unit 
+        }),
         data: { productId: product.id, type: 'low_quantity' },
       },
       trigger: { seconds: 2 },
