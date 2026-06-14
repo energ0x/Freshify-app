@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCategories } from '../hooks/useCategories';
 import { productsAPI } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
-import useTranslation from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 
 export default function AddProductScreen({ navigation, route }) {
