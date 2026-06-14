@@ -35,11 +35,6 @@ export default function AddProductScreen({ navigation, route }) {
 
   const styles = getStyles(COLORS);
 
-  // Update header title dynamically when language changes
-  useEffect(() => {
-    navigation.setOptions({ title: t('addProduct.screenTitle') });
-  }, [navigation, t]);
-
   useEffect(() => {
     if (categories.length > 0) {
       setForms(prev => prev.map(f => f.category_id ? f : { ...f, category_id: categories[0].id }));

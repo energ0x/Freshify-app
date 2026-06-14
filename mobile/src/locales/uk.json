@@ -10,7 +10,30 @@
     "delete": "Видалити",
     "restore": "Скинути",
     "attention": "Увага",
-    "ok": "ОК"
+    "ok": "ОК",
+    "resetAll": "Скинути все",
+    "apply": "Застосувати",
+    "info": "Інформація",
+    "undo": "Скасувати"
+  },
+  "tabs": {
+    "products": "Продукти",
+    "grocery": "Покупки",
+    "analytics": "Аналітика",
+    "profile": "Профіль"
+  },
+  "screens": {
+    "addProduct": "Додати продукт",
+    "scan": "Сканування",
+    "productDetail": "Деталі продукту",
+    "history": "Історія",
+    "recipes": "Рецепти",
+    "achievements": "Досягнення",
+    "leagues": "Ліги",
+    "dietSettings": "Моя дієта",
+    "allergensSettings": "Мої алергени",
+    "categories": "Категорії",
+    "dailyTasks": "Щоденні завдання"
   },
   "categories": {
     "deleteTitle": "Видалення категорії",
@@ -103,6 +126,18 @@
     "emptyTitle": "Згенеруйте рецепти",
     "emptyText": "Натисніть кнопку, щоб отримати ідеї страв на основі продуктів у вашому холодильнику"
   },
+  "grocery": {
+    "title": "Список покупок",
+    "inputPlaceholder": "Що потрібно купити?",
+    "addLowStock": "Додати те, що закінчується",
+    "emptyTitle": "Список порожній",
+    "emptyText": "Додайте продукти, які потрібно купити у магазині",
+    "enoughProducts": "У вас достатньо всіх продуктів.",
+    "lowStockAdded": "Продукти, що закінчуються, додано до списку.",
+    "purchased": "Куплено",
+    "itemDeleted": "Елемент видалено",
+    "defaultUnit": "шт"
+  },
   "register": {
     "title": "Створити акаунт",
     "emailPlaceholder": "Email *",
@@ -114,7 +149,24 @@
   "home": {
     "title": "Мої продукти",
     "search": "Пошук продуктів...",
-    "empty": "Список порожній"
+    "empty": "Список порожній",
+    "recipesIdea": "Що з цього приготувати?",
+    "filtersTitle": "Фільтри",
+    "filterCategory": "Категорія",
+    "all": "Всі",
+    "sortBy": "Сортувати за",
+    "sortExpiry": "Терміном",
+    "sortAlphabet": "Алфавітом",
+    "sortQuantity": "Кількістю",
+    "invalidQty": "Введено неправильну кількість.",
+    "qtyExceeds": "Кількість перевищує наявний залишок.",
+    "consume": "Спожити",
+    "filtersApplied": "Фільтри застосовано",
+    "sorting": "Сортування",
+    "emptyText": "Додайте свій перший продукт, щоб почати відстежувати їжу.",
+    "productDeleted": "Продукт видалено",
+    "consumeTitle": "Спожити продукт",
+    "consumeAvailable": "Доступно: {{quantity}} {{unit}}"
   },
   "settings": {
     "title": "Профіль",
@@ -161,7 +213,9 @@
     "chooseLanguageTitle": "Оберіть мову",
     "profileUpdated": "Профіль оновлено",
     "profileUpdateError": "Не вдалося оновити профіль",
-    "settingsSaveError": "Не вдалося зберегти налаштування"
+    "settingsSaveError": "Не вдалося зберегти налаштування",
+    "notifications": "Сповіщення",
+    "notificationsDenied": "Немає дозволу на сповіщення. Будь ласка, увімкніть їх у налаштуваннях вашого пристрою."
   },
   "allergens": {
     "allergenExists": "Цей алерген уже є у списку",
@@ -185,16 +239,39 @@
   },
   "camera": {
     "permissionMsg": "Додаток потребує доступу до камери для розпізнавання продуктів.",
+    "permissionRequired": "Додаток потребує доступу до камери для розпізнавання продуктів.",
     "grantPermission": "Надати дозвіл",
     "productByCode": "Продукт за кодом {{code}}",
     "other": "Інше",
     "barcodeError": "Не вдалося розпізнати штрихкод.",
+    "unrecognizedBarcode": "Не вдалося розпізнати штрихкод.",
     "imageRecognizeError": "Не вдалося розпізнати зображення. Спробуйте ще раз.",
+    "unrecognizedImage": "Не вдалося розпізнати зображення. Спробуйте ще раз.",
     "pointCameraAtBarcode": "Наведіть камеру на штрихкод",
+    "pointAtBarcode": "Наведіть камеру на штрихкод",
     "photoEntireReceipt": "Сфотографуйте весь чек",
+    "photoReceipt": "Сфотографуйте весь чек",
     "photoProductClose": "Сфотографуйте продукт крупним планом",
     "searchingProduct": "Шукаємо продукт...",
-    "aiAnalyzingPhoto": "ШІ аналізує фото..."
+    "aiAnalyzingPhoto": "ШІ аналізує фото...",
+    "aiAnalyzing": "ШІ аналізує фото..."
+  },
+  "dateHelpers": {
+    "notSpecified": "Не вказано",
+    "expiredDaysAgo_one": "Прострочено {{count}} день тому",
+    "expiredDaysAgo_few": "Прострочено {{count}} дні тому",
+    "expiredDaysAgo_many": "Прострочено {{count}} днів тому",
+    "expiredDaysAgo_other": "Прострочено {{count}} днів тому",
+    "expiresToday": "Закінчується сьогодні",
+    "expiresTomorrow": "Закінчується завтра",
+    "expiresInDays_one": "Залишилось {{count}} день",
+    "expiresInDays_few": "Залишилось {{count}} дні",
+    "expiresInDays_many": "Залишилось {{count}} днів",
+    "expiresInDays_other": "Залишилось {{count}} днів"
+  },
+  "productCard": {
+    "other": "Інше",
+    "notSpecified": "Не вказано"
   },
   "validation": {
     "nameShort": "Ім'я повинно мати мінімум 2 символи",
@@ -214,5 +291,15 @@
     "savedProducts": "Врятовано\nпродуктів",
     "donatedUAF": "Передано\nна ЗСУ",
     "yourAchievements": "Ваші Досягнення"
+  },
+  "notifications": {
+    "expiringSoonTitle": "⏰ Термін придатності скоро закінчується",
+    "expiringSoonBody": "{{name}} — залишилось 3 дні",
+    "expiresTodayTitle": "🚨 Продукт закінчується сьогодні",
+    "expiresTodayBody": "{{name}} — вживіть або викиньте",
+    "expiredTitle": "❌ Продукт прострочений",
+    "expiredBody": "{{name}} — термін придатності минув",
+    "lowQuantityTitle": "📦 Продукт закінчується",
+    "lowQuantityBody": "{{name}} — залишилось мало ({{quantity}} {{unit}})"
   }
 }

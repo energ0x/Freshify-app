@@ -10,7 +10,30 @@
     "delete": "Delete",
     "restore": "Restore",
     "attention": "Attention",
-    "ok": "OK"
+    "ok": "OK",
+    "resetAll": "Reset all",
+    "apply": "Apply",
+    "info": "Information",
+    "undo": "Undo"
+  },
+  "tabs": {
+    "products": "Products",
+    "grocery": "Grocery",
+    "analytics": "Analytics",
+    "profile": "Profile"
+  },
+  "screens": {
+    "addProduct": "Add Product",
+    "scan": "Scan",
+    "productDetail": "Product Detail",
+    "history": "History",
+    "recipes": "Recipes",
+    "achievements": "Achievements",
+    "leagues": "Leagues",
+    "dietSettings": "My Diet",
+    "allergensSettings": "My Allergens",
+    "categories": "Categories",
+    "dailyTasks": "Daily Tasks"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -103,6 +126,18 @@
     "emptyTitle": "Generate recipes",
     "emptyText": "Tap the button to get meal ideas based on the products in your fridge"
   },
+  "grocery": {
+    "title": "Grocery List",
+    "inputPlaceholder": "What do you need to buy?",
+    "addLowStock": "Add low stock items",
+    "emptyTitle": "List is empty",
+    "emptyText": "Add products you need to buy at the store",
+    "enoughProducts": "You have enough of all products.",
+    "lowStockAdded": "Low stock products added to the list.",
+    "purchased": "Bought",
+    "itemDeleted": "Item deleted",
+    "defaultUnit": "pcs"
+  },
   "register": {
     "title": "Create Account",
     "emailPlaceholder": "Email *",
@@ -112,9 +147,26 @@
     "errorRequired": "Enter mandatory fields"
   },
   "home": {
-    "title": "My Fridge",
+    "title": "My Products",
     "search": "Search products...",
-    "empty": "List is empty"
+    "empty": "List is empty",
+    "recipesIdea": "What can I make with this?",
+    "filtersTitle": "Filters",
+    "filterCategory": "Category",
+    "all": "All",
+    "sortBy": "Sort by",
+    "sortExpiry": "Expiry date",
+    "sortAlphabet": "Alphabet",
+    "sortQuantity": "Quantity",
+    "invalidQty": "Invalid quantity entered.",
+    "qtyExceeds": "Quantity exceeds available stock.",
+    "consume": "Consume",
+    "filtersApplied": "Filters applied",
+    "sorting": "Sorting",
+    "emptyText": "Add your first product to start tracking your food.",
+    "productDeleted": "Product deleted",
+    "consumeTitle": "Consume Product",
+    "consumeAvailable": "Available: {{quantity}} {{unit}}"
   },
   "settings": {
     "title": "Profile",
@@ -161,7 +213,9 @@
     "chooseLanguageTitle": "Choose language",
     "profileUpdated": "Profile updated successfully",
     "profileUpdateError": "Failed to update profile",
-    "settingsSaveError": "Failed to save settings"
+    "settingsSaveError": "Failed to save settings",
+    "notifications": "Notifications",
+    "notificationsDenied": "Notification permissions denied. Please enable them in your device settings."
   },
   "allergens": {
     "allergenExists": "This allergen is already in the list",
@@ -185,16 +239,34 @@
   },
   "camera": {
     "permissionMsg": "The app needs camera access to recognize products.",
+    "permissionRequired": "The app needs camera access to recognize products.",
     "grantPermission": "Grant permission",
     "productByCode": "Product by code {{code}}",
     "other": "Other",
     "barcodeError": "Failed to recognize the barcode.",
+    "unrecognizedBarcode": "Failed to recognize the barcode.",
     "imageRecognizeError": "Failed to recognize the image. Please try again.",
+    "unrecognizedImage": "Failed to recognize the image. Please try again.",
     "pointCameraAtBarcode": "Point the camera at the barcode",
+    "pointAtBarcode": "Point the camera at the barcode",
     "photoEntireReceipt": "Photograph the entire receipt",
+    "photoReceipt": "Photograph the entire receipt",
     "photoProductClose": "Take a close-up photo of the product",
     "searchingProduct": "Searching for product...",
-    "aiAnalyzingPhoto": "AI is analyzing the photo..."
+    "aiAnalyzingPhoto": "AI is analyzing the photo...",
+    "aiAnalyzing": "AI is analyzing the photo..."
+  },
+  "dateHelpers": {
+    "notSpecified": "Not specified",
+    "expiredDaysAgo": "Expired {{count}} days ago",
+    "expiresToday": "Expires today",
+    "expiresTomorrow": "Expires tomorrow",
+    "expiresInDays_one": "Expires in {{count}} day",
+    "expiresInDays_other": "Expires in {{count}} days"
+  },
+  "productCard": {
+    "other": "Other",
+    "notSpecified": "Not specified"
   },
   "validation": {
     "nameShort": "Name must be at least 2 characters",
@@ -214,5 +286,15 @@
     "savedProducts": "Saved\nproducts",
     "donatedUAF": "Donated\nto UAF",
     "yourAchievements": "Your Achievements"
+  },
+  "notifications": {
+    "expiringSoonTitle": "⏰ Expiry date is approaching",
+    "expiringSoonBody": "{{name}} — 3 days left",
+    "expiresTodayTitle": "🚨 Product expires today",
+    "expiresTodayBody": "{{name}} — consume or discard",
+    "expiredTitle": "❌ Product expired",
+    "expiredBody": "{{name}} — expiry date has passed",
+    "lowQuantityTitle": "📦 Product running low",
+    "lowQuantityBody": "{{name}} — running low ({{quantity}} {{unit}})"
   }
 }

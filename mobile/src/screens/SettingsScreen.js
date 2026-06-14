@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView, View, Text, StyleSheet, Switch, Alert, Linking,
-  Modal, TextInput, TouchableOpacity, KeyboardAvoidingView,
-  Platform, StatusBar, Share
+  Modal, TouchableOpacity, Platform, StatusBar, Share
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,10 +9,11 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 import { settingsAPI, achievementsAPI } from '../services/api';
-import CustomButton from '../components/CustomButton';
 import { CHARITY } from '../utils/constants';
 
 import DailyTasksWidget from '../components/DailyTasksWidget';
@@ -32,20 +32,16 @@ const LANGUAGES = [
 
 export default function SettingsScreen({ navigation }) {
   const { t, i18n } = useTranslation();
-  const { user, logout, updateProfile } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { theme, toggleTheme, colors: COLORS, isSystemTheme, setSystemTheme } = useThemeStore();
 
   const [donationSettings, setDonationSettings] = useState({ auto_donate: false });
-  const [saving, setSaving] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [achievements, setAchievements] = useState([]);
+  
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editForm, setEditForm] = useState({
-    name: '', email: '', current_password: '', new_password: '', confirmPassword: '',
-  });
-  const [editErrors, setEditErrors] = useState({});
   const [selectedCharity, setSelectedCharity] = useState(AVAILABLE_CHARITIES[0]);
   const [charityModalVisible, setCharityModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
@@ -56,16 +52,8 @@ export default function SettingsScreen({ navigation }) {
 
   useEffect(() => {
     loadSettings();
-    if (user) {
-      setEditForm({
-        name: user.name || '',
-        email: user.email || '',
-        current_password: '',
-        new_password: '',
-        confirmPassword: '',
-      });
-    }
-  }, [user]);
+    checkNotificationStatus();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,6 +78,44 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  const checkNotificationStatus = async () => {
+    try {
+      const storedPreference = await AsyncStorage.getItem('notifications_enabled');
+      if (storedPreference === 'true') {
+        const { status } = await Notifications.getPermissionsAsync();
+        setNotificationsEnabled(status === 'granted');
+      } else {
+        setNotificationsEnabled(false);
+      }
+    } catch (e) {
+      console.log('Error checking notification status', e);
+    }
+  };
+
+  const handleToggleNotifications = async (value) => {
+    if (value) {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus === 'granted') {
+        setNotificationsEnabled(true);
+        await AsyncStorage.setItem('notifications_enabled', 'true');
+      } else {
+        Alert.alert(t('common.attention'), t('settings.notificationsDenied'));
+        setNotificationsEnabled(false);
+      }
+    } else {
+      setNotificationsEnabled(false);
+      await AsyncStorage.setItem('notifications_enabled', 'false');
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
+  };
+
   const handleToggleDonation = async (value) => {
     setDonationSettings(prev => ({ ...prev, auto_donate: value }));
     try {
@@ -104,43 +130,6 @@ export default function SettingsScreen({ navigation }) {
     await AsyncStorage.setItem('app_language', code);
     i18n.changeLanguage(code);
     setLanguageModalVisible(false);
-  };
-
-  const validateEditForm = () => {
-    const errors = {};
-    if (editForm.name.trim().length < 2) errors.name = t('validation.nameShort');
-    if (!editForm.email.trim()) errors.email = t('validation.emailEmpty');
-    if (!editForm.email.includes('@')) errors.email = t('validation.emailInvalid');
-    if (editForm.new_password && editForm.new_password.length < 6)
-      errors.new_password = t('validation.passShort');
-    if (editForm.new_password && !editForm.current_password)
-      errors.current_password = t('validation.currentPassReq');
-    if (editForm.new_password !== editForm.confirmPassword)
-      errors.confirmPassword = t('validation.passMismatch');
-    setEditErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSaveProfile = async () => {
-    if (!validateEditForm()) return;
-    setSaving(true);
-    const updateData = {
-      name: editForm.name.trim(),
-      email: editForm.email.trim(),
-      ...(editForm.new_password && {
-        current_password: editForm.current_password,
-        new_password: editForm.new_password,
-      }),
-    };
-    const res = await updateProfile(updateData);
-    setSaving(false);
-    if (res.success) {
-      Alert.alert(t('common.success'), t('settings.profileUpdated'));
-      setEditForm(prev => ({ ...prev, current_password: '', new_password: '', confirmPassword: '' }));
-      setEditModalVisible(false);
-    } else {
-      Alert.alert(t('common.error'), res.error || t('settings.profileUpdateError'));
-    }
   };
 
   const handleLogout = () => {
@@ -214,7 +203,11 @@ export default function SettingsScreen({ navigation }) {
           <Text style={styles.profileName}>{user?.name || 'User'}</Text>
           <Text style={styles.profileEmail}>{user?.email}</Text>
 
-          <TouchableOpacity style={styles.editPill} onPress={() => setEditModalVisible(true)} activeOpacity={0.8}>
+          <TouchableOpacity 
+            style={styles.editPill} 
+            onPress={() => navigation.navigate('EditProfile')} 
+            activeOpacity={0.8}
+          >
             <Ionicons name="pencil-outline" size={16} color={COLORS.primary} />
             <Text style={styles.editPillText}>{t('settings.editProfile')}</Text>
           </TouchableOpacity>
@@ -288,6 +281,20 @@ export default function SettingsScreen({ navigation }) {
                 <Text style={styles.charityChipText} numberOfLines={1}>{currentLangName}</Text>
                 <Ionicons name="chevron-down" size={16} color={COLORS.outline} />
               </View>
+            }
+          />
+          <View style={styles.divider} />
+          <SettingItem
+            icon="notifications-outline"
+            title={t('settings.notifications')}
+            iconBgColor="#FF2D55"
+            rightComponent={
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                trackColor={{ false: COLORS.surfaceVariant, true: COLORS.primary }}
+                thumbColor={COLORS.onPrimary ?? '#fff'}
+              />
             }
           />
           <View style={styles.divider} />
@@ -424,67 +431,6 @@ export default function SettingsScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* ── Edit Profile Modal ── */}
-      <Modal visible={editModalVisible} animationType="slide" transparent onRequestClose={() => setEditModalVisible(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalSheet}>
-              <View style={styles.modalHandle} />
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t('settings.editProfileTitle')}</Text>
-                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                  <Ionicons name="close-circle" size={30} color={COLORS.outline} />
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
-                {[
-                  { key: 'name', label: t('settings.nameLabel'), placeholder: t('settings.namePlaceholder'), secure: false },
-                  { key: 'email', label: t('settings.emailLabel'), placeholder: t('settings.emailPlaceholder'), secure: false, keyboard: 'email-address' },
-                  { key: 'current_password', label: t('settings.currentPasswordLabel'), placeholder: t('settings.currentPasswordPlaceholder'), secure: true },
-                  { key: 'new_password', label: t('settings.newPasswordLabel'), placeholder: t('settings.newPasswordPlaceholder'), secure: true },
-                ].map(({ key, label, placeholder, secure, keyboard }) => (
-                  <View key={key} style={styles.formGroup}>
-                    <Text style={styles.formLabel}>{label}</Text>
-                    <TextInput
-                      style={[styles.input, editErrors[key] && styles.inputError]}
-                      placeholder={placeholder}
-                      value={editForm[key]}
-                      onChangeText={(text) => setEditForm(prev => ({ ...prev, [key]: text }))}
-                      secureTextEntry={secure}
-                      keyboardType={keyboard ?? 'default'}
-                      autoCapitalize="none"
-                      placeholderTextColor={COLORS.onSurfaceVariant}
-                    />
-                    {editErrors[key] && <Text style={styles.errorText}>{editErrors[key]}</Text>}
-                  </View>
-                ))}
-
-                {editForm.new_password !== '' && (
-                  <View style={styles.formGroup}>
-                    <Text style={styles.formLabel}>{t('settings.confirmPasswordLabel')}</Text>
-                    <TextInput
-                      style={[styles.input, editErrors.confirmPassword && styles.inputError]}
-                      placeholder={t('settings.confirmPasswordPlaceholder')}
-                      value={editForm.confirmPassword}
-                      onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
-                      secureTextEntry
-                      placeholderTextColor={COLORS.onSurfaceVariant}
-                    />
-                    {editErrors.confirmPassword && (
-                      <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>
-                    )}
-                  </View>
-                )}
-              </ScrollView>
-              <View style={styles.modalActions}>
-                <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setEditModalVisible(false)} style={styles.modalBtn} disabled={saving} />
-                <CustomButton title={t('common.save')} onPress={handleSaveProfile} loading={saving} style={styles.modalBtn} />
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-
       {/* ── Charity Modal ── */}
       <Modal visible={charityModalVisible} animationType="fade" transparent onRequestClose={() => setCharityModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCharityModalVisible(false)}>
@@ -586,20 +532,11 @@ const getStyles = (COLORS, insets, tabBarHeight, isDark) => {
     logoutText: { flex: 1, fontSize: 16, fontWeight: '600', color: '#FF3B30' },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.42)', justifyContent: 'flex-end' },
-    modalSheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: (insets.bottom || 0) + 30, maxHeight: '92%' },
     charitySheet: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingBottom: (insets.bottom || 0) + 24 },
     modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: COLORS.outline ?? '#CCC', alignSelf: 'center', marginTop: 12, marginBottom: 4, opacity: 0.45 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 18 },
     modalTitle: { fontSize: 20, fontWeight: '700', color: COLORS.text },
-    modalForm: { paddingHorizontal: 24, paddingTop: 4 },
-    formGroup: { marginBottom: 18 },
-    formLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-    input: { backgroundColor: COLORS.surfaceVariant, borderWidth: 1.5, borderColor: 'transparent', borderRadius: 14, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 16, color: COLORS.text },
-    inputError: { borderColor: COLORS.danger ?? '#FF3B30', backgroundColor: `${COLORS.danger ?? '#FF3B30'}08` },
-    errorText: { color: COLORS.danger ?? '#FF3B30', fontSize: 12, marginTop: 5 },
-    modalActions: { flexDirection: 'row', gap: 14, paddingHorizontal: 24, paddingVertical: 18, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: `${COLORS.text}10` },
-    modalBtn: { flex: 1 },
-
+    
     charityOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: `${COLORS.text}10` },
     charityOptionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
     charityOptionText: { fontSize: 16, color: COLORS.text, marginLeft: 16, fontWeight: '500', flex: 1 },

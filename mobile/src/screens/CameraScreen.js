@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { aiAPI, productsAPI } from '../services/api';
 import { COLORS } from '../utils/constants';
 import CustomButton from '../components/CustomButton';
-import { useTranslation } from 'react-i18next';
+import {useTranslation} from 'react-i18next';
 
 export default function CameraScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -91,9 +91,6 @@ export default function CameraScreen({ navigation, route }) {
         }}
       >
         <View style={styles.overlay}>
-          <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-            <Ionicons name="close" size={30} color="#fff" />
-          </TouchableOpacity>
 
           <Text style={styles.instructionText}>{getInstructionText()}</Text>
 

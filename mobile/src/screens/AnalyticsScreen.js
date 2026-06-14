@@ -148,7 +148,7 @@ export default function AnalyticsScreen({ navigation }) {
           <TouchableOpacity
             style={styles.statCard}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('Продукти')}
+            onPress={() => navigation.navigate('Products')}
           >
             <Text style={styles.statValue}>{data?.total_products_in_fridge || 0}</Text>
             <Text style={styles.statLabel}>{t('analytics.productsAtHome')}</Text>
@@ -192,7 +192,7 @@ export default function AnalyticsScreen({ navigation }) {
             <Animated.View style={animatedStyle}>
               <Ionicons name={loadingAi ? "close" : "sparkles-outline"} size={24} color={COLORS.onPrimary} />
             </Animated.View>
-            <Text style={styles.generateButtonText}>{loadingAi ? t('analytics.cancel') : t('analytics.getAdvice')}</Text>
+            <Text style={styles.generateButtonText}>{loadingAi ? t('common.cancel') : t('analytics.getAdvice')}</Text>
           </TouchableOpacity>
 
           {streamedText ? (

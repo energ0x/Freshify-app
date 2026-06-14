@@ -1,9 +1,11 @@
 import { differenceInDays, format, isPast, isToday, isTomorrow } from 'date-fns';
-import { uk } from 'date-fns/locale';
+import { uk, enUS } from 'date-fns/locale';
+import i18n from '../locales/i18n';
 
 export const formatDate = (dateStr) => {
-  if (!dateStr) return 'Не вказано';
-  return format(new Date(dateStr), 'd MMMM yyyy', { locale: uk });
+  if (!dateStr) return i18n.t('dateHelpers.notSpecified');
+  const locale = i18n.language === 'uk' ? uk : enUS;
+  return format(new Date(dateStr), 'd MMMM yyyy', { locale });
 };
 
 export const getDaysUntilExpiry = (expiryDateStr) => {
@@ -25,11 +27,10 @@ export const getExpiryStatus = (expiryDateStr) => {
 export const getExpiryLabel = (expiryDateStr) => {
   if (!expiryDateStr) return '';
   const days = getDaysUntilExpiry(expiryDateStr);
-  if (days < 0) return `Прострочено ${Math.abs(days)} дн. тому`;
-  if (days === 0) return 'Закінчується сьогодні';
-  if (days === 1) return 'Закінчується завтра';
-  if (days <= 3) return `Залишилось ${days} дні`;
-  return `Залишилось ${days} днів`;
+  if (days < 0) return i18n.t('dateHelpers.expiredDaysAgo', { count: Math.abs(days) });
+  if (days === 0) return i18n.t('dateHelpers.expiresToday');
+  if (days === 1) return i18n.t('dateHelpers.expiresTomorrow');
+  return i18n.t('dateHelpers.expiresInDays', { count: days });
 };
 
 export const getExpiryColor = (expiryDateStr, colors) => {
