@@ -8,9 +8,10 @@ import app.db.models  # noqa: F401 — registers ORM models before create_all
 
 from app.api.routes import (
     auth, products, ai_vision, recipes, grocery,
-    analytics, achievements, settings as settings_router, categories,
+    analytics, achievements, settings as settings_router, categories, daily_tasks
 )
 from app.services.achievement_service import init_achievements
+from app.services.daily_task_service import init_daily_tasks
 
 
 @asynccontextmanager
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         init_achievements(db)
+        init_daily_tasks(db)
     finally:
         db.close()
     os.makedirs("uploads", exist_ok=True)
@@ -51,6 +53,7 @@ app.include_router(analytics.router)
 app.include_router(settings_router.router)
 app.include_router(achievements.router)
 app.include_router(categories.router)
+app.include_router(daily_tasks.router)
 
 
 @app.get("/health")

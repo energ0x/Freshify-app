@@ -16,11 +16,6 @@ const ROADMAP_DATA = [
   { id: '6', level: 201, titleKey: 'achievements.roadmap3', icon: 'planet', color: '#F1C40F' },
 ];
 
-const OTHER_STATS = {
-  totalSaved: 45,
-  donated: 150,
-};
-
 export default function AchievementsScreen({ navigation }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
@@ -117,19 +112,6 @@ export default function AchievementsScreen({ navigation }) {
           <Text style={styles.xpHint}>{t('achievements.xpLeft', { xp: nextLevelXP - currentXP })}</Text>
         </View>
       </TouchableOpacity>
-
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Ionicons name="shield-checkmark" size={26} color={COLORS.success} />
-          <Text style={styles.statValue}>{OTHER_STATS.totalSaved}</Text>
-          <Text style={styles.statLabel}>{t('achievements.savedProducts')}</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Ionicons name="heart" size={26} color={COLORS.danger} />
-          <Text style={styles.statValue}>{OTHER_STATS.donated} ₴</Text>
-          <Text style={styles.statLabel}>{t('achievements.donatedUAF')}</Text>
-        </View>
-      </View>
 
       <View style={styles.achievementsSection}>
         <Text style={styles.sectionLabel}>{t('achievements.yourAchievements')}</Text>

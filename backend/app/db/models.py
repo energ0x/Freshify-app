@@ -34,6 +34,8 @@ class User(Base):
     donation_settings = relationship("DonationSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
     achievements = relationship("UserAchievement", back_populates="user", cascade="all, delete-orphan")
     categories = relationship("Category", back_populates="user", cascade="all, delete-orphan")
+    daily_tasks = relationship("UserDailyTask", back_populates="user", cascade="all, delete-orphan")
+    streaks = relationship("Streak", back_populates="user", cascade="all, delete-orphan")
 
 
 class Category(Base):
@@ -70,6 +72,46 @@ class UserAchievement(Base):
 
     user = relationship("User", back_populates="achievements")
     achievement = relationship("Achievement", back_populates="users")
+
+
+class DailyTask(Base):
+    __tablename__ = "daily_tasks"
+
+    id = Column(String(50), primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=False)
+    icon = Column(String(50), nullable=False)
+    xp_reward = Column(Integer, default=10)
+    total = Column(Integer, default=1)
+
+    users = relationship("UserDailyTask", back_populates="daily_task")
+
+
+class UserDailyTask(Base):
+    __tablename__ = "user_daily_tasks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    task_id = Column(String(50), ForeignKey("daily_tasks.id", ondelete="CASCADE"), nullable=False)
+    date = Column(Date, default=func.current_date(), nullable=False)
+    progress = Column(Integer, default=0, nullable=False)
+    completed = Column(Boolean, default=False, nullable=False)
+
+    user = relationship("User", back_populates="daily_tasks")
+    daily_task = relationship("DailyTask", back_populates="users")
+
+
+class Streak(Base):
+    __tablename__ = "streaks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    streak_type = Column(String(50), nullable=False) # e.g., 'daily_login', 'perfect_week'
+    current_streak = Column(Integer, default=0, nullable=False)
+    longest_streak = Column(Integer, default=0, nullable=False)
+    last_activity_date = Column(Date, nullable=True)
+
+    user = relationship("User", back_populates="streaks")
 
 
 class Product(Base):
