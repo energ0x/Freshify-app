@@ -186,10 +186,14 @@ def get_user_daily_summary(db: Session, user_id: uuid.UUID):
     ).all()
     entries_map = {e.date: e for e in entries}
 
-    week = []
+    week_items = []
     for d in week_dates:
         e = entries_map.get(d)
-        week.append(bool(e and (e.progress > 0 or e.completed)))
+        done = bool(e and (e.progress > 0 or e.completed))
+        week_items.append({
+            'date': d.isoformat(),
+            'done': done,
+        })
 
     # Fetch streak
     login_streak = db.query(Streak).filter(
@@ -205,6 +209,6 @@ def get_user_daily_summary(db: Session, user_id: uuid.UUID):
     return {
         'current': current,
         'best': best,
-        'week': week,
+        'week': week_items,
         'weekLabels': weekLabels,
     }

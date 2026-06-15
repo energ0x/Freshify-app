@@ -42,7 +42,9 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
         if (!mounted) return;
         if (summaryRes?.data) {
           const s = summaryRes.data;
-          setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: s.week || prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
+          // summary.week now contains [{date: 'YYYY-MM-DD', done: bool}, ...] ordered Mon..Sun
+          const week = (s.week || []).map(item => !!item.done);
+          setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: week.length === 7 ? week : prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
         }
       } catch (e) {
         // ignore
