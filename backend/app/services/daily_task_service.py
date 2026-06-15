@@ -120,6 +120,7 @@ def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
     tasks_map = {ut.task_id: ut for ut in user_tasks_today}
 
     response_tasks = []
+    streak_should_update = False
     for t_def in DAILY_TASK_DEFINITIONS:
         task_id = t_def["id"]
         
@@ -142,6 +143,8 @@ def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
             if user_task.progress >= t_def["total"]:
                 user_task.completed = True
                 user.xp_points = (user.xp_points or 0) + t_def["xp_reward"]
+                # Mark that we should update streaks because a task was completed now
+                streak_should_update = True
         
         response_tasks.append({
             "id": task_id,
@@ -154,6 +157,10 @@ def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
             "completed": user_task.completed
         })
         
+    # If any task was completed as part of this check, update streaks so last_activity_date/current_streak reflect today's activity
+    if streak_should_update:
+        update_streaks(db, user_id)
+
     db.commit()
     return response_tasks
 
