@@ -82,7 +82,7 @@ export const darkColors = {
 // але краще використовувати useThemeStore() у компонентах.
 export const COLORS = lightColors;
 
-export const UNITS = ['шт', 'кг', 'г', 'л', 'мл', 'упаковка', 'пачка', 'банка', 'пляшка'];
+export const UNITS = ['pcs', 'kg', 'g', 'l', 'ml'];
 
 export const CHARITY = {
   name: 'Повернись живим',
