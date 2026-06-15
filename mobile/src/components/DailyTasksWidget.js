@@ -43,7 +43,19 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
         if (summaryRes?.data) {
           const s = summaryRes.data;
           // summary.week now contains [{date: 'YYYY-MM-DD', done: bool}, ...] ordered Mon..Sun
-          const week = (s.week || []).map(item => !!item.done);
+          const weekItems = (s.week || []);
+          const week = weekItems.map(item => !!item.done);
+
+          // If client has any completed tasks in the freshly fetched tasks list, prefer marking today's slot as done
+          try {
+            const localIsoToday = new Date().toISOString().slice(0,10);
+            const todayIdx = weekItems.findIndex(i => i.date === localIsoToday);
+            const anyCompleted = (res?.data || []).some(t => !!t.completed);
+            if (todayIdx >= 0 && anyCompleted) {
+              week[todayIdx] = true;
+            }
+          } catch (e) {}
+
           setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: week.length === 7 ? week : prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
         }
       } catch (e) {
