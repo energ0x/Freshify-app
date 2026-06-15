@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useThemeStore from '../store/themeStore';
-import { dailyTasksAPI } from '../services/api';
+import { dailyTasksAPI, dailyTasksListeners } from '../services/api';
 
 // ─── Mock data ──────────────────────────────────────────────────────────────
 const STREAK_DATA = {
