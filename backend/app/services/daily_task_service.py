@@ -2,7 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from app.db.models import User, DailyTask, UserDailyTask, Streak, Product, ConsumedProduct
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
+from app.core.config import get_settings
 
 DAILY_TASK_DEFINITIONS = [
     {
@@ -40,6 +42,15 @@ DAILY_TASK_DEFINITIONS = [
     },
 ]
 
+def _local_today():
+    tz_name = get_settings().server_timezone
+    try:
+        tz = ZoneInfo(tz_name)
+    except Exception:
+        tz = ZoneInfo('UTC')
+    return datetime.now(tz).date()
+
+
 def init_daily_tasks(db: Session):
     # Видаляємо старе завдання, якщо воно існує
     old_task = db.query(DailyTask).filter(DailyTask.id == 'scan_barcode').first()
@@ -68,7 +79,7 @@ def init_daily_tasks(db: Session):
     db.commit()
 
 def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
-    today = date.today()
+    today = _local_today()
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         return []
@@ -128,7 +139,7 @@ def update_streaks(db: Session, user_id: uuid.UUID):
     - After update set last_activity_date = today
     - longest_streak updated when current_streak increased
     """
-    today = date.today()
+    today = _local_today()
     yesterday = today - timedelta(days=1)
     
     user = db.query(User).filter(User.id == user_id).first()
@@ -172,7 +183,7 @@ def get_user_daily_summary(db: Session, user_id: uuid.UUID):
     - week: list of booleans for the last 7 days (Mon..Sun order matching frontend labels)
     - weekLabels
     """
-    today = date.today()
+    today = _local_today()
     # Build week dates Monday..Sunday for current week (starting Monday)
     # Find start of week (Monday)
     start_of_week = today - timedelta(days=(today.weekday()))  # Monday

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     charity_url: str = "https://savelife.in.ua"
     charity_name: str = "Повернись живим"
     expo_public_api_url: str = ""
+    server_timezone: str = "Europe/Kyiv"  # Default server timezone for date calculations (IANA name)
 
     @field_validator("secret_key")
     @classmethod
