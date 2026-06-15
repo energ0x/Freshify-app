@@ -1,21 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
 import useAuthStore from '../../store/authStore';
 
-const INITIAL_ALLERGENS = [
-  'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
-];
-
 export default function AllergensScreen({ navigation }) {
-  const { updateProfile } = useAuthStore();
-  const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
+  const { t } = useTranslation();
+  const { user, updateProfile } = useAuthStore();
+  
+  // Мемоїзуємо перекладений список, щоб уникнути зайвих ререндерів
+  const initialTranslatedAllergens = useMemo(() => [
+    t('allergens.milk'), t('allergens.nuts'), t('allergens.eggs'), 
+    t('allergens.gluten'), t('allergens.fish'), t('allergens.seafood'), 
+    t('allergens.soy'), t('allergens.citrus'), t('allergens.honey')
+  ], [t]);
+
+  const [allergens, setAllergens] = useState(initialTranslatedAllergens);
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Підтягуємо алергени з БД
+  useEffect(() => {
+    if (user?.allergens) {
+      const mappedSelected = user.allergens.map(backendAllergen => {
+        // Знаходимо алерген зі списку (ігноруючи емодзі), щоб відобразити його локалізованим
+        const found = initialTranslatedAllergens.find(
+          ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() === backendAllergen
+        );
+        return found || backendAllergen; // Якщо кастомний — залишаємо як є
+      });
+
+      const remoteAllergens = mappedSelected.filter(a => !initialTranslatedAllergens.includes(a));
+      setAllergens([...initialTranslatedAllergens, ...remoteAllergens]);
+      setSelected(mappedSelected);
+    } else {
+      setAllergens(initialTranslatedAllergens);
+    }
+  }, [user, initialTranslatedAllergens]);
 
   const toggleAllergen = (item) => {
     if (selected.includes(item)) {
@@ -28,8 +53,9 @@ export default function AllergensScreen({ navigation }) {
   const addCustomAllergen = () => {
     const text = customInput.trim();
     if (!text) return;
-    if (allergens.includes(text)) {
-      return Alert.alert('Увага', 'Цей алерген уже є у списку');
+    // Перевірка на дублікати без урахування регістру
+    if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
+      return Alert.alert(t('common.attention'), t('onboarding.allergenExists'));
     }
     setAllergens([...allergens, text]);
     setSelected([...selected, text]);
@@ -48,14 +74,14 @@ export default function AllergensScreen({ navigation }) {
     if (res.success) {
       navigation.navigate('Guide');
     } else {
-      Alert.alert('Помилка', res.error || 'Не вдалося зберегти алергени. Спробуйте ще раз.');
+      Alert.alert(t('common.error'), res.error || t('onboarding.allergenSaveError'));
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Чи маєте ви алергію на якісь продукти?</Text>
-      <Text style={styles.subtitle}>ШІ буде попереджати вас, якщо знайде небезпечні інгредієнти.</Text>
+      <Text style={styles.title}>{t('onboarding.allergensTitle')}</Text>
+      <Text style={styles.subtitle}>{t('onboarding.allergensSubtitle')}</Text>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.grid}>
@@ -79,7 +105,7 @@ export default function AllergensScreen({ navigation }) {
             onPress={() => setShowCustomInput(!showCustomInput)}
           >
             <Ionicons name="add" size={16} color={COLORS.primary} style={{marginRight: 4}} />
-            <Text style={[styles.chipText, {color: COLORS.primary}]}>Інше...</Text>
+            <Text style={[styles.chipText, {color: COLORS.primary}]}>{t('common.other')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -87,13 +113,14 @@ export default function AllergensScreen({ navigation }) {
           <View style={styles.inputBlock}>
             <TextInput
               style={styles.input}
-              placeholder="Введіть свій варіант..."
+              placeholder={t('onboarding.enterOption')}
               value={customInput}
               onChangeText={setCustomInput}
               maxLength={20}
+              onSubmitEditing={addCustomAllergen}
             />
             <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
-              <Text style={styles.addButtonText}>Додати</Text>
+              <Text style={styles.addButtonText}>{t('common.add')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -101,7 +128,7 @@ export default function AllergensScreen({ navigation }) {
 
       <View style={styles.footer}>
         <CustomButton
-          title={selected.length > 0 ? `Продовжити` : "Немає алергій"}
+          title={selected.length > 0 ? t('common.continue') : t('onboarding.noAllergies')}
           onPress={handleNext}
           loading={loading}
         />

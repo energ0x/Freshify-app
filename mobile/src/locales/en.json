@@ -213,14 +213,21 @@
     "profileUpdateError": "Failed to update profile",
     "settingsSaveError": "Failed to save settings",
     "notifications": "Notifications",
-    "notificationsDenied": "Notification permissions denied. Please enable them in your device settings."
+    "notificationsDenied": "Notification permissions denied. Please enable them in your device settings.",
+    "dietSubtitle": "This helps us analyze products more accurately and suggest relevant recipes.",
+    "dietSaveSuccess": "Your diet settings have been saved.",
+    "dietSaveError": "Failed to save settings."
   },
   "allergens": {
     "allergenExists": "This allergen is already in the list",
     "allergensSaved": "Allergen settings saved.",
     "allergensSaveError": "Failed to save settings.",
     "subtitle": "Add products to avoid. Our AI will automatically exclude them from your recipes.",
-    "addCustomPlaceholder": "Add custom allergen..."
+    "addCustomPlaceholder": "Add custom allergen...",
+    "description": "Select the products you are allergic to.",
+    "alreadyInList": "This allergen is already in the list",
+    "saveSuccess": "Your allergens have been successfully saved.",
+    "saveError": "Failed to save allergens."
   },
   "analytics": {
     "title": "Analytics",
@@ -294,5 +301,40 @@
     "expiredBody": "{{name}} — expiry date has passed",
     "lowQuantityTitle": "📦 Product running low",
     "lowQuantityBody": "{{name}} — running low ({{quantity}} {{unit}})"
+  },
+  "welcome": {
+    "subtitle": "Welcome to Freshify!",
+    "title": "What should we call you?",
+    "placeholder": "Your name",
+    "emptyNameError": "Please enter your name",
+    "updateErrorTitle": "Update Error",
+    "updateErrorMessage": "Failed to save your name",
+    "saving": "Saving..."
+  },
+  "onboarding": {
+    "dietTitle": "Do you follow any diets?",
+    "dietSubtitle": "This helps us analyze the food in your fridge more accurately.",
+    "dietSaveError": "Failed to save your preferences. Please try again."
+  },
+  "diets": {
+    "noneTitle": "Omnivore (No diets)",
+    "noneDesc": "I eat everything without excluding food categories",
+    "vegetarianTitle": "Vegetarian 🥦",
+    "vegetarianDesc": "No meat or fish, but includes dairy products",
+    "veganTitle": "Vegan 🍃",
+    "veganDesc": "Strictly plant-based diet, no animal products",
+    "pescatarianTitle": "Pescatarian 🐟",
+    "pescatarianDesc": "Plant-based foods + fish and seafood (no meat)",
+    "flexitarianTitle": "Flexitarian 🌾",
+    "flexitarianDesc": "Mostly plant-based, occasionally meat/fish"
+  },
+  "guide": {
+    "slide1Title": "Scan receipts or products",
+    "slide1Desc": "Just take a photo with the built-in camera. Our AI will recognize the name and automatically set the expiration date.",
+    "slide2Title": "Monitor freshness",
+    "slide2Desc": "Freshify will send you push notifications in advance about products that are about to expire, so you have time to eat them.",
+    "slide3Title": "Smart recipes and lists",
+    "slide3Desc": "Generate meal ideas using only what's already in your fridge, and automatically create shopping lists.",
+    "start": "Get Started ✨"
   }
 }
