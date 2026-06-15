@@ -193,12 +193,14 @@ def update_streaks(db: Session, user_id: uuid.UUID):
     # Update only if last_activity_date isn't today
     if login_streak.last_activity_date != today:
         if login_streak.last_activity_date == yesterday:
+            # consecutive day
             login_streak.current_streak += 1
-            if login_streak.current_streak > login_streak.longest_streak:
-                login_streak.longest_streak = login_streak.current_streak
         else:
-            # Missed at least one day -> reset to 0
-            login_streak.current_streak = 0
+            # new streak (either first-ever or after a gap) -> start from 1
+            login_streak.current_streak = 1
+        # update longest
+        if login_streak.current_streak > login_streak.longest_streak:
+            login_streak.longest_streak = login_streak.current_streak
         login_streak.last_activity_date = today
 
     db.commit()
