@@ -265,6 +265,16 @@ def get_user_daily_summary(db: Session, user_id: uuid.UUID):
     current = login_streak.current_streak if login_streak else 0
     best = login_streak.longest_streak if login_streak else 0
 
+    # Fix edge-case: if last_activity_date is today but current_streak is 0, set it to 1
+    if login_streak and login_streak.last_activity_date == _local_today() and login_streak.current_streak == 0:
+        logger.info(f"Fixing inconsistent streak: user {user_id} had last_activity_date today but current_streak==0; setting to 1")
+        login_streak.current_streak = 1
+        if login_streak.current_streak > login_streak.longest_streak:
+            login_streak.longest_streak = login_streak.current_streak
+        db.commit()
+        current = login_streak.current_streak
+        best = login_streak.longest_streak
+
     weekLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд']
 
     raw_streak = None
