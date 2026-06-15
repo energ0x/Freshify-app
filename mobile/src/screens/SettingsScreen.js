@@ -30,6 +30,31 @@ const LANGUAGES = [
   { code: 'en', name: 'English 🇬🇧' }
 ];
 
+// ВИПРАВЛЕННЯ: Винесли SettingItem за межі SettingsScreen для стабільного рендеру
+const SettingItem = ({ icon, title, value, onPress, iconBgColor, rightComponent, styles, COLORS }) => (
+  <TouchableOpacity
+    style={styles.settingRow}
+    onPress={onPress}
+    activeOpacity={onPress ? 0.65 : 1}
+    disabled={!onPress}
+  >
+    <View style={styles.settingLeft}>
+      <View style={[styles.iconBox, { backgroundColor: iconBgColor ?? `${COLORS.primary}18` }]}>
+        <Ionicons name={icon} size={18} color={iconBgColor ? '#fff' : COLORS.primary} />
+      </View>
+      <Text style={styles.settingTitle}>{title}</Text>
+    </View>
+    <View style={styles.settingRight}>
+      {rightComponent ?? (
+        <>
+          {!!value && <Text style={styles.settingValue}>{value}</Text>}
+          {onPress && <Ionicons name="chevron-forward" size={18} color={COLORS.outline} />}
+        </>
+      )}
+    </View>
+  </TouchableOpacity>
+);
+
 export default function SettingsScreen({ navigation }) {
   const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
@@ -156,30 +181,6 @@ export default function SettingsScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, insets, tabBarHeight, isDark);
 
-  const SettingItem = ({ icon, title, value, onPress, iconBgColor, rightComponent }) => (
-    <TouchableOpacity
-      style={styles.settingRow}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.65 : 1}
-      disabled={!onPress}
-    >
-      <View style={styles.settingLeft}>
-        <View style={[styles.iconBox, { backgroundColor: iconBgColor ?? `${COLORS.primary}18` }]}>
-          <Ionicons name={icon} size={18} color={iconBgColor ? '#fff' : COLORS.primary} />
-        </View>
-        <Text style={styles.settingTitle}>{title}</Text>
-      </View>
-      <View style={styles.settingRight}>
-        {rightComponent ?? (
-          <>
-            {!!value && <Text style={styles.settingValue}>{value}</Text>}
-            {onPress && <Ionicons name="chevron-forward" size={18} color={COLORS.outline} />}
-          </>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
@@ -276,6 +277,8 @@ export default function SettingsScreen({ navigation }) {
             title={t('settings.language')}
             iconBgColor="#3498DB"
             onPress={() => setLanguageModalVisible(true)}
+            styles={styles}
+            COLORS={COLORS}
             rightComponent={
               <View style={styles.charityChip}>
                 <Text style={styles.charityChipText} numberOfLines={1}>{currentLangName}</Text>
@@ -288,6 +291,8 @@ export default function SettingsScreen({ navigation }) {
             icon="notifications-outline"
             title={t('settings.notifications')}
             iconBgColor="#FF2D55"
+            styles={styles}
+            COLORS={COLORS}
             rightComponent={
               <Switch
                 value={notificationsEnabled}
@@ -302,6 +307,8 @@ export default function SettingsScreen({ navigation }) {
             icon={theme === 'light' ? 'sunny' : 'moon'}
             title={t('settings.darkTheme')}
             iconBgColor={theme === 'light' ? '#FF9500' : '#5A5DE8'}
+            styles={styles}
+            COLORS={COLORS}
             rightComponent={
               <Switch
                 value={theme === 'dark'}
@@ -316,6 +323,8 @@ export default function SettingsScreen({ navigation }) {
             icon="phone-portrait-outline"
             title={t('settings.systemTheme')}
             iconBgColor="#5856D6"
+            styles={styles}
+            COLORS={COLORS}
             rightComponent={
               <Switch
                 value={isSystemTheme}
@@ -336,6 +345,8 @@ export default function SettingsScreen({ navigation }) {
             value={t('settings.choose')}
             iconBgColor="#FF6B35"
             onPress={() => navigation.navigate('DietSettings')}
+            styles={styles}
+            COLORS={COLORS}
           />
           <View style={styles.divider} />
           <SettingItem
@@ -344,6 +355,8 @@ export default function SettingsScreen({ navigation }) {
             value={t('settings.configure')}
             iconBgColor="#FF3B30"
             onPress={() => navigation.navigate('AllergensSettings')}
+            styles={styles}
+            COLORS={COLORS}
           />
           <View style={styles.divider} />
           <SettingItem
@@ -352,6 +365,8 @@ export default function SettingsScreen({ navigation }) {
             value={t('settings.configure')}
             iconBgColor="#9B59B6"
             onPress={() => navigation.navigate('Categories')}
+            styles={styles}
+            COLORS={COLORS}
           />
         </View>
 
@@ -385,6 +400,8 @@ export default function SettingsScreen({ navigation }) {
                 title={t('settings.defaultFund')}
                 iconBgColor="#007AFF"
                 onPress={() => setCharityModalVisible(true)}
+                styles={styles}
+                COLORS={COLORS}
                 rightComponent={
                   <View style={styles.charityChip}>
                     <Text style={styles.charityChipText} numberOfLines={1}>{selectedCharity.name}</Text>

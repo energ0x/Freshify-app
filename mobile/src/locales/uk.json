@@ -17,7 +17,10 @@
     "undo": "Скасувати",
     "continue": "Далі",
     "other": "Інше...",
-    "add": "Додати"
+    "add": "Додати",
+    "confirm": "Підтвердити",
+    "close": "Закрити",
+    "done": "Зроблено"
   },
   "tabs": {
     "products": "Продукти",
@@ -107,20 +110,29 @@
   },
   "addProduct": {
     "attentionAllergenTitle": "Увага, алерген!",
-    "attentionAllergenMsg": "У вас може бути алергія на цей продукт. Все одно додати?",
+    "attentionAllergenMsg": "Продукт \"{{name}}\" може містити алерген!",
     "categoryNotFoundTitle": "Категорію не знайдено",
     "categoryNotFoundMsg": "Цієї категорії продуктів (\"{{category}}\") у вас немає. Відновити її?",
     "productNotRecognizedMsg": "Не вдалося повністю розпізнати продукт без категорії",
     "receiptRecognizedTitle": "Чек розпізнано",
     "receiptRecognizedMsg": "Знайдено {{count}} продуктів. Поки що заповнено перший, інші ви зможете додати згодом",
-    "addWithAI": "Додати за допомогою ШІ",
+    "addWithAI": "Додати за допомогою ШІ / Штрихкоду",
     "photo": "Фото",
     "barcode": "Штрихкод",
     "receipt": "Чек",
     "notesOptional": "Нотатки (опціонально)",
     "notesPlaceholder2": "Наприклад: Зберігати в холодильнику...",
-    "addPhoto": "Додати фото",
-    "productIndex": "Продукт"
+    "addPhoto": "Додати фото продукту",
+    "productIndex": "Продукт {{index}}",
+    "nameRequired": "Введіть назву для продукту #{{index}}",
+    "savePartialError": "Деякі продукти не вдалося зберегти.",
+    "saveError": "Не вдалося зберегти продукти.",
+    "addMore": "Додати ще один продукт",
+    "macrosLabel": "КБЖВ (на 100г/мл)",
+    "proteins": "Білки",
+    "fats": "Жири",
+    "carbs": "Вугл.",
+    "calories": "Ккал"
   },
   "recipes": {
     "title": "Рецепти від AI",

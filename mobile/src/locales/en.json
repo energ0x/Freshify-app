@@ -17,7 +17,10 @@
     "undo": "Undo",
     "continue": "Continue",
     "other": "Other...",
-    "add": "Add"
+    "add": "Add",
+    "confirm": "Confirm",
+    "close": "Close",
+    "done": "Done"
   },
   "tabs": {
     "products": "Products",
@@ -107,20 +110,29 @@
   },
   "addProduct": {
     "attentionAllergenTitle": "Allergen Warning!",
-    "attentionAllergenMsg": "You might be allergic to this product. Add it anyway?",
+    "attentionAllergenMsg": "Product \"{{name}}\" may contain an allergen!",
     "categoryNotFoundTitle": "Category not found",
     "categoryNotFoundMsg": "You don't have this product category (\"{{category}}\"). Restore it?",
     "productNotRecognizedMsg": "Failed to fully recognize the product without a category",
     "receiptRecognizedTitle": "Receipt Recognized",
     "receiptRecognizedMsg": "Found {{count}} products. The first one is filled in for now, you can add the others later",
-    "addWithAI": "Add with AI",
+    "addWithAI": "Add with AI / Barcode",
     "photo": "Photo",
     "barcode": "Barcode",
     "receipt": "Receipt",
     "notesOptional": "Notes (optional)",
     "notesPlaceholder2": "E.g.: Store in the fridge...",
-    "addPhoto": "Add photo",
-    "productIndex": "Product"
+    "addPhoto": "Add product photo",
+    "productIndex": "Product {{index}}",
+    "nameRequired": "Enter a name for product #{{index}}",
+    "savePartialError": "Some products could not be saved.",
+    "saveError": "Failed to save products.",
+    "addMore": "Add another product",
+    "macrosLabel": "Macros (per 100g/ml)",
+    "proteins": "Proteins",
+    "fats": "Fats",
+    "carbs": "Carbs",
+    "calories": "Kcal"
   },
   "recipes": {
     "title": "AI Recipes",

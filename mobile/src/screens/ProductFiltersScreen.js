@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
+import CustomButton from '../components/CustomButton';
 
 export default function ProductFiltersScreen({ navigation, route }) {
   const { t } = useTranslation();
-  const { colors: COLORS } = useThemeStore();
+  const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
+  
+  const isDark = theme === 'dark';
 
   const { currentFilters, presentCategories = [] } = route.params || {};
 
@@ -31,10 +34,8 @@ export default function ProductFiltersScreen({ navigation, route }) {
   };
 
   const handleApply = () => {
-    // Повертаємося назад і передаємо нові фільтри через params. 
-    // Замість "Home" вкажи назву твого роуту головного екрана, якщо вона інша
     navigation.navigate({
-      name: 'Products', // Переконайся, що це правильне ім'я екрана
+      name: 'Products', 
       params: { appliedFilters: { selectedCategoryId, sortBy, sortDirection } },
       merge: true,
     });
@@ -46,209 +47,251 @@ export default function ProductFiltersScreen({ navigation, route }) {
     setSortDirection('asc');
   };
 
+  const styles = getStyles(COLORS, insets, isDark);
+
   return (
-    <View style={[styles.container, { backgroundColor: COLORS.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top || 20, backgroundColor: COLORS.surface }]}>
+    <View style={styles.container}>
+      <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+          <Ionicons name="close" size={28} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: COLORS.text }]}>{t('home.filtersTitle')}</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>{t('home.filtersTitle')}</Text>
+        <View style={{ width: 44 }} />
       </View>
 
-      {/* 2 Колонки */}
-      <View style={styles.columnsContainer}>
-        {/* Ліва колонка: Категорії */}
-        <View style={styles.column}>
-          <Text style={[styles.sectionTitle, { color: COLORS.text }]}>{t('home.filterCategory')}</Text>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <TouchableOpacity 
-              style={[
-                styles.chip, 
-                { backgroundColor: selectedCategoryId === null ? COLORS.primary : COLORS.surfaceVariant }
-              ]} 
-              onPress={() => setSelectedCategoryId(null)}
-            >
-              <Text style={[styles.chipText, { color: selectedCategoryId === null ? COLORS.onPrimary : COLORS.text }]}>
-                {t('home.all')}
-              </Text>
-            </TouchableOpacity>
+      <ScrollView 
+        style={styles.scrollContainer} 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.subtitle}>
+          Налаштуйте відображення продуктів для зручного пошуку та аналізу.
+        </Text>
+        <View style={styles.columnsContainer}>
+          <View style={styles.column}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="folder-outline" size={20} color={COLORS.text} />
+              <Text style={styles.sectionTitle}>{t('home.filterCategory')}</Text>
+            </View>
             
-            {presentCategories.map(category => (
+            <View style={styles.chipContainer}>
               <TouchableOpacity 
-                key={category.id} 
                 style={[
                   styles.chip, 
-                  { backgroundColor: selectedCategoryId === category.id ? COLORS.primary : COLORS.surfaceVariant }
+                  selectedCategoryId === null ? styles.chipSelected : styles.chipUnselected
                 ]} 
-                onPress={() => setSelectedCategoryId(category.id)}
+                onPress={() => setSelectedCategoryId(null)}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.chipText, { color: selectedCategoryId === category.id ? COLORS.onPrimary : COLORS.text }]}>
-                  {category.name}
+                <Text style={[styles.chipText, selectedCategoryId === null ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                  {t('home.all')}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+              
+              {presentCategories.map(category => (
+                <TouchableOpacity 
+                  key={category.id} 
+                  style={[
+                    styles.chip, 
+                    selectedCategoryId === category.id ? styles.chipSelected : styles.chipUnselected
+                  ]} 
+                  onPress={() => setSelectedCategoryId(category.id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.chipText, selectedCategoryId === category.id ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.column}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="swap-vertical-outline" size={20} color={COLORS.text} />
+              <Text style={styles.sectionTitle}>{t('home.sortBy')}</Text>
+            </View>
+
+            <View style={styles.chipContainer}>
+              <TouchableOpacity 
+                style={[
+                  styles.chip, 
+                  sortBy === 'expiry' ? styles.chipSelected : styles.chipUnselected
+                ]} 
+                onPress={() => handleSortPress('expiry')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.chipText, sortBy === 'expiry' ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                  {t('home.sortExpiry')}{renderSortArrow('expiry')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.chip, 
+                  sortBy === 'alphabet' ? styles.chipSelected : styles.chipUnselected
+                ]} 
+                onPress={() => handleSortPress('alphabet')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.chipText, sortBy === 'alphabet' ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                  {t('home.sortAlphabet')}{renderSortArrow('alphabet')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[
+                  styles.chip, 
+                  sortBy === 'quantity' ? styles.chipSelected : styles.chipUnselected
+                ]} 
+                onPress={() => handleSortPress('quantity')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.chipText, sortBy === 'quantity' ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                  {t('home.sortQuantity')}{renderSortArrow('quantity')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
+      </ScrollView>
 
-        {/* Вертикальний розділювач */}
-        <View style={[styles.divider, { backgroundColor: COLORS.outline }]} />
-
-        {/* Права колонка: Сортування */}
-        <View style={styles.column}>
-          <Text style={[styles.sectionTitle, { color: COLORS.text }]}>{t('home.sortBy')}</Text>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            <TouchableOpacity 
-              style={[
-                styles.chip, 
-                { backgroundColor: sortBy === 'expiry' ? COLORS.primary : COLORS.surfaceVariant }
-              ]} 
-              onPress={() => handleSortPress('expiry')}
-            >
-              <Text style={[styles.chipText, { color: sortBy === 'expiry' ? COLORS.onPrimary : COLORS.text }]}>
-                {t('home.sortExpiry')}{renderSortArrow('expiry')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[
-                styles.chip, 
-                { backgroundColor: sortBy === 'alphabet' ? COLORS.primary : COLORS.surfaceVariant }
-              ]} 
-              onPress={() => handleSortPress('alphabet')}
-            >
-              <Text style={[styles.chipText, { color: sortBy === 'alphabet' ? COLORS.onPrimary : COLORS.text }]}>
-                {t('home.sortAlphabet')}{renderSortArrow('alphabet')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[
-                styles.chip, 
-                { backgroundColor: sortBy === 'quantity' ? COLORS.primary : COLORS.surfaceVariant }
-              ]} 
-              onPress={() => handleSortPress('quantity')}
-            >
-              <Text style={[styles.chipText, { color: sortBy === 'quantity' ? COLORS.onPrimary : COLORS.text }]}>
-                {t('home.sortQuantity')}{renderSortArrow('quantity')}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </View>
-
-      {/* Кнопки дій */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom || 20, backgroundColor: COLORS.surface }]}>
-        <TouchableOpacity 
-          style={[styles.resetButton, { borderColor: COLORS.outline, backgroundColor: COLORS.background }]} 
+      <View style={styles.footer}>
+        <CustomButton
+          title={t('common.resetAll')}
+          variant="outline"
           onPress={resetFilters}
-        >
-          <Text style={[styles.resetButtonText, { color: COLORS.danger }]}>{t('common.resetAll')}</Text>
-        </TouchableOpacity>
+          style={styles.resetButton}
+          textStyle={{ color: COLORS.danger }}
+        />
         
-        <TouchableOpacity 
-          style={[styles.applyButton, { backgroundColor: COLORS.primary }]} 
+        <CustomButton
+          title={t('common.apply')}
           onPress={handleApply}
-        >
-          <Text style={[styles.applyButtonText, { color: COLORS.onPrimary }]}>{t('common.apply')}</Text>
-        </TouchableOpacity>
+          style={styles.applyButton}
+        />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 20 : insets.top || 20,
+    paddingHorizontal: 16,
     paddingBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    backgroundColor: COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
   backButton: {
     padding: 8,
-    marginLeft: -8,
+    width: 44,
+    alignItems: 'flex-start',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginBottom: 28,
+    lineHeight: 20,
+    textAlign: 'center',
+    paddingHorizontal: 10,
   },
   columnsContainer: {
-    flex: 1,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    gap: 16,
   },
   column: {
     flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: 24,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
-  divider: {
-    width: 1,
-    marginHorizontal: 16,
-    opacity: 0.2,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 16,
-    textAlign: 'center',
+    color: COLORS.text,
   },
-  scrollContent: {
-    paddingBottom: 20,
+  chipContainer: {
+    flexDirection: 'column',
+    gap: 10,
   },
   chip: {
+    width: '100%',
+    paddingVertical: 14,
     paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 16,
-    marginBottom: 10,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  chipUnselected: {
+    backgroundColor: COLORS.surfaceVariant,
+  },
+  chipSelected: {
+    backgroundColor: `${COLORS.primary}15`,
+    borderColor: COLORS.primary,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
+  chipTextUnselected: {
+    color: COLORS.text,
+  },
+  chipTextSelected: {
+    color: COLORS.primary,
+  },
   footer: {
     flexDirection: 'row',
-    padding: 20,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingBottom: (insets.bottom || 20) + 10,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
     gap: 12,
   },
   resetButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  resetButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    borderColor: COLORS.danger,
   },
   applyButton: {
     flex: 2,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  applyButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

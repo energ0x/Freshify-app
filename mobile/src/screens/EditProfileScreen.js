@@ -8,20 +8,21 @@ import {
   ScrollView, 
   Alert, 
   KeyboardAvoidingView, 
-  Platform 
+  Platform,
+  StatusBar
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
-import CustomButton from '../components/CustomButton';
 
 export default function EditProfileScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
+  const isDark = theme === 'dark';
   
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -77,24 +78,18 @@ export default function EditProfileScreen({ navigation }) {
     
     if (res.success) {
       Alert.alert(t('common.success'), t('settings.profileUpdated'));
-      navigation.goBack(); // Повертаємося на екран налаштувань після збереження
+      navigation.goBack(); 
     } else {
       Alert.alert(t('common.error'), res.error || t('settings.profileUpdateError'));
     }
   };
 
-  const styles = getStyles(COLORS, insets, theme);
+  const heroBg = isDark ? COLORS.primaryContainer : COLORS.primary;
+  const styles = getStyles(COLORS, insets, isDark, heroBg);
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('settings.editProfileTitle')}</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <StatusBar barStyle="light-content" backgroundColor={heroBg} />
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
@@ -105,93 +100,119 @@ export default function EditProfileScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Поля форми */}
-          {[
-            { key: 'name', label: t('settings.nameLabel'), placeholder: t('settings.namePlaceholder'), secure: false },
-            { key: 'email', label: t('settings.emailLabel'), placeholder: t('settings.emailPlaceholder'), secure: false, keyboard: 'email-address' },
-            { key: 'current_password', label: t('settings.currentPasswordLabel'), placeholder: t('settings.currentPasswordPlaceholder'), secure: true },
-            { key: 'new_password', label: t('settings.newPasswordLabel'), placeholder: t('settings.newPasswordPlaceholder'), secure: true },
-          ].map(({ key, label, placeholder, secure, keyboard }) => (
-            <View key={key} style={styles.formGroup}>
-              <Text style={styles.formLabel}>{label}</Text>
-              <TextInput
-                style={[styles.input, editErrors[key] && styles.inputError]}
-                placeholder={placeholder}
-                value={editForm[key]}
-                onChangeText={(text) => setEditForm(prev => ({ ...prev, [key]: text }))}
-                secureTextEntry={secure}
-                keyboardType={keyboard ?? 'default'}
-                autoCapitalize="none"
-                placeholderTextColor={COLORS.onSurfaceVariant}
-              />
-              {editErrors[key] && <Text style={styles.errorText}>{editErrors[key]}</Text>}
+          {/* Hero Section */}
+          <View style={styles.heroSection}>
+            <View style={styles.bCircle1} />
+            <View style={styles.bCircle2} />
+            
+            <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+              <Ionicons name="close" size={24} color="#FFF" />
+            </TouchableOpacity>
+            
+            <View style={styles.avatarContainer}>
+              <Ionicons name="person" size={44} color={isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary} />
             </View>
-          ))}
+            
+            <Text style={styles.heroTitle}>{t('settings.editProfileTitle')}</Text>
+          </View>
 
-          {editForm.new_password !== '' && (
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>{t('settings.confirmPasswordLabel')}</Text>
-              <TextInput
-                style={[styles.input, editErrors.confirmPassword && styles.inputError]}
-                placeholder={t('settings.confirmPasswordPlaceholder')}
-                value={editForm.confirmPassword}
-                onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
-                secureTextEntry
-                placeholderTextColor={COLORS.onSurfaceVariant}
-              />
-              {editErrors.confirmPassword && (
-                <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>
-              )}
-            </View>
-          )}
+          <View style={styles.formContainer}>
+            {/* Поля форми */}
+            {[
+              { key: 'name', label: t('settings.nameLabel'), placeholder: t('settings.namePlaceholder'), secure: false },
+              { key: 'email', label: t('settings.emailLabel'), placeholder: t('settings.emailPlaceholder'), secure: false, keyboard: 'email-address' },
+              { key: 'current_password', label: t('settings.currentPasswordLabel'), placeholder: t('settings.currentPasswordPlaceholder'), secure: true },
+              { key: 'new_password', label: t('settings.newPasswordLabel'), placeholder: t('settings.newPasswordPlaceholder'), secure: true },
+            ].map(({ key, label, placeholder, secure, keyboard }) => (
+              <View key={key} style={styles.formGroup}>
+                <Text style={styles.formLabel}>{label}</Text>
+                <TextInput
+                  style={[styles.input, editErrors[key] && styles.inputError]}
+                  placeholder={placeholder}
+                  value={editForm[key]}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, [key]: text }))}
+                  secureTextEntry={secure}
+                  keyboardType={keyboard ?? 'default'}
+                  autoCapitalize="none"
+                  placeholderTextColor={COLORS.textLight}
+                />
+                {editErrors[key] ? <Text style={styles.errorText}>{editErrors[key]}</Text> : null}
+              </View>
+            ))}
+
+            {editForm.new_password !== '' ? (
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>{t('settings.confirmPasswordLabel')}</Text>
+                <TextInput
+                  style={[styles.input, editErrors.confirmPassword && styles.inputError]}
+                  placeholder={t('settings.confirmPasswordPlaceholder')}
+                  value={editForm.confirmPassword}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
+                  secureTextEntry
+                  placeholderTextColor={COLORS.textLight}
+                />
+                {editErrors.confirmPassword ? (
+                  <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
         </ScrollView>
         
         {/* Кнопки дій */}
-        <View style={styles.actionsContainer}>
-          <CustomButton 
-            title={t('common.save')} 
-            onPress={handleSaveProfile} 
-            loading={saving} 
-            style={styles.saveButton} 
-          />
+        <View style={styles.actionSection}>
+          <TouchableOpacity 
+             style={styles.subscribeBtn} 
+             onPress={handleSaveProfile} 
+             activeOpacity={0.85}
+             disabled={saving}
+          >
+            <Text style={styles.subscribeBtnText}>
+              {saving ? t('common.save') + "..." : t('common.save')}
+            </Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </View>
   );
 }
 
-const getStyles = (COLORS, insets, theme) => StyleSheet.create({
+const getStyles = (COLORS, insets, isDark, heroBg) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: insets.top || 20,
+  scrollContent: { 
+    paddingBottom: 40, 
+    flexGrow: 1 
+  },
+  
+  heroSection: {
+    backgroundColor: heroBg,
+    paddingTop: Platform.OS === 'ios' ? 40 : insets.top + 20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
-    backgroundColor: COLORS.surface,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-  },
-  backButton: {
-    padding: 8,
-    marginLeft: -8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
     paddingBottom: 40,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: isDark ? '#000' : COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: isDark ? 0.3 : 0.2,
+    shadowRadius: 15,
+    elevation: 4,
+    marginBottom: 24,
+  },
+  bCircle1: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.06)', top: -60, right: -60 },
+  bCircle2: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(255,255,255,0.04)', bottom: -40, left: -20 },
+  
+  closeButton: { position: 'absolute', top: Platform.OS === 'ios' ? 20 : insets.top + 10, right: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  
+  avatarContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 16, marginTop: 10, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)' },
+  heroTitle: { fontSize: 24, fontWeight: '800', color: isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary, textAlign: 'center' },
+
+  formContainer: {
+    paddingHorizontal: 20,
   },
   formGroup: {
     marginBottom: 20,
@@ -201,14 +222,15 @@ const getStyles = (COLORS, insets, theme) => StyleSheet.create({
     fontWeight: '600',
     color: COLORS.text,
     marginBottom: 8,
+    marginLeft: 4,
   },
   input: {
-    backgroundColor: COLORS.surfaceVariant,
+    backgroundColor: COLORS.surface,
     borderWidth: 1.5,
-    borderColor: 'transparent',
-    borderRadius: 14,
+    borderColor: COLORS.border,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
+    paddingVertical: Platform.OS === 'ios' ? 16 : 14,
     fontSize: 16,
     color: COLORS.text,
   },
@@ -219,17 +241,26 @@ const getStyles = (COLORS, insets, theme) => StyleSheet.create({
   errorText: {
     color: COLORS.danger ?? '#FF3B30',
     fontSize: 12,
-    marginTop: 5,
+    marginTop: 6,
+    marginLeft: 4,
   },
-  actionsContainer: {
-    paddingHorizontal: 24,
+  
+  actionSection: { 
+    paddingHorizontal: 20,
     paddingBottom: (insets.bottom || 20) + 10,
-    paddingTop: 16,
-    backgroundColor: COLORS.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: `${COLORS.text}10`,
+    paddingTop: 10,
   },
-  saveButton: {
-    width: '100%',
+  subscribeBtn: { 
+    backgroundColor: COLORS.primary, 
+    borderRadius: 16, 
+    height: 56, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    shadowColor: COLORS.primary, 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 8, 
+    elevation: 4 
   },
+  subscribeBtnText: { color: COLORS.onPrimary, fontSize: 16, fontWeight: 'bold' },
 });

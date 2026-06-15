@@ -94,7 +94,10 @@ export default function AddProductScreen({ navigation, route }) {
       });
 
       if (data.has_allergen) {
-        Alert.alert(t('addProduct.attentionAllergenTitle'), t('addProduct.attentionAllergenMsg', { defaultValue: `Продукт "${data.name}" може містити алерген!` }));
+        Alert.alert(
+          t('addProduct.attentionAllergenTitle'),
+          t('addProduct.attentionAllergenMsg', { name: data.name })
+        );
       }
     }
     
@@ -162,7 +165,7 @@ export default function AddProductScreen({ navigation, route }) {
 
   const handleSave = async () => {
     for (let i = 0; i < forms.length; i++) {
-      if (!forms[i].name) return Alert.alert(t('common.error'), t('addProduct.nameRequired', { defaultValue: `Введіть назву для продукту #${i + 1}`, index: i + 1 }));
+      if (!forms[i].name) return Alert.alert(t('common.error'), t('addProduct.nameRequired', { index: i + 1 }));
     }
 
     setLoading(true);
@@ -196,11 +199,11 @@ export default function AddProductScreen({ navigation, route }) {
       if (savedCount === forms.length) {
         navigation.goBack();
       } else {
-        Alert.alert(t('common.error'), t('addProduct.savePartialError', 'Деякі продукти не вдалося зберегти.'));
+        Alert.alert(t('common.error'), t('addProduct.savePartialError'));
       }
     } catch (e) {
       setLoading(false);
-      Alert.alert(t('common.error'), t('addProduct.saveError', 'Не вдалося зберегти продукти.'));
+      Alert.alert(t('common.error'), t('addProduct.saveError'));
     }
   };
 
@@ -218,7 +221,7 @@ export default function AddProductScreen({ navigation, route }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       
-      <Text style={styles.scanLabel}>{t('addProduct.addWithAI', 'Додати за допомогою ШІ / Штрихкоду')}</Text>
+      <Text style={styles.scanLabel}>{t('addProduct.addWithAI')}</Text>
       <View style={styles.scanRow}>
         <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'product' })} activeOpacity={0.7}>
           <Ionicons name="camera-outline" size={28} color={COLORS.primary} />
@@ -239,7 +242,7 @@ export default function AddProductScreen({ navigation, route }) {
       {forms.map((form, index) => (
         <View key={index} style={styles.formCard}>
           <View style={styles.formHeader}>
-            <Text style={styles.formTitle}>{t('addProduct.productIndex', { defaultValue: `Продукт ${index + 1}`, index: index + 1 })}</Text>
+            <Text style={styles.formTitle}>{t('addProduct.productIndex', { index: index + 1 })}</Text>
             {forms.length > 1 && (
               <TouchableOpacity onPress={() => removeForm(index)}>
                 <Ionicons name="trash-outline" size={24} color={COLORS.danger} />
@@ -254,7 +257,7 @@ export default function AddProductScreen({ navigation, route }) {
               ) : (
                 <>
                   <Ionicons name="image-outline" size={40} color={COLORS.onSurfaceVariant} />
-                  <Text style={styles.imageText}>{t('addProduct.addPhoto', 'Додати фото продукту')}</Text>
+                  <Text style={styles.imageText}>{t('addProduct.addPhoto')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -311,14 +314,14 @@ export default function AddProductScreen({ navigation, route }) {
           </View>
           
           <View style={styles.section}>
-            <Text style={styles.label}>КБЖВ (на 100г/мл)</Text>
+            <Text style={styles.label}>{t('addProduct.macrosLabel')}</Text>
             <View style={styles.macroRow}>
               <View style={styles.macroInputContainer}>
                 <TextInput
                   style={[styles.input, styles.macroInput]}
                   value={form.proteins}
                   onChangeText={(val) => updateForm(index, 'proteins', val)}
-                  placeholder="Білки"
+                  placeholder={t('addProduct.proteins')}
                   keyboardType="numeric"
                   placeholderTextColor={COLORS.onSurfaceVariant}
                 />
@@ -328,7 +331,7 @@ export default function AddProductScreen({ navigation, route }) {
                   style={[styles.input, styles.macroInput]}
                   value={form.fats}
                   onChangeText={(val) => updateForm(index, 'fats', val)}
-                  placeholder="Жири"
+                  placeholder={t('addProduct.fats')}
                   keyboardType="numeric"
                   placeholderTextColor={COLORS.onSurfaceVariant}
                 />
@@ -338,7 +341,7 @@ export default function AddProductScreen({ navigation, route }) {
                   style={[styles.input, styles.macroInput]}
                   value={form.carbohydrates}
                   onChangeText={(val) => updateForm(index, 'carbohydrates', val)}
-                  placeholder="Вугл."
+                  placeholder={t('addProduct.carbs')}
                   keyboardType="numeric"
                   placeholderTextColor={COLORS.onSurfaceVariant}
                 />
@@ -347,7 +350,7 @@ export default function AddProductScreen({ navigation, route }) {
                 <TextInput
                   style={[styles.input, styles.macroInput, { backgroundColor: COLORS.surface }]}
                   value={form.calories}
-                  placeholder="Ккал"
+                  placeholder={t('addProduct.calories')}
                   keyboardType="numeric"
                   placeholderTextColor={COLORS.onSurfaceVariant}
                   editable={false}
@@ -374,7 +377,7 @@ export default function AddProductScreen({ navigation, route }) {
 
       <TouchableOpacity style={styles.addMoreBtn} onPress={addEmptyForm}>
         <Ionicons name="add-circle-outline" size={24} color={COLORS.primary} />
-        <Text style={[styles.addMoreText, { color: COLORS.primary }]}>{t('addProduct.addMore', 'Додати ще один продукт')}</Text>
+        <Text style={[styles.addMoreText, { color: COLORS.primary }]}>{t('addProduct.addMore')}</Text>
       </TouchableOpacity>
 
       <CustomButton
