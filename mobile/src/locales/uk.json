@@ -118,7 +118,9 @@
     "barcode": "Штрихкод",
     "receipt": "Чек",
     "notesOptional": "Нотатки (опціонально)",
-    "notesPlaceholder2": "Наприклад: Зберігати в холодильнику..."
+    "notesPlaceholder2": "Наприклад: Зберігати в холодильнику...",
+    "addPhoto": "Додати фото",
+    "productIndex": "Продукт"
   },
   "recipes": {
     "title": "Рецепти від AI",
@@ -367,5 +369,12 @@
     "passwordPlaceholder": "Пароль",
     "loginBtn": "Увійти",
     "registerBtn": "Реєстрація"
+  },
+  "units": {
+    "pcs": "шт",
+    "kg": "кг",
+    "g": "г",
+    "l": "л",
+    "ml": "мл"
   }
 }

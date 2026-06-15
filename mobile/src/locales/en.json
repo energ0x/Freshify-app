@@ -118,7 +118,9 @@
     "barcode": "Barcode",
     "receipt": "Receipt",
     "notesOptional": "Notes (optional)",
-    "notesPlaceholder2": "E.g.: Store in the fridge..."
+    "notesPlaceholder2": "E.g.: Store in the fridge...",
+    "addPhoto": "Add photo",
+    "productIndex": "Product"
   },
   "recipes": {
     "title": "AI Recipes",
@@ -362,5 +364,12 @@
     "passwordPlaceholder": "Password",
     "loginBtn": "Login",
     "registerBtn": "Register"
+  },
+  "units": {
+    "pcs": "pcs",
+    "kg": "kg",
+    "g": "g",
+    "l": "L",
+    "ml": "ml"
   }
 }
