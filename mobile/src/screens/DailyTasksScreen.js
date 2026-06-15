@@ -36,7 +36,7 @@ export default function DailyTasksScreen({ navigation }) {
     let mounted = true;
     const fetchAll = async () => {
       try {
-        const [res, summaryRes] = await Promise.all([dailyTasksAPI.list(), dailyTasksAPI.getSummary()]);
+        const res = await dailyTasksAPI.list();
         if (!mounted) return;
         if (res?.data) {
           setTasks(res.data.map(t => ({
@@ -49,6 +49,9 @@ export default function DailyTasksScreen({ navigation }) {
             completed: t.completed,
           })));
         }
+        // Fetch summary after tasks to ensure today's entries were created server-side
+        const summaryRes = await dailyTasksAPI.getSummary();
+        if (!mounted) return;
         if (summaryRes?.data) {
           const s = summaryRes.data;
           setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: s.week || prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
