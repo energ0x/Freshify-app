@@ -18,7 +18,7 @@ export default function DatePicker({
   const { t } = useTranslation();
 
   // Використовуємо локалізований текст за замовчуванням, якщо label не передано
-  const displayLabel = label !== undefined ? label : t('datePicker.expiryDate', 'Термін придатності');
+  const displayLabel = label !== undefined ? label : t('datePicker.expiryDate');
 
   const [show, setShow] = useState(false);
   const [tempDate, setTempDate] = useState(date || new Date());

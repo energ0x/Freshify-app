@@ -20,7 +20,8 @@
     "add": "Add",
     "confirm": "Confirm",
     "close": "Close",
-    "done": "Done"
+    "done": "Done",
+    "choose": "Choose"
   },
   "tabs": {
     "products": "Products",
@@ -383,5 +384,8 @@
     "g": "g",
     "l": "L",
     "ml": "ml"
+  },
+  "datePicker": {
+    "expiryDate": "Expiry Date"
   }
 }
