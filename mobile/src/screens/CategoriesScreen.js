@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
+import useProductStore from '../store/productStore';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
@@ -28,6 +29,21 @@ export default function CategoriesScreen({ navigation }) {
   };
 
   const handleDeleteCategory = async (id) => {
+    // Перевіряємо локально чи категорія використовується у продуктах або в історії споживання
+    const ps = useProductStore.getState();
+    const usedInProducts = (ps.products || []).some(p => p.category_id === id || (p.category_obj && p.category_obj.id === id));
+    const usedInConsumed = (ps.consumedProducts || []).some(p => p.category_id === id || (p.category_obj && p.category_obj.id === id));
+
+    if (usedInProducts || usedInConsumed) {
+      // Показуємо пояснювальне вікно — категорію не можна видалити
+      Alert.alert(
+        t('categories.deleteInUseTitle') || t('common.attention'),
+        t('categories.deleteInUseMessage') || t('errors.deleteCategory'),
+        [{ text: t('common.ok'), style: 'default' }]
+      );
+      return;
+    }
+
     Alert.alert(
       t('categories.deleteTitle'),
       t('categories.deleteMessage'),

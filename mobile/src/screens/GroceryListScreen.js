@@ -124,7 +124,7 @@ export default function GroceryListScreen() {
     return (
       <Swipeable
         ref={swipeableRef}
-        containerStyle={{ marginBottom: 12 }}
+        containerStyle={{ marginBottom: 12, overflow: 'visible' }}
         renderLeftActions={renderLeftActions}
         renderRightActions={renderRightActions}
         overshootLeft={false}
@@ -234,6 +234,8 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -296,6 +298,8 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+
+  // ─── List ──────────────────────────────────────────────────────────────────
   list: {
     padding: 20,
     paddingBottom: tabBarHeight + 40,
@@ -308,11 +312,11 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    elevation: 3,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
   },
   checkboxContainer: {
     flexDirection: 'row',
@@ -330,6 +334,8 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     textDecorationLine: 'line-through',
     color: COLORS.onSurfaceVariant,
   },
+
+  // ─── Empty state ───────────────────────────────────────────────────────────
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -357,6 +363,8 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
+
+  // ─── Swipe actions ─────────────────────────────────────────────────────────
   swipeAction: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -378,6 +386,8 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontWeight: '600',
     marginTop: 4,
   },
+
+  // ─── Snackbar ──────────────────────────────────────────────────────────────
   snackbar: {
     position: 'absolute',
     bottom: tabBarHeight + 80,

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import useAuthStore from '../store/authStore';
 import { achievementsAPI } from '../services/api';
+import * as db from '../services/db';
 
 const { width } = Dimensions.get('window');
 
@@ -39,8 +40,13 @@ export default function AchievementsScreen({ navigation }) {
           await refreshUser();
           const response = await achievementsAPI.get();
           setAchievements(response.data);
+          await db.write(db.KEYS.ACHIEVEMENTS, response.data);
         } catch (error) {
           console.error("Failed to fetch data", error);
+          const cached = await db.read(db.KEYS.ACHIEVEMENTS);
+          if (cached) {
+            setAchievements(cached);
+          }
         } finally {
           setLoading(false);
         }

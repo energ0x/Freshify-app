@@ -44,6 +44,9 @@ export default function AllergensSettingsScreen({ navigation }) {
   const addCustomAllergen = () => {
     const text = customInput.trim();
     if (!text) return;
+    if (text.length > 100) {
+      return Alert.alert(t('common.error'), t('allergens.maxLengthError') || 'Назва алергену не може бути такою довгою.');
+    }
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
       return Alert.alert(t('common.attention'), t('allergens.alreadyInList'));
     }
@@ -86,6 +89,7 @@ export default function AllergensSettingsScreen({ navigation }) {
           onChangeText={setCustomInput}
           onSubmitEditing={addCustomAllergen}
           placeholderTextColor={COLORS.textLight}
+          maxLength={255}
         />
         <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
           <Ionicons name="add" size={24} color="#fff" />

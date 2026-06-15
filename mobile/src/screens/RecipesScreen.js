@@ -1,19 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, TouchableOpacity, StatusBar, Animated, Platform } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, StatusBar, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import RecipeCard from '../components/RecipeCard';
 
+const RECIPES_STORAGE_KEY = 'generated_recipes';
+
 export default function RecipesScreen() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
-  const [streamedText, setStreamedText] = useState('');
   const [recipes, setRecipes] = useState([]);
 
   const { colors: COLORS, theme } = useThemeStore();
@@ -24,6 +27,25 @@ export default function RecipesScreen() {
   const animation = useRef(new Animated.Value(0)).current;
   const wsRef = useRef(null);
 
+  const loadRecipesFromStorage = async () => {
+    try {
+      const storedRecipes = await AsyncStorage.getItem(RECIPES_STORAGE_KEY);
+      if (storedRecipes) {
+        setRecipes(JSON.parse(storedRecipes));
+      }
+    } catch (error) {
+      console.log('Failed to load recipes from storage', error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (recipes.length === 0) {
+        loadRecipesFromStorage();
+      }
+    }, [recipes.length])
+  );
+
   useEffect(() => {
     return () => {
       if (wsRef.current) {
@@ -32,31 +54,20 @@ export default function RecipesScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    if (streamedText) {
-      const rawRecipes = streamedText.split('---').filter(r => r.trim() !== '');
-      setRecipes(rawRecipes);
-    } else {
-        setRecipes([]);
-    }
-  }, [streamedText]);
-
   const handleGenerateRecipes = async () => {
     if (loading) {
       if (wsRef.current) {
         wsRef.current.close();
       }
-      setLoading(false);
-      Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
       return;
     }
 
     setLoading(true);
-    setStreamedText('');
     setRecipes([]);
     Animated.timing(animation, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
     try {
+      await AsyncStorage.removeItem(RECIPES_STORAGE_KEY);
       const token = await SecureStore.getItemAsync('auth_token');
       
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
@@ -69,19 +80,33 @@ export default function RecipesScreen() {
       const ws = new WebSocket(`${wsUrl}/recipes/ws/generate?include_grocery=${includeGrocery}&token=${token}`);
       wsRef.current = ws;
 
+      let messageBuffer = '';
+
       ws.onmessage = (event) => {
-        setStreamedText(prev => prev + event.data);
+        messageBuffer += event.data;
+        const newRecipes = messageBuffer.split('---').filter(r => r.trim() !== '');
+        setRecipes(newRecipes);
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = async () => {
         setLoading(false);
         Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+        wsRef.current = null;
+        try {
+            const finalRecipes = messageBuffer.split('---').filter(r => r.trim() !== '');
+            if (finalRecipes.length > 0) {
+                await AsyncStorage.setItem(RECIPES_STORAGE_KEY, JSON.stringify(finalRecipes));
+            }
+        } catch (error) {
+            console.log('Failed to save recipes', error);
+        }
       };
 
       ws.onerror = (e) => {
         console.log("WebSocket Error:", e.message);
         setLoading(false);
         Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+        wsRef.current = null;
       };
 
     } catch (error) {
@@ -113,13 +138,15 @@ export default function RecipesScreen() {
               onValueChange={setIncludeGrocery}
               trackColor={{ false: COLORS.surfaceVariant, true: COLORS.primary }}
               thumbColor={COLORS.onPrimary}
+              disabled={loading}
             />
           </View>
           <CustomButton
             title={loading ? t('recipes.cancelBtn') : t('recipes.generateBtn')}
             onPress={handleGenerateRecipes}
-            loading={loading && !streamedText}
+            loading={loading && recipes.length === 0}
             style={styles.generateBtn}
+            disabled={loading}
             icon={
               <Animated.View style={animatedStyle}>
                 <Ionicons name={loading ? "close" : "sparkles-outline"} size={20} color={COLORS.onPrimary} />
@@ -130,7 +157,7 @@ export default function RecipesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {loading && !streamedText ? (
+        {loading && recipes.length === 0 ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={COLORS.primary} />
             <Text style={styles.loadingText}>{t('recipes.loading')}</Text>

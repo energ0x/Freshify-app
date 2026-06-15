@@ -77,7 +77,7 @@ def update_category(db: Session, category_id: uuid.UUID, category: CategoryUpdat
 
 def check_category_in_use(db: Session, category_id: uuid.UUID) -> bool:
     """Checks if a category is used in any product, consumed product, or grocery item."""
-    if db.query(Product).filter(Product.category_id == category_id).first():
+    if db.query(Product).filter(and_(Product.category_id == category_id, Product.is_active == True)).first():
         return True
     if db.query(ConsumedProduct).filter(ConsumedProduct.category_id == category_id).first():
         return True

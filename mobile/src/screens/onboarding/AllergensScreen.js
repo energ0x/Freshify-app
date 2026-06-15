@@ -54,8 +54,13 @@ export default function AllergensScreen({ navigation }) {
     const text = customInput.trim();
     if (!text) return;
     // Перевірка на дублікати без урахування регістру
+    if (text.length > 100) {
+      return Alert.alert('Помилка', 'Назва алергену не може бути такою довгою.');
+    }
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
       return Alert.alert(t('common.attention'), t('onboarding.allergenExists'));
+    if (allergens.includes(text)) {
+      return Alert.alert('Увага', 'Цей алерген уже є у списку');
     }
     setAllergens([...allergens, text]);
     setSelected([...selected, text]);
@@ -118,6 +123,7 @@ export default function AllergensScreen({ navigation }) {
               onChangeText={setCustomInput}
               maxLength={20}
               onSubmitEditing={addCustomAllergen}
+              maxLength={256}
             />
             <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
               <Text style={styles.addButtonText}>{t('common.add')}</Text>
