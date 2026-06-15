@@ -14,7 +14,10 @@
     "resetAll": "Reset all",
     "apply": "Apply",
     "info": "Information",
-    "undo": "Undo"
+    "undo": "Undo",
+    "continue": "Continue",
+    "other": "Other...",
+    "add": "Add"
   },
   "tabs": {
     "products": "Products",
@@ -229,7 +232,16 @@
     "description": "Select the products you are allergic to.",
     "alreadyInList": "This allergen is already in the list",
     "saveSuccess": "Your allergens have been successfully saved.",
-    "saveError": "Failed to save allergens."
+    "saveError": "Failed to save allergens.",
+    "milk": "Milk🥛",
+    "nuts": "Nuts🥜",
+    "eggs": "Eggs🥚",
+    "gluten": "Gluten🌾",
+    "fish": "Fish🐟",
+    "seafood": "Seafood🦀",
+    "soy": "Soy🌱",
+    "citrus": "Citrus🍊",
+    "honey": "Honey🍯"
   },
   "analytics": {
     "title": "Analytics",
@@ -316,7 +328,12 @@
   "onboarding": {
     "dietTitle": "Do you follow any diets?",
     "dietSubtitle": "This helps us analyze the food in your fridge more accurately.",
-    "dietSaveError": "Failed to save your preferences. Please try again."
+    "dietSaveError": "Failed to save your preferences. Please try again.",
+    "allergenTooLong": "Allergen name cannot be that long.",
+    "allergensTitle": "Do you have any food allergies?",
+    "allergensSubtitle": "AI will warn you if it detects dangerous ingredients.",
+    "enterOption": "Enter your option...",
+    "noAllergies": "No allergies"
   },
   "diets": {
     "noneTitle": "Omnivore (No diets)",
