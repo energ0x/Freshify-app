@@ -6,6 +6,38 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 from app.core.config import get_settings
 
+def _utc_range_for_local_date(on_date):
+    # returns (start_utc, end_utc) timezone-aware datetimes
+    tz_name = get_settings().server_timezone
+    try:
+        local_tz = ZoneInfo(tz_name)
+    except Exception:
+        local_tz = ZoneInfo('UTC')
+    start_local = datetime(on_date.year, on_date.month, on_date.day, 0, 0, 0, tzinfo=local_tz)
+    end_local = start_local + timedelta(days=1)
+    start_utc = start_local.astimezone(ZoneInfo('UTC'))
+    end_utc = end_local.astimezone(ZoneInfo('UTC'))
+    return start_utc, end_utc
+
+
+def check_add_product(db, user_id, on_date):
+    start_utc, end_utc = _utc_range_for_local_date(on_date)
+    return db.query(func.count(Product.id)).filter(
+        Product.user_id == user_id,
+        Product.created_at >= start_utc,
+        Product.created_at < end_utc
+    ).scalar() or 0
+
+
+def check_use_product(db, user_id, on_date):
+    start_utc, end_utc = _utc_range_for_local_date(on_date)
+    return db.query(func.count(ConsumedProduct.id)).filter(
+        ConsumedProduct.user_id == user_id,
+        ConsumedProduct.consumed_at >= start_utc,
+        ConsumedProduct.consumed_at < end_utc
+    ).scalar() or 0
+
+
 DAILY_TASK_DEFINITIONS = [
     {
         "id": "daily_login",
@@ -23,10 +55,7 @@ DAILY_TASK_DEFINITIONS = [
         "icon": "plus",
         "xp_reward": 15,
         "total": 1,
-        "check_progress": lambda db, user_id, on_date: db.query(func.count(Product.id)).filter(
-            Product.user_id == user_id,
-            func.date(Product.created_at) == on_date
-        ).scalar() or 0
+        "check_progress": check_add_product
     },
     {
         "id": "use_product",
@@ -35,10 +64,7 @@ DAILY_TASK_DEFINITIONS = [
         "icon": "check",
         "xp_reward": 20,
         "total": 1,
-        "check_progress": lambda db, user_id, on_date: db.query(func.count(ConsumedProduct.id)).filter(
-            ConsumedProduct.user_id == user_id,
-            func.date(ConsumedProduct.consumed_at) == on_date
-        ).scalar() or 0
+        "check_progress": check_use_product
     },
 ]
 
