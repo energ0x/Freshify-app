@@ -267,9 +267,18 @@ def get_user_daily_summary(db: Session, user_id: uuid.UUID):
 
     weekLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд']
 
+    raw_streak = None
+    if login_streak:
+        raw_streak = {
+            'last_activity_date': login_streak.last_activity_date.isoformat() if login_streak.last_activity_date else None,
+            'current_streak': login_streak.current_streak,
+            'longest_streak': login_streak.longest_streak,
+        }
+
     return {
         'current': current,
         'best': best,
         'week': week_items,
         'weekLabels': weekLabels,
+        'raw_streak': raw_streak,
     }
