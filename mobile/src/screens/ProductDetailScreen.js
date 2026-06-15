@@ -161,6 +161,13 @@ export default function ProductDetailScreen({ route, navigation }) {
   
   const categoryName = product.category_obj?.name;
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // Дозволяємо зберегти поточну дату, якщо вона вже в минулому
+  const minDate = editForm.expiry_date < today ? editForm.expiry_date : today;
+  const maxDate = new Date();
+  maxDate.setFullYear(maxDate.getFullYear() + 10);
+
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -308,6 +315,8 @@ export default function ProductDetailScreen({ route, navigation }) {
                   <DatePicker
                     date={editForm.expiry_date}
                     onDateChange={(date) => setEditForm(prev => ({ ...prev, expiry_date: date }))}
+                    minimumDate={minDate}
+                    maximumDate={maxDate}
                   />
                 </View>
                 

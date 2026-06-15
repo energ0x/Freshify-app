@@ -1,39 +1,42 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions, FlatList, Image } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import CustomButton from '../../components/CustomButton';
 import useAuthStore from '../../store/authStore';
 import { COLORS } from '../../utils/constants';
 
 const { width } = Dimensions.get('window');
 
-const SLIDES = [
+// Замість жорсткого тексту зберігаємо ключі для перекладу
+const SLIDE_KEYS = [
   {
     id: '1',
-    title: 'Скануйте чеки або продукти',
-    description: 'Просто зробіть фото за допомогою вбудованої камери. Наш ШІ розпізнає назву та автоматично виставить дату придатності.',
+    titleKey: 'guide.slide1Title',
+    descKey: 'guide.slide1Desc',
     image: 'https://cdn-icons-png.flaticon.com/512/3143/3143636.png'
   },
   {
     id: '2',
-    title: 'Контролюйте свіжість',
-    description: 'Freshify буде завчасно надсилати вам push-сповіщення про продукти, у яких завершується термін дії, щоб ви встигли їх з\'їсти.',
+    titleKey: 'guide.slide2Title',
+    descKey: 'guide.slide2Desc',
     image: 'https://cdn-icons-png.flaticon.com/512/2913/2913584.png'
   },
   {
     id: '3',
-    title: 'Розумні рецепти та списки',
-    description: 'Генеруйте ідеї для страв виключно з того, що вже лежить у вашому холодильнику, та автоматично створюйте списки покупок.',
+    titleKey: 'guide.slide3Title',
+    descKey: 'guide.slide3Desc',
     image: 'https://cdn-icons-png.flaticon.com/512/3502/3502688.png'
   }
 ];
 
 export default function GuideScreen() {
+  const { t } = useTranslation();
   const { finishOnboarding } = useAuthStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
 
   const handleNext = () => {
-    if (currentIndex < SLIDES.length - 1) {
+    if (currentIndex < SLIDE_KEYS.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
       finishOnboarding(); // Закриваємо онбординг назавжди!
@@ -50,7 +53,7 @@ export default function GuideScreen() {
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={SLIDES}
+        data={SLIDE_KEYS}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -60,15 +63,15 @@ export default function GuideScreen() {
         renderItem={({ item }) => (
           <View style={styles.slide}>
             <Image source={{ uri: item.image }} style={styles.image} />
-            <Text style={styles.slideTitle}>{item.title}</Text>
-            <Text style={styles.slideDesc}>{item.description}</Text>
+            <Text style={styles.slideTitle}>{t(item.titleKey)}</Text>
+            <Text style={styles.slideDesc}>{t(item.descKey)}</Text>
           </View>
         )}
       />
 
       {/* Пагінація (Крапки) */}
       <View style={styles.indicatorContainer}>
-        {SLIDES.map((_, index) => (
+        {SLIDE_KEYS.map((_, index) => (
           <View 
             key={index} 
             style={[styles.indicator, currentIndex === index && styles.activeIndicator]} 
@@ -78,7 +81,7 @@ export default function GuideScreen() {
 
       <View style={styles.footer}>
         <CustomButton 
-          title={currentIndex === SLIDES.length - 1 ? "Почати роботу ✨" : "Далі"} 
+          title={currentIndex === SLIDE_KEYS.length - 1 ? t('guide.start') : t('common.next')} 
           onPress={handleNext} 
         />
       </View>

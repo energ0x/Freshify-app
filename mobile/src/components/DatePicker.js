@@ -5,27 +5,33 @@ import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 import { formatDate } from '../utils/dateHelpers';
 import CustomButton from './CustomButton';
+import { useTranslation } from 'react-i18next';
 
-export default function DatePicker({ date, onDateChange, label = 'Термін придатності' }) {
+export default function DatePicker({ 
+  date, 
+  onDateChange, 
+  label,
+  minimumDate, // Додано: мінімальна дата
+  maximumDate  // Додано: максимальна дата
+}) {
   const { theme, colors: COLORS } = useThemeStore();
+  const { t } = useTranslation();
 
-  // Спільний стан для показу пікера (Modal на iOS, системний діалог на Android)
+  // Використовуємо локалізований текст за замовчуванням, якщо label не передано
+  const displayLabel = label !== undefined ? label : t('datePicker.expiryDate', 'Термін придатності');
+
   const [show, setShow] = useState(false);
-
-  // Стан для тимчасової дати (використовується тільки на iOS)
   const [tempDate, setTempDate] = useState(date || new Date());
 
   const styles = getStyles(COLORS);
 
   const onChange = (event, selectedDate) => {
     if (Platform.OS === 'android') {
-      // Логіка для Android: закриваємо пікер і одразу зберігаємо дату
       setShow(false);
       if (selectedDate) {
         onDateChange(selectedDate);
       }
     } else {
-      // Логіка для iOS: просто оновлюємо тимчасову дату, чекаємо підтвердження
       if (selectedDate) {
         setTempDate(selectedDate);
       }
@@ -39,14 +45,14 @@ export default function DatePicker({ date, onDateChange, label = 'Термін �
 
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {displayLabel ? <Text style={styles.label}>{displayLabel}</Text> : null}
       <TouchableOpacity
         style={styles.pickerButton}
         onPress={() => setShow(true)}
       >
         <Ionicons name="calendar-outline" size={20} color={COLORS.text} />
         <Text style={styles.dateText}>
-          {date ? formatDate(date) : 'Оберіть дату'}
+          {date ? formatDate(date) : t('datePicker.chooseDate')}
         </Text>
       </TouchableOpacity>
 
@@ -64,13 +70,14 @@ export default function DatePicker({ date, onDateChange, label = 'Термін �
                 mode="date"
                 display="inline"
                 onChange={onChange}
-                minimumDate={new Date()}
+                minimumDate={minimumDate} // Використовуємо пропс
+                maximumDate={maximumDate} // Використовуємо пропс
                 themeVariant={theme}
                 accentColor={COLORS.primary}
               />
               <View style={styles.modalActions}>
-                <CustomButton title="Скасувати" variant="outline" onPress={() => setShow(false)} style={{ flex: 1 }} />
-                <CustomButton title="Вибрати" onPress={handleIosConfirm} style={{ flex: 1 }} />
+                <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setShow(false)} style={{ flex: 1 }} />
+                <CustomButton title={t('common.choose')} onPress={handleIosConfirm} style={{ flex: 1 }} />
               </View>
             </View>
           </View>
@@ -82,7 +89,8 @@ export default function DatePicker({ date, onDateChange, label = 'Термін �
             mode="date"
             display="default"
             onChange={onChange}
-            minimumDate={new Date()}
+            minimumDate={minimumDate} // Використовуємо пропс
+            maximumDate={maximumDate} // Використовуємо пропс
           />
         )
       )}

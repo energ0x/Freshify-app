@@ -59,6 +59,7 @@ export default function AllergensScreen({ navigation }) {
     }
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
       return Alert.alert(t('common.attention'), t('onboarding.allergenExists'));
+    }
     if (allergens.includes(text)) {
       return Alert.alert('Увага', 'Цей алерген уже є у списку');
     }

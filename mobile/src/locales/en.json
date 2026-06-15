@@ -338,5 +338,12 @@
     "slide3Title": "Smart recipes and lists",
     "slide3Desc": "Generate meal ideas using only what's already in your fridge, and automatically create shopping lists.",
     "start": "Get Started ✨"
+  },
+  "auth": {
+    "emptyFields": "Please enter your email and password",
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "loginBtn": "Login",
+    "registerBtn": "Register"
   }
 }

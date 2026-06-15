@@ -1,21 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import CustomButton from '../../components/CustomButton';
 import { COLORS } from '../../utils/constants';
 import useAuthStore from '../../store/authStore';
 
-const DIETS = [
-  { id: 'none', title: 'Всеїдний (Ніяких дієт)', desc: 'Харчуюся без виключення категорій їжі' },
-  { id: 'vegetarian', title: 'Вегетаріанець 🥦', desc: 'Без м\'яса та риби, але з молочними продуктами' },
-  { id: 'vegan', title: 'Веган 🍃', desc: 'Суворо рослинна дієта, жодних тваринних продуктів' },
-  { id: 'pescatarian', title: 'Пескетаріанець 🐟', desc: 'Рослинна їжа + риба та морепродукти (без м\'яса)' },
-  { id: 'flexitarian', title: 'Флекситаріанець 🌾', desc: 'Переважно рослинна їжа, зрідка м\'ясо/риба' },
+// Замість жорсткого тексту зберігаємо ключі для перекладу
+const DIET_KEYS = [
+  { id: 'none', titleKey: 'diets.noneTitle', descKey: 'diets.noneDesc' },
+  { id: 'vegetarian', titleKey: 'diets.vegetarianTitle', descKey: 'diets.vegetarianDesc' },
+  { id: 'vegan', titleKey: 'diets.veganTitle', descKey: 'diets.veganDesc' },
+  { id: 'pescatarian', titleKey: 'diets.pescatarianTitle', descKey: 'diets.pescatarianDesc' },
+  { id: 'flexitarian', titleKey: 'diets.flexitarianTitle', descKey: 'diets.flexitarianDesc' },
 ];
 
 export default function DietScreen({ navigation }) {
-  const { updateProfile } = useAuthStore();
+  const { t } = useTranslation();
+  const { user, updateProfile } = useAuthStore();
   const [selectedDiet, setSelectedDiet] = useState('none');
   const [loading, setLoading] = useState(false);
+
+  // Підтягуємо збережену дієту з БД, якщо вона є
+  useEffect(() => {
+    if (user?.dietary_preference) {
+      setSelectedDiet(user.dietary_preference);
+    }
+  }, [user]);
 
   const handleNext = async () => {
     setLoading(true);
@@ -25,17 +35,17 @@ export default function DietScreen({ navigation }) {
     if (res.success) {
       navigation.navigate('Allergens');
     } else {
-      Alert.alert('Помилка', res.error || 'Не вдалося зберегти ваші вподобання. Спробуйте ще раз.');
+      Alert.alert(t('common.error'), res.error || t('onboarding.dietSaveError'));
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Чи дотримуєтесь ви якихось дієт?</Text>
-      <Text style={styles.subtitle}>Це допоможе нам точніше аналізувати продукти у вашому холодильнику.</Text>
+      <Text style={styles.title}>{t('onboarding.dietTitle')}</Text>
+      <Text style={styles.subtitle}>{t('onboarding.dietSubtitle')}</Text>
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {DIETS.map((diet) => {
+        {DIET_KEYS.map((diet) => {
           const isSelected = selectedDiet === diet.id;
           return (
             <TouchableOpacity
@@ -48,8 +58,8 @@ export default function DietScreen({ navigation }) {
                 {isSelected && <View style={styles.radioDot} />}
               </View>
               <View style={styles.textContainer}>
-                <Text style={[styles.dietTitle, isSelected && styles.selectedDietTitle]}>{diet.title}</Text>
-                <Text style={styles.dietDesc}>{diet.desc}</Text>
+                <Text style={[styles.dietTitle, isSelected && styles.selectedDietTitle]}>{t(diet.titleKey)}</Text>
+                <Text style={styles.dietDesc}>{t(diet.descKey)}</Text>
               </View>
             </TouchableOpacity>
           );
@@ -57,7 +67,7 @@ export default function DietScreen({ navigation }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <CustomButton title="Далі" onPress={handleNext} loading={loading} />
+        <CustomButton title={t('common.next')} onPress={handleNext} loading={loading} />
       </View>
     </View>
   );

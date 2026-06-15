@@ -4,8 +4,10 @@ import logging
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
 from starlette.websockets import WebSocketState
+from sqlalchemy import case, cast, Date
+
 from app.db.database import get_db
 from app.db.models import User, ConsumedProduct, Product, Category
 from app.services.gemini_service import stream_diet_recommendations
@@ -18,11 +20,18 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 @router.get("")
 def get_analytics(
-    days: int = Query(30, ge=7, le=365),
+    days: int = Query(30, ge=1, le=9999),
+    start_date: date = Query(None),
+    end_date: date = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    if start_date and end_date:
+        since = datetime.combine(start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+        until = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
+    else:
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+        until = datetime.now(timezone.utc)
 
     consumed = db.query(
         ConsumedProduct.product_name,
@@ -31,7 +40,7 @@ def get_analytics(
         func.sum(ConsumedProduct.quantity).label("total_quantity"),
         func.count(ConsumedProduct.id).label("times_consumed"),
     ).join(Category, ConsumedProduct.category_id == Category.id, isouter=True).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
     ).group_by(
         ConsumedProduct.product_name, Category.name, ConsumedProduct.unit
     ).all()
@@ -40,14 +49,30 @@ def get_analytics(
         Category.name.label("category"),
         func.sum(ConsumedProduct.quantity).label("total"),
     ).join(Category, ConsumedProduct.category_id == Category.id, isouter=True).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
     ).group_by(Category.name).all()
 
     daily = db.query(
         func.date_trunc("day", ConsumedProduct.consumed_at).label("day"),
         func.count(ConsumedProduct.id).label("count"),
     ).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since)
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
+    ).group_by("day").order_by("day").all()
+    
+    multiplier = case(
+        (func.lower(ConsumedProduct.unit).in_(['г', 'g', 'мл', 'ml']), ConsumedProduct.quantity / 100.0),
+        (func.lower(ConsumedProduct.unit).in_(['кг', 'kg', 'л', 'l']), ConsumedProduct.quantity * 10.0),
+        else_=ConsumedProduct.quantity
+    )
+
+    nutrition = db.query(
+        func.date_trunc("day", ConsumedProduct.consumed_at).label("day"),
+        func.sum(Product.calories * multiplier).label("total_calories"),
+        func.sum(Product.proteins * multiplier).label("total_proteins"),
+        func.sum(Product.fats * multiplier).label("total_fats"),
+        func.sum(Product.carbohydrates * multiplier).label("total_carbs"),
+    ).join(Product, ConsumedProduct.product_id == Product.id).filter(
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
     ).group_by("day").order_by("day").all()
 
     active_quantity = db.query(func.sum(Product.quantity)).filter(
@@ -55,7 +80,7 @@ def get_analytics(
     ).scalar()
 
     return {
-        "period_days": days,
+        "period_days": days if not (start_date and end_date) else (end_date - start_date).days,
         "total_products_in_fridge": float(active_quantity) if active_quantity is not None else 0.0,
         "consumed_products": [
             {
@@ -75,6 +100,16 @@ def get_analytics(
             {"day": str(r.day)[:10], "count": r.count}
             for r in daily
         ],
+        "nutrition_history": [
+            {
+                "date": str(r.day)[:10],
+                "calories": float(r.total_calories or 0),
+                "proteins": float(r.total_proteins or 0),
+                "fats": float(r.total_fats or 0),
+                "carbs": float(r.total_carbs or 0)
+            }
+            for r in nutrition
+        ]
     }
 
 
