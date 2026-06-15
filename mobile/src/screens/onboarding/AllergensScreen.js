@@ -28,6 +28,9 @@ export default function AllergensScreen({ navigation }) {
   const addCustomAllergen = () => {
     const text = customInput.trim();
     if (!text) return;
+    if (text.length > 100) {
+      return Alert.alert('Помилка', 'Назва алергену не може бути такою довгою.');
+    }
     if (allergens.includes(text)) {
       return Alert.alert('Увага', 'Цей алерген уже є у списку');
     }
@@ -90,7 +93,7 @@ export default function AllergensScreen({ navigation }) {
               placeholder="Введіть свій варіант..."
               value={customInput}
               onChangeText={setCustomInput}
-              maxLength={20}
+              maxLength={256}
             />
             <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
               <Text style={styles.addButtonText}>Додати</Text>
