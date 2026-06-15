@@ -21,7 +21,10 @@
     "confirm": "Підтвердити",
     "close": "Закрити",
     "done": "Зроблено",
-    "choose": "Обрати"
+    "choose": "Обрати",
+    "from": "Від",
+    "to": "До",
+    "all": "Всі"
   },
   "tabs": {
     "products": "Продукти",
@@ -40,7 +43,8 @@
     "dietSettings": "Моя дієта",
     "allergensSettings": "Мої алергени",
     "categories": "Категорії",
-    "dailyTasks": "Щоденні завдання"
+    "dailyTasks": "Щоденні завдання",
+    "editProduct": "Редагувати продукт"
   },
   "categories": {
     "deleteTitle": "Видалення категорії",
@@ -296,7 +300,20 @@
     "consumptionByCategory": "Споживання за категоріями",
     "noConsumptionData": "Немає даних про споживання за останні 30 днів",
     "aiRecommendationsTitle": "AI Рекомендації дієтолога",
-    "getAdvice": "Отримати поради"
+    "getAdvice": "Отримати поради",
+    "periods": {
+      "1m": "1 місяць",
+      "3m": "3 місяці",
+      "6m": "Півроку",
+      "1y": "1 рік",
+      "all": "Весь час",
+      "custom": "Кастомний"
+    },
+    "macrosDynamics": "Динаміка КБЖВ",
+    "calories": "Калорії",
+    "macros": "БЖВ",
+    "kcal": "Ккал",
+    "noData": "Немає даних"
   },
   "camera": {
     "permissionMsg": "Додаток потребує доступу до камери для розпізнавання продуктів",
@@ -377,7 +394,7 @@
     "dietSubtitle": "Це допоможе нам точніше аналізувати продукти у вашому холодильнику",
     "dietSaveError": "Не вдалося зберегти ваші вподобання. Спробуйте ще раз",
     "allergenTooLong": "Назва алергену не може бути такою довгою",
-    "allergensTitle": "Do you have any food allergies?",
+    "allergensTitle": "Чи є у вас харчові алергії?",
     "allergensSubtitle": "ШІ буде попереджати вас, якщо знайде небезпечні інгредієнти",
     "enterOption": "Введіть свій варіант...",
     "noAllergies": "Немає алергій"

@@ -21,7 +21,10 @@
     "confirm": "Confirm",
     "close": "Close",
     "done": "Done",
-    "choose": "Choose"
+    "choose": "Choose",
+    "from": "From",
+    "to": "To",
+    "all": "All"
   },
   "tabs": {
     "products": "Products",
@@ -40,7 +43,8 @@
     "dietSettings": "My Diet",
     "allergensSettings": "My Allergens",
     "categories": "Categories",
-    "dailyTasks": "Daily Tasks"
+    "dailyTasks": "Daily Tasks",
+    "editProduct": "Edit Product"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -294,7 +298,20 @@
     "consumptionByCategory": "Consumption by Category",
     "noConsumptionData": "No consumption data for the last 30 days",
     "aiRecommendationsTitle": "AI Dietitian Recommendations",
-    "getAdvice": "Get advice"
+    "getAdvice": "Get advice",
+    "periods": {
+      "1m": "1 month",
+      "3m": "3 months",
+      "6m": "6 months",
+      "1y": "1 year",
+      "all": "All time",
+      "custom": "Custom"
+    },
+    "macrosDynamics": "Macros Dynamics",
+    "calories": "Calories",
+    "macros": "Macros",
+    "kcal": "Kcal",
+    "noData": "No data"
   },
   "camera": {
     "permissionMsg": "The app needs camera access to recognize products",

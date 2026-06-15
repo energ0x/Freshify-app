@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -6,14 +6,17 @@ import CustomButton from '../components/CustomButton';
 import { COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
 
-const INITIAL_ALLERGENS = [
-  'Молоко🥛', 'Горіхи🥜', 'Яйця🥚', 'Глютен🌾', 'Риба🐟', 'Морепродукти🦀', 'Соя🌱', 'Цитрусові🍊', 'Мед🍯'
-];
-
 export default function AllergensSettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
-  const [allergens, setAllergens] = useState(INITIAL_ALLERGENS);
+  
+  const initialTranslatedAllergens = useMemo(() => [
+    t('allergens.milk'), t('allergens.nuts'), t('allergens.eggs'), 
+    t('allergens.gluten'), t('allergens.fish'), t('allergens.seafood'), 
+    t('allergens.soy'), t('allergens.citrus'), t('allergens.honey')
+  ], [t]);
+
+  const [allergens, setAllergens] = useState(initialTranslatedAllergens);
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,17 +24,19 @@ export default function AllergensSettingsScreen({ navigation }) {
   useEffect(() => {
     if (user?.allergens) {
       const mappedSelected = user.allergens.map(backendAllergen => {
-        const found = INITIAL_ALLERGENS.find(
+        const found = initialTranslatedAllergens.find(
           ia => ia.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim() === backendAllergen
         );
         return found || backendAllergen;
       });
 
-      const remoteAllergens = mappedSelected.filter(a => !INITIAL_ALLERGENS.includes(a));
-      setAllergens([...INITIAL_ALLERGENS, ...remoteAllergens]);
+      const remoteAllergens = mappedSelected.filter(a => !initialTranslatedAllergens.includes(a));
+      setAllergens([...initialTranslatedAllergens, ...remoteAllergens]);
       setSelected(mappedSelected);
+    } else {
+      setAllergens(initialTranslatedAllergens);
     }
-  }, [user]);
+  }, [user, initialTranslatedAllergens]);
 
   const toggleAllergen = (item) => {
     if (selected.includes(item)) {
@@ -45,7 +50,7 @@ export default function AllergensSettingsScreen({ navigation }) {
     const text = customInput.trim();
     if (!text) return;
     if (text.length > 100) {
-      return Alert.alert(t('common.error'), t('allergens.maxLengthError') || 'Назва алергену не може бути такою довгою.');
+      return Alert.alert(t('common.error'), t('onboarding.allergenTooLong') || 'Назва алергену не може бути такою довгою.');
     }
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
       return Alert.alert(t('common.attention'), t('allergens.alreadyInList'));

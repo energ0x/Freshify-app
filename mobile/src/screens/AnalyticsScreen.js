@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { ScrollView, View, Text, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, TouchableOpacity, StatusBar, Animated, Platform, Alert } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, TouchableOpacity, StatusBar, Animated, Platform } from 'react-native';
 import { PieChart, LineChart } from 'react-native-chart-kit';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,13 +8,12 @@ import * as SecureStore from 'expo-secure-store';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
-// Імпортуємо твій кастомний компонент
 import DatePicker from '../components/DatePicker'; 
-
 import { analyticsAPI } from '../services/api';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
 import MarkdownRenderer from '../components/MarkdownRenderer';
+import { getTranslatedCategoryName } from '../utils/categoryHelper'; // <-- ДОДАНО
 
 const screenWidth = Dimensions.get('window').width;
 const chartColors = ['#2ECC71', '#3498DB', '#9B59B6', '#E67E22', '#E74C3C', '#1ABC9C', '#F1C40F'];
@@ -26,13 +25,14 @@ const MACRO_COLORS = {
   carbs: '#2ECC71',
 };
 
+// Замість жорстких label використовуємо labelKey
 const PERIODS = [
-  { id: '1m', label: '1 місяць', days: 30 },
-  { id: '3m', label: '3 місяці', days: 90 },
-  { id: '6m', label: 'Півроку', days: 180 },
-  { id: '1y', label: '1 рік', days: 365 },
-  { id: 'all', label: 'Весь час', days: 9999 },
-  { id: 'custom', label: 'Кастомний', days: null },
+  { id: '1m', labelKey: 'analytics.periods.1m', fallback: '1 місяць', days: 30 },
+  { id: '3m', labelKey: 'analytics.periods.3m', fallback: '3 місяці', days: 90 },
+  { id: '6m', labelKey: 'analytics.periods.6m', fallback: 'Півроку', days: 180 },
+  { id: '1y', labelKey: 'analytics.periods.1y', fallback: '1 рік', days: 365 },
+  { id: 'all', labelKey: 'analytics.periods.all', fallback: 'Весь час', days: 9999 },
+  { id: 'custom', labelKey: 'analytics.periods.custom', fallback: 'Кастомний', days: null },
 ];
 
 export default function AnalyticsScreen({ navigation }) {
@@ -105,14 +105,12 @@ export default function AnalyticsScreen({ navigation }) {
 
     try {
       const token = await SecureStore.getItemAsync('auth_token');
-      // Отримуємо мову
       const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
 
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) wsUrl = wsUrl.replace('localhost', '10.0.2.2');
       else if (Platform.OS === 'android' && wsUrl.includes('127.0.0.1')) wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
       
-      // Додаємо параметр lang до запиту
       const ws = new WebSocket(`${wsUrl}/analytics/ws/ai-recommendations?days=${activePeriod.days || 30}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
@@ -145,8 +143,9 @@ export default function AnalyticsScreen({ navigation }) {
     );
   }
 
+  // Локалізуємо назви категорій у PieChart
   const pieChartData = data?.by_category?.map((item, index) => ({
-    name: item.category,
+    name: getTranslatedCategoryName(item.category, t), // <-- ДОДАНО
     population: item.total,
     color: chartColors[index % chartColors.length],
     legendFontColor: COLORS.text,
@@ -159,7 +158,7 @@ export default function AnalyticsScreen({ navigation }) {
   let finalData = { calories: [], proteins: [], fats: [], carbs: [] };
 
   if (rawNutritionData.length === 0) {
-    finalLabels = ['Немає даних', ' '];
+    finalLabels = [t('analytics.noData', 'Немає даних'), ' ']; // <-- ЛОКАЛІЗОВАНО
     finalData = { calories: [0, 0], proteins: [0, 0], fats: [0, 0], carbs: [0, 0] };
   } else if (rawNutritionData.length === 1) {
     finalLabels = [rawNutritionData[0].date, ' '];
@@ -221,7 +220,8 @@ export default function AnalyticsScreen({ navigation }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Динаміка КБЖВ</Text>
+          {/* ЛОКАЛІЗОВАНО */}
+          <Text style={styles.sectionTitle}>{t('analytics.macrosDynamics', 'Динаміка КБЖВ')}</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodContainer} contentContainerStyle={{ gap: 8 }}>
             {PERIODS.map(period => (
@@ -230,8 +230,9 @@ export default function AnalyticsScreen({ navigation }) {
                 style={[styles.periodPill, activePeriod.id === period.id && { backgroundColor: COLORS.primary }]}
                 onPress={() => handlePeriodChange(period)}
               >
+                {/* ЛОКАЛІЗОВАНО */}
                 <Text style={[styles.periodText, activePeriod.id === period.id && { color: COLORS.onPrimary }]}>
-                  {period.label}
+                  {t(period.labelKey, period.fallback)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -240,16 +241,18 @@ export default function AnalyticsScreen({ navigation }) {
           {activePeriod.id === 'custom' && (
             <View style={styles.customDateContainer}>
               <View style={styles.datePickerWrapper}>
+                {/* ЛОКАЛІЗОВАНО */}
                 <DatePicker
-                  label="Від"
+                  label={t('common.from', 'Від')}
                   date={customDateRange.start}
                   maximumDate={customDateRange.end}
                   onDateChange={(selectedDate) => setCustomDateRange(prev => ({ ...prev, start: selectedDate }))}
                 />
               </View>
               <View style={styles.datePickerWrapper}>
+                {/* ЛОКАЛІЗОВАНО */}
                 <DatePicker
-                  label="До"
+                  label={t('common.to', 'До')}
                   date={customDateRange.end}
                   minimumDate={customDateRange.start}
                   maximumDate={new Date()}
@@ -261,13 +264,16 @@ export default function AnalyticsScreen({ navigation }) {
 
           <View style={styles.chartFilterContainer}>
              <TouchableOpacity onPress={() => setActiveChartFilter('all')} style={[styles.filterBtn, activeChartFilter === 'all' && styles.filterBtnActive]}>
-                <Text style={[styles.filterBtnText, activeChartFilter === 'all' && {color: COLORS.primary}]}>Всі</Text>
+                {/* ЛОКАЛІЗОВАНО */}
+                <Text style={[styles.filterBtnText, activeChartFilter === 'all' && {color: COLORS.primary}]}>{t('common.all', 'Всі')}</Text>
              </TouchableOpacity>
              <TouchableOpacity onPress={() => setActiveChartFilter('calories')} style={[styles.filterBtn, activeChartFilter === 'calories' && styles.filterBtnActive]}>
-                <Text style={[styles.filterBtnText, activeChartFilter === 'calories' && {color: COLORS.primary}]}>Калорії</Text>
+                {/* ЛОКАЛІЗОВАНО */}
+                <Text style={[styles.filterBtnText, activeChartFilter === 'calories' && {color: COLORS.primary}]}>{t('analytics.calories', 'Калорії')}</Text>
              </TouchableOpacity>
              <TouchableOpacity onPress={() => setActiveChartFilter('macros')} style={[styles.filterBtn, activeChartFilter === 'macros' && styles.filterBtnActive]}>
-                <Text style={[styles.filterBtnText, activeChartFilter === 'macros' && {color: COLORS.primary}]}>БЖВ</Text>
+                {/* ЛОКАЛІЗОВАНО */}
+                <Text style={[styles.filterBtnText, activeChartFilter === 'macros' && {color: COLORS.primary}]}>{t('analytics.macros', 'БЖВ')}</Text>
              </TouchableOpacity>
           </View>
 
@@ -292,10 +298,11 @@ export default function AnalyticsScreen({ navigation }) {
           </ScrollView>
 
           <View style={styles.legendContainer}>
-            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.calories}]}/><Text style={styles.legendText}>Ккал</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.proteins}]}/><Text style={styles.legendText}>Білки</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.fats}]}/><Text style={styles.legendText}>Жири</Text></View>
-            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.carbs}]}/><Text style={styles.legendText}>Вуглеводи</Text></View>
+            {/* ЛОКАЛІЗОВАНО */}
+            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.calories}]}/><Text style={styles.legendText}>{t('analytics.kcal', 'Ккал')}</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.proteins}]}/><Text style={styles.legendText}>{t('addProduct.proteins', 'Білки')}</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.fats}]}/><Text style={styles.legendText}>{t('addProduct.fats', 'Жири')}</Text></View>
+            <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.carbs}]}/><Text style={styles.legendText}>{t('addProduct.carbs', 'Вуглеводи')}</Text></View>
           </View>
         </View>
 

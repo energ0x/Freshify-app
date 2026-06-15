@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,56 +6,23 @@ import { useTranslation } from 'react-i18next';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
-import DatePicker from '../components/DatePicker';
-import CustomPicker from '../components/CustomPicker';
-import { UNITS, API_URL } from '../utils/constants';
+import { API_URL } from '../utils/constants';
 import { getExpiryLabel, getExpiryColor, formatDate } from '../utils/dateHelpers';
-import { useCategories } from '../hooks/useCategories';
-import * as ImagePicker from 'expo-image-picker';
-import { productsAPI } from '../services/api';
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 export default function ProductDetailScreen({ route, navigation }) {
   const { t } = useTranslation();
   const { productId } = route.params;
-  const { products, deleteProduct, consumeProduct, updateProduct } = useProductStore();
+  const { products, deleteProduct, consumeProduct } = useProductStore();
   const { colors: COLORS } = useThemeStore();
-  const { categories } = useCategories();
   const [loading, setLoading] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [localImageUri, setLocalImageUri] = useState(null);
   const insets = useSafeAreaInsets();
 
   const product = products.find(p => p.id === productId);
 
-  const [editForm, setEditForm] = useState({
-    name: '',
-    category_id: null,
-    quantity: '1',
-    unit: UNITS[0],
-    expiry_date: new Date(),
-    notes: '',
-    image_url: null,
-  });
-
   // State for Consume Modal
   const [consumeModalVisible, setConsumeModalVisible] = useState(false);
   const [consumeAmount, setConsumeAmount] = useState('');
-
-  useEffect(() => {
-    if (product) {
-      setEditForm({
-        name: product.name || '',
-        category_id: product.category_id || (categories.length > 0 ? categories[0].id : null),
-        quantity: product.quantity ? product.quantity.toString() : '1',
-        unit: product.unit || UNITS[0],
-        expiry_date: product.expiry_date ? new Date(product.expiry_date) : new Date(),
-        notes: product.notes || '',
-        image_url: product.image_url || null,
-      });
-      setLocalImageUri(product.image_url ? (product.image_url.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}`) : null);
-    }
-  }, [product, categories]);
 
   if (!product) {
     const styles = getStyles(COLORS, insets);
@@ -105,6 +72,7 @@ export default function ProductDetailScreen({ route, navigation }) {
 
     if (res.success) {
       setConsumeModalVisible(false);
+      Alert.alert(t('common.success'), t('productDetail.consumeSuccessMsg'));
       if (product.quantity - amount <= 0) {
         navigation.goBack();
       }
@@ -113,75 +81,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     }
   };
 
-  // ... (rest of the code remains the same, down to the return statement)
-  
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.5,
-    });
-
-    if (!result.canceled) {
-      setLocalImageUri(result.assets[0].uri);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editForm.name) return Alert.alert(t('common.error'), t('productDetail.nameRequired'));
-
-    setSaving(true);
-    let finalImageUrl = editForm.image_url;
-    
-    try {
-      if (localImageUri && localImageUri !== (product.image_url?.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}`)) {
-        if (!localImageUri.startsWith('http') || localImageUri.startsWith('file://')) {
-          const uploadRes = await productsAPI.uploadImage(localImageUri);
-          finalImageUrl = uploadRes.data.image_url;
-        }
-      }
-
-      const updateData = {
-        name: editForm.name,
-        category_id: editForm.category_id,
-        quantity: parseFloat(editForm.quantity),
-        unit: editForm.unit,
-        expiry_date: editForm.expiry_date.toISOString().split('T')[0],
-        notes: editForm.notes,
-        image_url: finalImageUrl,
-      };
-
-      const res = await updateProduct(product.id, updateData);
-      setSaving(false);
-
-      if (res.success) {
-        setEditModalVisible(false);
-      } else {
-        Alert.alert(t('common.error'), res.error || t('productDetail.updateError'));
-      }
-    } catch (e) {
-      setSaving(false);
-      Alert.alert(t('common.error'), 'Failed to save changes.');
-    }
-  };
-
-  // Fallback for missing getTranslatedCategoryName if it's not imported
-  const getTranslatedCategoryName = (name, t) => {
-    // Basic implementation if the hook/utility isn't provided here
-    return name;
-  }
-
-  const unitItems = UNITS.map(u => ({ label: u, value: u }));
-  const categoryItems = categories.map(c => ({ label: getTranslatedCategoryName(c.name, t), value: c.id }));
-  
   const categoryName = getTranslatedCategoryName(product.category_obj?.name, t);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const minDate = editForm.expiry_date < today ? editForm.expiry_date : today;
-  const maxDate = new Date();
-  maxDate.setFullYear(maxDate.getFullYear() + 10);
 
   return (
     <>
@@ -200,7 +100,8 @@ export default function ProductDetailScreen({ route, navigation }) {
                 <Text style={styles.category}>{categoryName || t('productDetail.noCategory')}</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={() => setEditModalVisible(true)} style={styles.editIconBtn}>
+            {/* Перехід до екрану EditProductScreen */}
+            <TouchableOpacity onPress={() => navigation.navigate('EditProduct', { productId: product.id })} style={styles.editIconBtn}>
               <Ionicons name="pencil" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
@@ -250,127 +151,6 @@ export default function ProductDetailScreen({ route, navigation }) {
           />
         </View>
       </ScrollView>
-
-      {/* Edit Modal */}
-      <Modal
-        visible={editModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
-        >
-          <View style={styles.editModalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t('productDetail.editTitle')}</Text>
-                <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                  <Ionicons name="close-circle" size={32} color={COLORS.outline} />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView style={styles.modalForm}>
-                
-                <View style={styles.imageSection}>
-                  <TouchableOpacity style={styles.imagePlaceholder} onPress={pickImage}>
-                    {localImageUri ? (
-                      <Image source={{ uri: localImageUri }} style={styles.productImage} />
-                    ) : (
-                      <>
-                        <Ionicons name="image-outline" size={40} color={COLORS.onSurfaceVariant} />
-                        <Text style={styles.imageText}>Додати фото продукту</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.formGroup}>
-                  <Text style={styles.formLabel}>{t('productDetail.nameLabel')}</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editForm.name}
-                    onChangeText={(val) => setEditForm(prev => ({ ...prev, name: val }))}
-                    placeholder={t('productDetail.namePlaceholder')}
-                    placeholderTextColor={COLORS.onSurfaceVariant}
-                  />
-                </View>
-
-                <View style={styles.row}>
-                  <View style={[styles.formGroup, { flex: 2, marginRight: 10 }]}>
-                    <Text style={styles.formLabel}>{t('productDetail.qtyLabel')}</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={editForm.quantity}
-                      onChangeText={(val) => setEditForm(prev => ({ ...prev, quantity: val }))}
-                      keyboardType="numeric"
-                      placeholderTextColor={COLORS.onSurfaceVariant}
-                    />
-                  </View>
-                  <View style={[styles.formGroup, { flex: 3 }]}>
-                    <CustomPicker
-                      label={t('productDetail.unitLabel')}
-                      items={unitItems}
-                      selectedValue={editForm.unit}
-                      onValueChange={(val) => setEditForm(prev => ({ ...prev, unit: val }))}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.formGroup}>
-                  <CustomPicker
-                    label={t('productDetail.categoryLabel')}
-                    items={categoryItems}
-                    selectedValue={editForm.category_id}
-                    onValueChange={(val) => setEditForm(prev => ({ ...prev, category_id: val }))}
-                  />
-                </View>
-
-                <View style={styles.formGroup}>
-                  <DatePicker
-                    date={editForm.expiry_date}
-                    onDateChange={(date) => setEditForm(prev => ({ ...prev, expiry_date: date }))}
-                    minimumDate={minDate}
-                    maximumDate={maxDate}
-                  />
-                </View>
-                
-                <View style={[styles.formGroup, {marginBottom: 30}]}>
-                  <Text style={styles.formLabel}>{t('productDetail.notesLabel')}</Text>
-                  <TextInput
-                    style={[styles.input, styles.textArea]}
-                    value={editForm.notes}
-                    onChangeText={(val) => setEditForm(prev => ({ ...prev, notes: val }))}
-                    placeholder={t('productDetail.notesPlaceholder')}
-                    placeholderTextColor={COLORS.onSurfaceVariant}
-                    multiline={true}
-                    numberOfLines={3}
-                    textAlignVertical="top"
-                  />
-                </View>
-
-              </ScrollView>
-
-              <View style={styles.modalActions}>
-                <CustomButton
-                  title={t('common.cancel')}
-                  variant="outline"
-                  onPress={() => setEditModalVisible(false)}
-                  style={styles.modalButton}
-                  disabled={saving}
-                />
-                <CustomButton
-                  title={t('common.save')}
-                  onPress={handleSaveEdit}
-                  loading={saving}
-                  style={styles.modalButton}
-                />
-              </View>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
 
       {/* Consume Modal */}
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
@@ -422,23 +202,6 @@ const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
   actions: { gap: 16 },
   consumeButton: { backgroundColor: COLORS.primary },
   deleteButton: { borderColor: COLORS.danger, borderWidth: 1 },
-  modalContainer: { flex: 1 },
-  editModalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: insets?.bottom ? insets.bottom + 30 : 30, maxHeight: '90%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 20 },
-  modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.text },
-  modalForm: { paddingHorizontal: 24, paddingTop: 8 },
-  imageSection: { marginBottom: 20, alignItems: 'center' },
-  imagePlaceholder: { width: '100%', height: 150, backgroundColor: COLORS.surfaceVariant, borderRadius: 16, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: `${COLORS.primary}20`, borderStyle: 'dashed' },
-  productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  imageText: { marginTop: 8, fontSize: 14, color: COLORS.onSurfaceVariant },
-  formGroup: { marginBottom: 20 },
-  row: { flexDirection: 'row' },
-  formLabel: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-  input: { backgroundColor: COLORS.surfaceVariant, borderRadius: 12, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 16, color: COLORS.text },
-  textArea: { minHeight: 100, textAlignVertical: 'top' },
-  modalActions: { flexDirection: 'row', gap: 16, paddingHorizontal: 24, paddingTop: 20, borderTopWidth: 1, borderTopColor: COLORS.border },
-  modalButton: { flex: 1 },
 
   // Consume Modal Styles
   consumeModalOverlay: {
@@ -484,4 +247,5 @@ const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
+  modalButton: { flex: 1 },
 });

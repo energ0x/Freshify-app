@@ -50,6 +50,7 @@ import CategoriesScreen from "../screens/CategoriesScreen";
 import DailyTasksScreen from "../screens/DailyTasksScreen";
 import ProductFiltersScreen from "../screens/ProductFiltersScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import EditProductScreen from "../screens/EditProductScreen";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -416,6 +417,15 @@ export default function AppNavigator() {
               component={EditProfileScreen}
               options={{
                 headerShown: false,
+                ...TransitionPresets.ModalPresentationIOS,
+              }}
+            />
+            <Stack.Screen
+              name="EditProduct"
+              component={EditProductScreen}
+              options={{
+                headerShown: true,
+                title: t("screens.editProduct"),
                 ...TransitionPresets.ModalPresentationIOS,
               }}
             />
