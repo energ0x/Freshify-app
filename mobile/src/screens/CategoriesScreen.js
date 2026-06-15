@@ -6,6 +6,7 @@ import useProductStore from '../store/productStore';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 export default function CategoriesScreen({ navigation }) {
   const { t } = useTranslation();
