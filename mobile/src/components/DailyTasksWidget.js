@@ -1,32 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { dailyTasksAPI } from '../services/api';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 
-// Мокові дані (у майбутньому винесете їх у store)
+// Local defaults (fallback while loading)
 const STREAK_DATA = {
-  current: 7,
-  week: [true, true, true, true, true, true, true],
+  current: 0,
+  week: [null, null, null, null, null, null, null],
   weekLabels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
 };
 
-const DAILY_TASKS_PREVIEW = [
-  { id: 'd1', title: 'Перевір терміни', icon: 'calendar-outline', color: '#E74C3C', xp: 20, completed: true },
-  { id: 'd2', title: 'Використай продукт', icon: 'restaurant-outline', color: '#2ECC71', xp: 30, completed: true },
-  { id: 'd3', title: 'Додай новий продукт', icon: 'add-circle-outline', color: '#3498DB', xp: 25, completed: false },
-  { id: 'd4', title: 'ШІ-рецепт дня', icon: 'bulb-outline', color: '#9B59B6', xp: 40, completed: false },
-  { id: 'd5', title: 'Поділись досягненням', icon: 'share-social-outline', color: '#E67E22', xp: 15, completed: false },
-];
+const DAILY_TASKS_PREVIEW = [];
 
 export default function DailyTasksWidget({ navigation, isClosable = false, onClose }) {
   const { colors: COLORS, theme } = useThemeStore();
   const isDark = theme === 'dark';
 
-  const completedCount = DAILY_TASKS_PREVIEW.filter((t) => t.completed).length;
-  const totalCount = DAILY_TASKS_PREVIEW.length;
+  const [tasks, setTasks] = useState(DAILY_TASKS_PREVIEW);
+  const [streak, setStreak] = useState(STREAK_DATA);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await dailyTasksAPI.list();
+        if (mounted && res?.data) {
+          const data = res.data.map(t => ({
+            id: t.id,
+            title: t.name,
+            icon: t.icon,
+            color: '#2ECC71',
+            xp: t.xp_reward,
+            completed: t.completed,
+          }));
+          setTasks(data);
+        }
+        const sres = await dailyTasksAPI.getStreaks();
+        if (mounted && sres?.data) {
+          const login = sres.data.find(st => st.streak_type === 'daily_login');
+          if (login) {
+            setStreak(prev => ({ ...prev, current: login.current_streak }));
+          }
+        }
+      } catch (e) {}
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const completedCount = tasks.filter((t) => t.completed).length;
+  const totalCount = tasks.length || 1;
   const progressPercent = (completedCount / totalCount) * 100;
-  const todayXP = DAILY_TASKS_PREVIEW.filter((t) => t.completed).reduce((s, t) => s + t.xp, 0);
-  const maxXP = DAILY_TASKS_PREVIEW.reduce((s, t) => s + t.xp, 0);
+  const todayXP = tasks.filter((t) => t.completed).reduce((s, t) => s + t.xp, 0);
+  const maxXP = tasks.reduce((s, t) => s + t.xp, 0);
 
   const styles = getStyles(COLORS, isDark);
 
@@ -42,14 +68,14 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
             <Ionicons name="flame" size={20} color="#E74C3C" />
           </View>
           <View>
-            <Text style={styles.dailyStreakNumber}>{STREAK_DATA.current} днів</Text>
+            <Text style={styles.dailyStreakNumber}>{streak.current} днів</Text>
             <Text style={styles.dailyStreakSub}>поточний стрік</Text>
           </View>
         </View>
 
         <View style={styles.rightInfoContainer}>
           <View style={styles.dailyWeekRow}>
-            {STREAK_DATA.week.map((done, i) => (
+            {streak.week.map((done, i) => (
               <View
                 key={i}
                 style={[

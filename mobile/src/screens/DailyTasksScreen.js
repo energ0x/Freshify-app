@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,63 +11,17 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useThemeStore from '../store/themeStore';
+import { dailyTasksAPI } from '../services/api';
 
 // ─── Mock data ──────────────────────────────────────────────────────────────
 const STREAK_DATA = {
-  current: 7,
-  best: 14,
-  // true = completed that day, false = missed, null = future
-  week: [true, true, true, true, true, true, true],
+  current: 0,
+  best: 0,
+  week: [null, null, null, null, null, null, null],
   weekLabels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
 };
 
-const DAILY_TASKS = [
-  {
-    id: 'd1',
-    title: 'Перевір терміни',
-    desc: 'Відкрий холодильник і позначте прострочені продукти',
-    icon: 'calendar-outline',
-    color: '#E74C3C',
-    xp: 20,
-    completed: true,
-  },
-  {
-    id: 'd2',
-    title: 'Використай продукт',
-    desc: 'Позначте хоча б один продукт як використаний сьогодні',
-    icon: 'restaurant-outline',
-    color: '#2ECC71',
-    xp: 30,
-    completed: true,
-  },
-  {
-    id: 'd3',
-    title: 'Додай новий продукт',
-    desc: 'Відскануй штрихкод або зроби фото нового продукту',
-    icon: 'add-circle-outline',
-    color: '#3498DB',
-    xp: 25,
-    completed: false,
-  },
-  {
-    id: 'd4',
-    title: 'ШІ-рецепт дня',
-    desc: 'Отримай рецепт на основі продуктів з холодильника',
-    icon: 'bulb-outline',
-    color: '#9B59B6',
-    xp: 40,
-    completed: false,
-  },
-  {
-    id: 'd5',
-    title: 'Поділись досягненням',
-    desc: 'Розкажи другу або родичу про свій еко-прогрес',
-    icon: 'share-social-outline',
-    color: '#E67E22',
-    xp: 15,
-    completed: false,
-  },
-];
+const DAILY_TASKS = [];
 
 const WEEKLY_CHALLENGES = [
   {
@@ -108,10 +62,39 @@ export default function DailyTasksScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
-  const completedCount = DAILY_TASKS.filter((t) => t.completed).length;
-  const totalCount = DAILY_TASKS.length;
-  const todayXP = DAILY_TASKS.filter((t) => t.completed).reduce((s, t) => s + t.xp, 0);
-  const maxXP = DAILY_TASKS.reduce((s, t) => s + t.xp, 0);
+  const [tasks, setTasks] = useState(DAILY_TASKS);
+  const [streak, setStreak] = useState(STREAK_DATA);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await dailyTasksAPI.list();
+        if (mounted && res?.data) {
+          setTasks(res.data.map(t => ({
+            id: t.id,
+            title: t.name,
+            desc: t.description,
+            icon: t.icon,
+            color: '#2ECC71',
+            xp: t.xp_reward,
+            completed: t.completed,
+          })));
+        }
+        const sres = await dailyTasksAPI.getStreaks();
+        if (mounted && sres?.data) {
+          const login = sres.data.find(st => st.streak_type === 'daily_login');
+          if (login) setStreak(prev => ({ ...prev, current: login.current_streak, best: login.longest_streak }));
+        }
+      } catch (e) {}
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const completedCount = tasks.filter((t) => t.completed).length;
+  const totalCount = tasks.length || 1;
+  const todayXP = tasks.filter((t) => t.completed).reduce((s, t) => s + t.xp, 0);
+  const maxXP = tasks.reduce((s, t) => s + t.xp, 0);
   const progressPercent = (completedCount / totalCount) * 100;
 
   return (
@@ -157,18 +140,18 @@ export default function DailyTasksScreen({ navigation }) {
               <Ionicons name="flame" size={36} color="#E74C3C" />
             </View>
             <View style={styles.streakInfo}>
-              <Text style={styles.streakNumber}>{STREAK_DATA.current}</Text>
+              <Text style={styles.streakNumber}>{streak.current}</Text>
               <Text style={styles.streakLabel}>днів поспіль</Text>
             </View>
             <View style={styles.bestStreakBadge}>
               <Ionicons name="trophy" size={14} color="#F1C40F" />
-              <Text style={styles.bestStreakText}>Рекорд: {STREAK_DATA.best} дн.</Text>
+              <Text style={styles.bestStreakText}>Рекорд: {streak.best} дн.</Text>
             </View>
           </View>
 
           {/* Week dots */}
           <View style={styles.weekRow}>
-            {STREAK_DATA.week.map((done, i) => (
+            {streak.week.map((done, i) => (
               <View key={i} style={styles.dayCol}>
                 <View
                   style={[
@@ -181,7 +164,7 @@ export default function DailyTasksScreen({ navigation }) {
                   {done === true && <Ionicons name="checkmark" size={14} color="#fff" />}
                   {done === false && <Ionicons name="close" size={12} color={COLORS.textLight} />}
                 </View>
-                <Text style={styles.dayLabel}>{STREAK_DATA.weekLabels[i]}</Text>
+                <Text style={styles.dayLabel}>{streak.weekLabels[i]}</Text>
               </View>
             ))}
           </View>
@@ -213,7 +196,7 @@ export default function DailyTasksScreen({ navigation }) {
         {/* ── Daily tasks ── */}
         <Text style={styles.sectionLabel}>Завдання на сьогодні</Text>
 
-        {DAILY_TASKS.map((task) => (
+        {tasks.map((task) => (
           <View
             key={task.id}
             style={[

@@ -123,4 +123,10 @@ export const achievementsAPI = {
 };
 
 
+// Daily tasks
+export const dailyTasksAPI = {
+  list: () => api.get('/api/v1/daily-tasks'),
+  getStreaks: () => api.get('/api/v1/daily-tasks/streaks'),
+};
+
 export default api;
