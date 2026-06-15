@@ -5,9 +5,6 @@ import uuid
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 from app.core.config import get_settings
-import logging
-
-logger = logging.getLogger(__name__)
 
 def _utc_range_for_local_date(on_date):
     # returns (start_utc, end_utc) timezone-aware datetimes
@@ -193,27 +190,19 @@ def update_streaks(db: Session, user_id: uuid.UUID):
         login_streak = Streak(user_id=user_id, streak_type='daily_login', current_streak=0, longest_streak=0)
         db.add(login_streak)
 
-    # Logging before update
-    logger.info(f"Streak before update for user {user_id}: last_activity_date={login_streak.last_activity_date}, current_streak={login_streak.current_streak}, longest_streak={login_streak.longest_streak}")
-
     # Update only if last_activity_date isn't today
     if login_streak.last_activity_date != today:
         if login_streak.last_activity_date == yesterday:
             # consecutive day
             login_streak.current_streak += 1
-            logger.info(f"Consecutive day -> incremented streak to {login_streak.current_streak}")
         else:
             # new streak (either first-ever or after a gap) -> start from 1
             login_streak.current_streak = 1
-            logger.info("Starting new streak = 1")
         # update longest
         if login_streak.current_streak > login_streak.longest_streak:
             login_streak.longest_streak = login_streak.current_streak
-            logger.info(f"Updated longest_streak to {login_streak.longest_streak}")
         login_streak.last_activity_date = today
-        logger.info(f"Set last_activity_date to {today}")
 
-    logger.info(f"Streak after update for user {user_id}: last_activity_date={login_streak.last_activity_date}, current_streak={login_streak.current_streak}, longest_streak={login_streak.longest_streak}")
     db.commit()
 
 
@@ -267,7 +256,6 @@ def get_user_daily_summary(db: Session, user_id: uuid.UUID):
 
     # Fix edge-case: if last_activity_date is today but current_streak is 0, set it to 1
     if login_streak and login_streak.last_activity_date == _local_today() and login_streak.current_streak == 0:
-        logger.info(f"Fixing inconsistent streak: user {user_id} had last_activity_date today but current_streak==0; setting to 1")
         login_streak.current_streak = 1
         if login_streak.current_streak > login_streak.longest_streak:
             login_streak.longest_streak = login_streak.current_streak
