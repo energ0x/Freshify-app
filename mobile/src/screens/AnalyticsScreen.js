@@ -217,7 +217,7 @@ export default function AnalyticsScreen({ navigation }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Динаміка КБЖУ</Text>
+          <Text style={styles.sectionTitle}>Динаміка КБЖВ</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodContainer} contentContainerStyle={{ gap: 8 }}>
             {PERIODS.map(period => (

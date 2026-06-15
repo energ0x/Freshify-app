@@ -108,7 +108,7 @@ export const groceryAPI = {
 
 // Analytics — AI recommendations stream via WebSocket only; REST endpoint returns raw data only
 export const analyticsAPI = {
-  get: (days = 30) => api.get('/analytics', { params: { days } }),
+  get: (params) => api.get('/analytics', { params }),
 };
 
 // Settings
