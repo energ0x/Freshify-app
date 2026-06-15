@@ -105,6 +105,8 @@ def init_daily_tasks(db: Session):
     db.commit()
 
 def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
+    # Ensure streaks are up-to-date for this user before computing tasks
+    update_streaks(db, user_id)
     today = _local_today()
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -209,6 +211,8 @@ def get_user_daily_summary(db: Session, user_id: uuid.UUID):
     - week: list of booleans for the last 7 days (Mon..Sun order matching frontend labels)
     - weekLabels
     """
+    # Update streaks before returning summary so 'current' is accurate
+    update_streaks(db, user_id)
     today = _local_today()
     # Build week dates Monday..Sunday for current week (starting Monday)
     # Find start of week (Monday)
