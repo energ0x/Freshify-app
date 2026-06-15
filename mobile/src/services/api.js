@@ -81,14 +81,16 @@ export const productsAPI = {
 
 // AI
 export const aiAPI = {
-  analyzeImage: async (imageUri, lang = 'uk') => {
+  // ДОДАНО ПАРАМЕТР mode (за замовчуванням 'product')
+  analyzeImage: async (imageUri, lang = 'uk', mode = 'product') => {
     const formData = new FormData();
     formData.append('file', {
       uri: imageUri,
       type: 'image/jpeg',
       name: 'product.jpg',
     });
-    return api.post(`/ai/analyze-image?lang=${lang}`, formData, {
+    // ДОДАНО mode У QUERY ПАРАМЕТРИ
+    return api.post(`/ai/analyze-image?lang=${lang}&mode=${mode}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
@@ -121,6 +123,5 @@ export const settingsAPI = {
 export const achievementsAPI = {
   get: () => api.get('/achievements'),
 };
-
 
 export default api;

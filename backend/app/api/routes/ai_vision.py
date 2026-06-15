@@ -17,7 +17,8 @@ ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
 @router.post("/analyze-image", response_model=AIProductListResponse)
 async def analyze_image(
     file: UploadFile = File(...),
-    lang: str = Query("uk"), # <-- ДОДАНО
+    lang: str = Query("uk"),
+    mode: str = Query("product"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -46,7 +47,8 @@ async def analyze_image(
         mime_type="image/jpeg",
         user_allergens=current_user.allergens,
         available_categories=available_categories,
-        lang=lang, # <-- ДОДАНО
+        lang=lang, 
+        mode=mode
     )
 
     if "error" in result and not result.get("products"):

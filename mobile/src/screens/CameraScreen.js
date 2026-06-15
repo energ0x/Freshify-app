@@ -60,8 +60,8 @@ export default function CameraScreen({ navigation, route }) {
     setLoading(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
-      // Передаємо lang у запит
-      const response = await aiAPI.analyzeImage(photo.uri, lang); 
+      // ДОДАНО: Передаємо mode (product або receipt) у запит
+      const response = await aiAPI.analyzeImage(photo.uri, lang, mode); 
 
       if (response?.data?.error) {
         Alert.alert(t('common.attention'), response.data.error);

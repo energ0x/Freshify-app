@@ -52,31 +52,54 @@ async def clean_stream(response_stream):
             yield buffer
 
 
+# app/services/gemini_service.py
+
+# ... попередній код файлу ...
+
 async def analyze_product_image(
         image_bytes: bytes,
         mime_type: str = "image/jpeg",
         user_allergens: list[str] | None = None,
-        available_categories: list[str] | None = None
+        available_categories: list[str] | None = None,
+        lang: str = "uk",
+        mode: str = "product" # <-- ДОДАНО
 ) -> dict:
     allergens_prompt = f"User is allergic to: {', '.join(user_allergens)}." if user_allergens else "User has no known allergies."
     categories_prompt = f"Available categories: {', '.join(available_categories)}." if available_categories else "No categories available."
 
-    prompt = f"""You are a food recognition assistant.
-Analyze the image and identify ALL food products visible (e.g. from a receipt or multiple items on a table).
+    # Налаштовуємо поведінку залежно від того, що ми фотографуємо
+    if mode == "receipt":
+        task_instruction = """
+        The image is a store receipt. Read the text carefully and extract ONLY food items. 
+        Ignore non-food items (plastic bags, taxes, household chemicals, etc.).
+        For each food item, identify its name and estimate its macronutrients (proteins, fats, carbs) per 100g based on typical values for such a product.
+        """
+    else:
+        task_instruction = """
+        The image contains food products (ingredients or packaged food). Identify ALL food products visible.
+        For each item, estimate its macronutrients (proteins, fats, carbs) per 100g based on typical values.
+        """
 
-1.  **Identify the products** and their names in Ukrainian.
+    prompt = f"""You are an expert nutritionist and food recognition assistant.
+{task_instruction}
+
+1.  **Identify the products** and provide their names in {"Ukrainian" if lang == "uk" else "English"}. If it's a receipt, use a clean, readable name based on the receipt text (e.g., 'Milk 2.5%' instead of 'MLK 2.5% BTL').
 2.  **Categorize the products.** Choose the BEST category ONLY from this list: {categories_prompt}
 3.  **Check for allergens.** The user's allergies are: {allergens_prompt}. Do the products contain any of these?
 4.  **Estimate shelf life.** Provide the estimated number of days the product stays fresh.
+5.  **Estimate Macros.** Provide estimated proteins, fats, and carbohydrates per 100g for this exact product. Use standard nutritional databases logic.
 
 Respond with a JSON object following this exact format:
 {{
   "products": [
     {{
-      "name": "Назва українською",
+      "name": "Назва українською (або англійською)",
       "category": "Одна з доступних категорій",
       "estimated_shelf_life_days": int,
-      "has_allergen": boolean 
+      "has_allergen": boolean,
+      "proteins": float,
+      "fats": float,
+      "carbohydrates": float
     }}
   ]
 }}
@@ -92,7 +115,10 @@ If the image does not contain any food products, return:
 
     try:
         image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-        config = types.GenerateContentConfig(response_mime_type="application/json")
+        config = types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.2 # Знижуємо температуру для більшої точності макросів
+        )
 
         response = await client.aio.models.generate_content(
             model=VISION_MODEL_NAME,
