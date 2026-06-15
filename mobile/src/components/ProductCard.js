@@ -1,16 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import { getExpiryLabel, getExpiryColor } from '../utils/dateHelpers';
 import { API_URL } from '../utils/constants';
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 export default function ProductCard({ item, onPress, style }) {
+  const { t } = useTranslation();
   const { colors: COLORS } = useThemeStore();
   const expiryColor = getExpiryColor(item.expiry_date, COLORS);
   const styles = getStyles(COLORS, expiryColor);
   
-  const categoryName = item.category_obj?.name;
+  const originalCategoryName = item.category_obj?.name;
+  const displayCategoryName = getTranslatedCategoryName(originalCategoryName, t);
 
   const getCategoryIcon = (categoryName) => {
     switch (categoryName) {
@@ -37,7 +41,7 @@ export default function ProductCard({ item, onPress, style }) {
     
     return (
       <View style={styles.iconContainer}>
-         <Ionicons name={getCategoryIcon(categoryName)} size={24} color={COLORS.primary} />
+         <Ionicons name={getCategoryIcon(originalCategoryName)} size={24} color={COLORS.primary} />
       </View>
     );
   };
@@ -48,7 +52,7 @@ export default function ProductCard({ item, onPress, style }) {
       <View style={styles.mainInfo}>
         <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.subtext} numberOfLines={1}>
-          {categoryName || 'Інше'}
+          {displayCategoryName || t('productCard.other')}
         </Text>
       </View>
       <View style={styles.rightSection}>

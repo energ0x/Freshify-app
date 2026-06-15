@@ -14,7 +14,7 @@ import RecipeCard from '../components/RecipeCard';
 const RECIPES_STORAGE_KEY = 'generated_recipes';
 
 export default function RecipesScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
   const [recipes, setRecipes] = useState([]);
@@ -69,6 +69,8 @@ export default function RecipesScreen() {
     try {
       await AsyncStorage.removeItem(RECIPES_STORAGE_KEY);
       const token = await SecureStore.getItemAsync('auth_token');
+      // Отримуємо мову
+      const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
       
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) {
@@ -77,7 +79,8 @@ export default function RecipesScreen() {
          wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
       }
       
-      const ws = new WebSocket(`${wsUrl}/recipes/ws/generate?include_grocery=${includeGrocery}&token=${token}`);
+      // Додаємо параметр lang до запиту
+      const ws = new WebSocket(`${wsUrl}/recipes/ws/generate?include_grocery=${includeGrocery}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
       let messageBuffer = '';

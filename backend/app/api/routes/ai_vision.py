@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.schemas.product import AIProductListResponse
@@ -17,6 +17,7 @@ ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
 @router.post("/analyze-image", response_model=AIProductListResponse)
 async def analyze_image(
     file: UploadFile = File(...),
+    lang: str = Query("uk"), # <-- ДОДАНО
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -45,6 +46,7 @@ async def analyze_image(
         mime_type="image/jpeg",
         user_allergens=current_user.allergens,
         available_categories=available_categories,
+        lang=lang, # <-- ДОДАНО
     )
 
     if "error" in result and not result.get("products"):

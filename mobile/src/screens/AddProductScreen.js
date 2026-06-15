@@ -11,14 +11,18 @@ import { useCategories } from '../hooks/useCategories';
 import { productsAPI } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 
 export default function AddProductScreen({ navigation, route }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { addProduct } = useProductStore();
   const { colors: COLORS } = useThemeStore();
   const { categories, createCategory } = useCategories();
   const [loading, setLoading] = useState(false);
+
+  // Визначаємо мову застосунку
+  const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
 
   const getInitialForm = () => ({
     name: '',
@@ -211,7 +215,7 @@ export default function AddProductScreen({ navigation, route }) {
     label: t(`units.${u}`, { defaultValue: u }), 
     value: u 
   }));
-  const categoryItems = categories.map(c => ({ label: c.name, value: c.id }));
+  const categoryItems = categories.map(c => ({ label: getTranslatedCategoryName(c.name, t), value: c.id }));
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -223,17 +227,17 @@ export default function AddProductScreen({ navigation, route }) {
       
       <Text style={styles.scanLabel}>{t('addProduct.addWithAI')}</Text>
       <View style={styles.scanRow}>
-        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'product' })} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'product', lang })} activeOpacity={0.7}>
           <Ionicons name="camera-outline" size={28} color={COLORS.primary} />
           <Text style={styles.scanBtnText}>{t('addProduct.photo')}</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'barcode' })} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'barcode', lang })} activeOpacity={0.7}>
           <Ionicons name="barcode-outline" size={28} color={COLORS.primary} />
           <Text style={styles.scanBtnText}>{t('addProduct.barcode')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'receipt' })} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'receipt', lang })} activeOpacity={0.7}>
           <Ionicons name="receipt-outline" size={28} color={COLORS.primary} />
           <Text style={styles.scanBtnText}>{t('addProduct.receipt')}</Text>
         </TouchableOpacity>

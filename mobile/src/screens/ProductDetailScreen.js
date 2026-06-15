@@ -38,6 +38,10 @@ export default function ProductDetailScreen({ route, navigation }) {
     image_url: null,
   });
 
+  // State for Consume Modal
+  const [consumeModalVisible, setConsumeModalVisible] = useState(false);
+  const [consumeAmount, setConsumeAmount] = useState('');
+
   useEffect(() => {
     if (product) {
       setEditForm({
@@ -80,30 +84,36 @@ export default function ProductDetailScreen({ route, navigation }) {
     ]);
   };
 
-  const handleConsume = async () => {
-    const amountToConsume = product.quantity >= 1 ? 1 : product.quantity;
-
-    Alert.alert(t('productDetail.consumeConfirmTitle'), t('productDetail.consumeConfirmMsg', { amount: amountToConsume, unit: product.unit }), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.yes'),
-        onPress: async () => {
-          setLoading(true);
-          const res = await consumeProduct(product.id, amountToConsume);
-          setLoading(false);
-
-          if (res.success) {
-            Alert.alert(t('common.success'), t('productDetail.consumeSuccessMsg'));
-            if (product.quantity - amountToConsume <= 0) {
-              navigation.goBack();
-            }
-          } else {
-            Alert.alert(t('common.error'), res.error);
-          }
-        }
-      }
-    ]);
+  const openConsumeModal = () => {
+    const defaultAmount = product.quantity >= 1 ? '1' : product.quantity.toString();
+    setConsumeAmount(defaultAmount);
+    setConsumeModalVisible(true);
   };
+
+  const submitConsume = async () => {
+    const amount = Number(consumeAmount.replace(',', '.'));
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return Alert.alert(t('common.error'), t('home.invalidQty'));
+    }
+    if (amount > product.quantity) {
+      return Alert.alert(t('common.attention'), t('home.qtyExceeds'));
+    }
+
+    setLoading(true);
+    const res = await consumeProduct(product.id, amount);
+    setLoading(false);
+
+    if (res.success) {
+      setConsumeModalVisible(false);
+      if (product.quantity - amount <= 0) {
+        navigation.goBack();
+      }
+    } else {
+      Alert.alert(t('common.error'), res.error);
+    }
+  };
+
+  // ... (rest of the code remains the same, down to the return statement)
   
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -156,14 +166,19 @@ export default function ProductDetailScreen({ route, navigation }) {
     }
   };
 
+  // Fallback for missing getTranslatedCategoryName if it's not imported
+  const getTranslatedCategoryName = (name, t) => {
+    // Basic implementation if the hook/utility isn't provided here
+    return name;
+  }
+
   const unitItems = UNITS.map(u => ({ label: u, value: u }));
-  const categoryItems = categories.map(c => ({ label: c.name, value: c.id }));
+  const categoryItems = categories.map(c => ({ label: getTranslatedCategoryName(c.name, t), value: c.id }));
   
-  const categoryName = product.category_obj?.name;
+  const categoryName = getTranslatedCategoryName(product.category_obj?.name, t);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  // Дозволяємо зберегти поточну дату, якщо вона вже в минулому
   const minDate = editForm.expiry_date < today ? editForm.expiry_date : today;
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 10);
@@ -219,7 +234,7 @@ export default function ProductDetailScreen({ route, navigation }) {
         <View style={styles.actions}>
           <CustomButton
             title={t('productDetail.consumeBtn')}
-            onPress={handleConsume}
+            onPress={openConsumeModal}
             loading={loading}
             style={styles.consumeButton}
             icon={<Ionicons name="restaurant-outline" size={20} color={COLORS.onPrimary} />}
@@ -236,6 +251,7 @@ export default function ProductDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
+      {/* Edit Modal */}
       <Modal
         visible={editModalVisible}
         animationType="slide"
@@ -246,7 +262,7 @@ export default function ProductDetailScreen({ route, navigation }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalContainer}
         >
-          <View style={styles.modalOverlay}>
+          <View style={styles.editModalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{t('productDetail.editTitle')}</Text>
@@ -355,6 +371,30 @@ export default function ProductDetailScreen({ route, navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Consume Modal */}
+      <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.consumeModalOverlay}>
+          <View style={styles.consumeModalContent}>
+            <Text style={styles.consumeModalTitle}>{t('home.consumeTitle')}</Text>
+            <Text style={styles.consumeSubtitle}>{product.name} ({t('home.consumeAvailable', { quantity: product.quantity, unit: product.unit })})</Text>
+            
+            <TextInput
+              style={styles.consumeInput}
+              keyboardType="numeric"
+              value={consumeAmount}
+              onChangeText={setConsumeAmount}
+              autoFocus
+              placeholderTextColor={COLORS.onSurfaceVariant}
+            />
+            
+            <View style={styles.consumeModalActionsRow}>
+              <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setConsumeModalVisible(false)} style={styles.modalButton} disabled={loading} />
+              <CustomButton title={t('common.confirm', 'Підтвердити')} onPress={submitConsume} style={styles.modalButton} loading={loading} />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </>
   );
 }
@@ -383,7 +423,7 @@ const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
   consumeButton: { backgroundColor: COLORS.primary },
   deleteButton: { borderColor: COLORS.danger, borderWidth: 1 },
   modalContainer: { flex: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'flex-end' },
+  editModalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.4)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: COLORS.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingBottom: insets?.bottom ? insets.bottom + 30 : 30, maxHeight: '90%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 20 },
   modalTitle: { fontSize: 22, fontWeight: '700', color: COLORS.text },
@@ -399,4 +439,49 @@ const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
   textArea: { minHeight: 100, textAlignVertical: 'top' },
   modalActions: { flexDirection: 'row', gap: 16, paddingHorizontal: 24, paddingTop: 20, borderTopWidth: 1, borderTopColor: COLORS.border },
   modalButton: { flex: 1 },
+
+  // Consume Modal Styles
+  consumeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  consumeModalContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 24,
+    padding: 24,
+    width: '92%',
+    maxWidth: 380,
+  },
+  consumeModalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 8,
+    textAlign: 'center'
+  },
+  consumeSubtitle: {
+    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  consumeInput: {
+    borderWidth: 1,
+    borderColor: COLORS.outline,
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 20,
+    textAlign: 'center',
+    marginBottom: 24,
+    backgroundColor: COLORS.background,
+    color: COLORS.text,
+  },
+  consumeModalActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
 });

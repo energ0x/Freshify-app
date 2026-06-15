@@ -65,7 +65,7 @@ export const productsAPI = {
   getConsumed: (limit = 100) => api.get('/products/history/consumed', { params: { limit } }),
   getExpiring: (days = 3) => api.get('/products/expiring', { params: { days } }),
   getExpired: () => api.get('/products/expired'),
-  analyzeBarcode: (barcode) => api.get(`/products/barcode/${barcode}`),
+  analyzeBarcode: (barcode, lang = 'uk') => api.get(`/products/barcode/${barcode}?lang=${lang}`),
   uploadImage: async (imageUri) => {
     const formData = new FormData();
     formData.append('file', {
@@ -81,14 +81,14 @@ export const productsAPI = {
 
 // AI
 export const aiAPI = {
-  analyzeImage: async (imageUri) => {
+  analyzeImage: async (imageUri, lang = 'uk') => {
     const formData = new FormData();
     formData.append('file', {
       uri: imageUri,
       type: 'image/jpeg',
       name: 'product.jpg',
     });
-    return api.post('/ai/analyze-image', formData, {
+    return api.post(`/ai/analyze-image?lang=${lang}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },

@@ -118,6 +118,7 @@ async def websocket_ai_recommendations(
     websocket: WebSocket,
     days: int = Query(30, ge=7, le=365),
     token: str = Query(...),
+    lang: str = Query("uk"), # <-- ДОДАНО
 ):
     await websocket.accept()
     db: Session = next(get_db())
@@ -158,14 +159,14 @@ async def websocket_ai_recommendations(
             for r in consumed
         ]
 
-        # Charge after data retrieval, before AI stream
         if not user.is_premium:
             user.analytics_generations_count += 1
             db.commit()
             db.refresh(user)
 
         async def send_data():
-            async for chunk in stream_diet_recommendations(consumed_data):
+            # Передаємо lang у gemini_service
+            async for chunk in stream_diet_recommendations(consumed_data, lang=lang):
                 await websocket.send_text(chunk)
 
         async def receive_disconnect():

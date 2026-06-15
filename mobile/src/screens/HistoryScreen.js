@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 export default function HistoryScreen() {
+  const { t } = useTranslation();
   const { consumedProducts, fetchConsumedProducts } = useProductStore();
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);

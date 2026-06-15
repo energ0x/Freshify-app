@@ -36,7 +36,7 @@ const PERIODS = [
 ];
 
 export default function AnalyticsScreen({ navigation }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [data, setData] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAi, setLoadingAi] = useState(false);
@@ -105,11 +105,15 @@ export default function AnalyticsScreen({ navigation }) {
 
     try {
       const token = await SecureStore.getItemAsync('auth_token');
+      // Отримуємо мову
+      const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
+
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) wsUrl = wsUrl.replace('localhost', '10.0.2.2');
       else if (Platform.OS === 'android' && wsUrl.includes('127.0.0.1')) wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
       
-      const ws = new WebSocket(`${wsUrl}/analytics/ws/ai-recommendations?days=${activePeriod.days || 30}&token=${token}`);
+      // Додаємо параметр lang до запиту
+      const ws = new WebSocket(`${wsUrl}/analytics/ws/ai-recommendations?days=${activePeriod.days || 30}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
       ws.onmessage = (event) => setStreamedText(prev => prev + event.data);
@@ -118,12 +122,12 @@ export default function AnalyticsScreen({ navigation }) {
         Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
       };
       ws.onerror = (e) => {
-        setStreamedText(t('analytics.loadError'));
+        setStreamedText(t('analytics.loadStatsError'));
         setLoadingAi(false);
         Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
       };
     } catch (error) {
-      setStreamedText(t('analytics.loadError'));
+      setStreamedText(t('analytics.loadStatsError'));
       setLoadingAi(false);
       Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
     }
@@ -233,7 +237,6 @@ export default function AnalyticsScreen({ navigation }) {
             ))}
           </ScrollView>
 
-          {/* Використовуємо твій DatePicker для кастомного періоду */}
           {activePeriod.id === 'custom' && (
             <View style={styles.customDateContainer}>
               <View style={styles.datePickerWrapper}>
