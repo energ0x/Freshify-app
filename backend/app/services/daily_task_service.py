@@ -6,11 +6,20 @@ from datetime import date, timedelta
 
 DAILY_TASK_DEFINITIONS = [
     {
+        "id": "daily_login",
+        "name": "Щоденний вхід",
+        "description": "Відкрийте застосунок.",
+        "icon": "log-in-outline",
+        "xp_reward": 10,
+        "total": 1,
+        "check_progress": lambda db, user_id, on_date: 1 # Завжди виконано, якщо користувач запитує завдання
+    },
+    {
         "id": "add_product",
         "name": "Додайте продукт",
         "description": "Додайте будь-який продукт до свого холодильника.",
         "icon": "plus",
-        "xp_reward": 10,
+        "xp_reward": 15,
         "total": 1,
         "check_progress": lambda db, user_id, on_date: db.query(func.count(Product.id)).filter(
             Product.user_id == user_id,
@@ -22,29 +31,21 @@ DAILY_TASK_DEFINITIONS = [
         "name": "Використайте продукт",
         "description": "Відзначте, що ви використали продукт.",
         "icon": "check",
-        "xp_reward": 15,
+        "xp_reward": 20,
         "total": 1,
         "check_progress": lambda db, user_id, on_date: db.query(func.count(ConsumedProduct.id)).filter(
             ConsumedProduct.user_id == user_id,
             func.date(ConsumedProduct.consumed_at) == on_date
         ).scalar() or 0
     },
-    {
-        "id": "scan_barcode",
-        "name": "Відскануйте штрих-код",
-        "description": "Додайте продукт за допомогою сканування штрих-коду.",
-        "icon": "barcode",
-        "xp_reward": 20,
-        "total": 1,
-        "check_progress": lambda db, user_id, on_date: db.query(func.count(Product.id)).filter(
-            Product.user_id == user_id,
-            func.date(Product.created_at) == on_date,
-            Product.source == 'barcode'
-        ).scalar() or 0
-    },
 ]
 
 def init_daily_tasks(db: Session):
+    # Видаляємо старе завдання, якщо воно існує
+    old_task = db.query(DailyTask).filter(DailyTask.id == 'scan_barcode').first()
+    if old_task:
+        db.delete(old_task)
+
     for t_def in DAILY_TASK_DEFINITIONS:
         task = db.query(DailyTask).filter(DailyTask.id == t_def["id"]).first()
         if not task:
@@ -56,6 +57,14 @@ def init_daily_tasks(db: Session):
                 xp_reward=t_def["xp_reward"],
                 total=t_def["total"]
             ))
+        else:
+            # Оновлюємо дані, якщо вони змінилися
+            task.name = t_def["name"]
+            task.description = t_def["description"]
+            task.icon = t_def["icon"]
+            task.xp_reward = t_def["xp_reward"]
+            task.total = t_def["total"]
+            
     db.commit()
 
 def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
@@ -74,7 +83,6 @@ def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
     response_tasks = []
     for t_def in DAILY_TASK_DEFINITIONS:
         task_id = t_def["id"]
-        progress = t_def["check_progress"](db, user_id, today)
         
         user_task = tasks_map.get(task_id)
         
@@ -87,13 +95,15 @@ def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
                 completed=False
             )
             db.add(user_task)
-
-        user_task.progress = progress
         
-        if not user_task.completed and user_task.progress >= t_def["total"]:
-            user_task.completed = True
-            user.xp_points = (user.xp_points or 0) + t_def["xp_reward"]
-            
+        # Перевіряємо прогрес, тільки якщо завдання ще не виконано
+        if not user_task.completed:
+            progress = t_def["check_progress"](db, user_id, today)
+            user_task.progress = progress
+            if user_task.progress >= t_def["total"]:
+                user_task.completed = True
+                user.xp_points = (user.xp_points or 0) + t_def["xp_reward"]
+        
         response_tasks.append({
             "id": task_id,
             "name": t_def["name"],
@@ -109,6 +119,15 @@ def get_user_daily_tasks(db: Session, user_id: uuid.UUID):
     return response_tasks
 
 def update_streaks(db: Session, user_id: uuid.UUID):
+    """
+    Update daily_login streak when the user accesses streaks.
+    Rules:
+    - If last_activity_date == today → no change
+    - If last_activity_date == yesterday → increment current_streak by 1
+    - If last_activity_date is older (gap >= 2 days) → reset current_streak to 0
+    - After update set last_activity_date = today
+    - longest_streak updated when current_streak increased
+    """
     today = date.today()
     yesterday = today - timedelta(days=1)
     
@@ -125,18 +144,67 @@ def update_streaks(db: Session, user_id: uuid.UUID):
         login_streak = Streak(user_id=user_id, streak_type='daily_login', current_streak=0, longest_streak=0)
         db.add(login_streak)
 
-    if login_streak.last_activity_date is None or login_streak.last_activity_date < yesterday:
-        login_streak.current_streak = 1
-    elif login_streak.last_activity_date == yesterday:
-        login_streak.current_streak += 1
-    
-    login_streak.last_activity_date = today
-    if login_streak.current_streak > login_streak.longest_streak:
-        login_streak.longest_streak = login_streak.current_streak
+    # Update only if last_activity_date isn't today
+    if login_streak.last_activity_date != today:
+        if login_streak.last_activity_date == yesterday:
+            login_streak.current_streak += 1
+            if login_streak.current_streak > login_streak.longest_streak:
+                login_streak.longest_streak = login_streak.current_streak
+        else:
+            # Missed at least one day -> reset to 0
+            login_streak.current_streak = 0
+        login_streak.last_activity_date = today
 
     db.commit()
+
 
 def get_user_streaks(db: Session, user_id: uuid.UUID):
     update_streaks(db, user_id)
     streaks = db.query(Streak).filter(Streak.user_id == user_id).all()
     return streaks
+
+
+def get_user_daily_summary(db: Session, user_id: uuid.UUID):
+    """
+    Return a small summary used by the frontend widget:
+    - current streak
+    - best streak
+    - week: list of booleans for the last 7 days (Mon..Sun order matching frontend labels)
+    - weekLabels
+    """
+    today = date.today()
+    # Build week dates Monday..Sunday for current week (starting Monday)
+    # Find start of week (Monday)
+    start_of_week = today - timedelta(days=(today.weekday()))  # Monday
+    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+
+    # Query UserDailyTask entries for 'daily_login' for these dates
+    entries = db.query(UserDailyTask).filter(
+        UserDailyTask.user_id == user_id,
+        UserDailyTask.task_id == 'daily_login',
+        UserDailyTask.date.in_([d for d in week_dates])
+    ).all()
+    entries_map = {e.date: e for e in entries}
+
+    week = []
+    for d in week_dates:
+        e = entries_map.get(d)
+        week.append(bool(e and (e.progress > 0 or e.completed)))
+
+    # Fetch streak
+    login_streak = db.query(Streak).filter(
+        Streak.user_id == user_id,
+        Streak.streak_type == 'daily_login'
+    ).first()
+
+    current = login_streak.current_streak if login_streak else 0
+    best = login_streak.longest_streak if login_streak else 0
+
+    weekLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд']
+
+    return {
+        'current': current,
+        'best': best,
+        'week': week,
+        'weekLabels': weekLabels,
+    }

@@ -23,39 +23,6 @@ const STREAK_DATA = {
 
 const DAILY_TASKS = [];
 
-const WEEKLY_CHALLENGES = [
-  {
-    id: 'w1',
-    title: 'Нуль відходів',
-    desc: 'Не викидайте жодного продукту протягом тижня',
-    icon: 'leaf',
-    color: '#2ECC71',
-    xp: 150,
-    progress: 5,
-    total: 7,
-  },
-  {
-    id: 'w2',
-    title: 'Сканер тижня',
-    desc: 'Відскануйте 15 штрихкодів за тиждень',
-    icon: 'barcode',
-    color: '#3498DB',
-    xp: 100,
-    progress: 9,
-    total: 15,
-  },
-  {
-    id: 'w3',
-    title: 'Кулінарний тиждень',
-    desc: 'Отримайте 5 ШІ-рецептів за тиждень',
-    icon: 'restaurant',
-    color: '#E67E22',
-    xp: 120,
-    progress: 2,
-    total: 5,
-  },
-];
-
 export default function DailyTasksScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
@@ -67,10 +34,11 @@ export default function DailyTasksScreen({ navigation }) {
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    const fetchAll = async () => {
       try {
-        const res = await dailyTasksAPI.list();
-        if (mounted && res?.data) {
+        const [res, summaryRes] = await Promise.all([dailyTasksAPI.list(), dailyTasksAPI.getSummary()]);
+        if (!mounted) return;
+        if (res?.data) {
           setTasks(res.data.map(t => ({
             id: t.id,
             title: t.name,
@@ -81,14 +49,21 @@ export default function DailyTasksScreen({ navigation }) {
             completed: t.completed,
           })));
         }
-        const sres = await dailyTasksAPI.getStreaks();
-        if (mounted && sres?.data) {
-          const login = sres.data.find(st => st.streak_type === 'daily_login');
-          if (login) setStreak(prev => ({ ...prev, current: login.current_streak, best: login.longest_streak }));
+        if (summaryRes?.data) {
+          const s = summaryRes.data;
+          setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: s.week || prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
         }
-      } catch (e) {}
-    })();
-    return () => { mounted = false; };
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    fetchAll();
+
+    const listener = () => fetchAll();
+    dailyTasksListeners.add(listener);
+
+    return () => { mounted = false; dailyTasksListeners.delete(listener); };
   }, []);
 
   const completedCount = tasks.filter((t) => t.completed).length;
@@ -238,40 +213,6 @@ export default function DailyTasksScreen({ navigation }) {
             </View>
           </View>
         ))}
-
-        {/* ── Weekly challenges ── */}
-        <Text style={[styles.sectionLabel, { marginTop: 32 }]}>Тижневі челенджі</Text>
-
-        {WEEKLY_CHALLENGES.map((ch) => {
-          const pct = (ch.progress / ch.total) * 100;
-          return (
-            <View key={ch.id} style={styles.challengeCard}>
-              <View style={styles.challengeTop}>
-                <View style={[styles.challengeIcon, { backgroundColor: `${ch.color}20` }]}>
-                  <Ionicons name={ch.icon} size={24} color={ch.color} />
-                </View>
-                <View style={styles.challengeInfo}>
-                  <Text style={styles.challengeTitle}>{ch.title}</Text>
-                  <Text style={styles.challengeDesc}>{ch.desc}</Text>
-                </View>
-                <View style={[styles.xpBadge, { backgroundColor: `${ch.color}15` }]}>
-                  <Text style={[styles.xpBadgeText, { color: ch.color }]}>+{ch.xp} XP</Text>
-                </View>
-              </View>
-
-              <View style={styles.challengeProgressRow}>
-                <View style={styles.challengeTrack}>
-                  <View
-                    style={[styles.challengeFill, { width: `${pct}%`, backgroundColor: ch.color }]}
-                  />
-                </View>
-                <Text style={styles.challengeCount}>
-                  {ch.progress}/{ch.total}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
 
         <View style={{ height: 40 }} />
       </ScrollView>

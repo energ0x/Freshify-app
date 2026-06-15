@@ -17,11 +17,16 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Додамо подію, яку можна слухати з UI компонентів
+// Додамо події, які можна слухати з UI компонентів
 export const premiumLimitListeners = new Set();
+export const dailyTasksListeners = new Set();
 
 export const notifyPremiumLimitReached = (message) => {
   premiumLimitListeners.forEach(listener => listener(message));
+};
+
+export const notifyDailyTasksUpdated = () => {
+  dailyTasksListeners.forEach(listener => listener());
 };
 
 api.interceptors.response.use(
@@ -57,11 +62,19 @@ export const categoriesAPI = {
 // Products
 export const productsAPI = {
   list: (params) => api.get('/products', { params }),
-  create: (data) => api.post('/products', data),
+  create: async (data) => {
+    const res = await api.post('/products', data);
+    try { notifyDailyTasksUpdated(); } catch (e) {}
+    return res;
+  },
   get: (id) => api.get(`/products/${id}`),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
-  consume: (id, quantity) => api.post(`/products/${id}/consume`, { quantity }),
+  consume: async (id, quantity) => {
+    const res = await api.post(`/products/${id}/consume`, { quantity });
+    try { notifyDailyTasksUpdated(); } catch (e) {}
+    return res;
+  },
   getConsumed: (limit = 100) => api.get('/products/history/consumed', { params: { limit } }),
   getExpiring: (days = 3) => api.get('/products/expiring', { params: { days } }),
   getExpired: () => api.get('/products/expired'),
@@ -73,9 +86,11 @@ export const productsAPI = {
       type: 'image/jpeg',
       name: 'product.jpg',
     });
-    return api.post('/products/upload-image', formData, {
+    const res = await api.post('/products/upload-image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    try { notifyDailyTasksUpdated(); } catch (e) {}
+    return res;
   },
 };
 
@@ -127,6 +142,7 @@ export const achievementsAPI = {
 export const dailyTasksAPI = {
   list: () => api.get('/api/v1/daily-tasks'),
   getStreaks: () => api.get('/api/v1/daily-tasks/streaks'),
+  getSummary: () => api.get('/api/v1/daily-tasks/summary'),
 };
 
 export default api;

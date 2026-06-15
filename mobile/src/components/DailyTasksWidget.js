@@ -22,10 +22,11 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
 
   useEffect(() => {
     let mounted = true;
-    (async () => {
+    const fetchAll = async () => {
       try {
-        const res = await dailyTasksAPI.list();
-        if (mounted && res?.data) {
+        const [res, summaryRes] = await Promise.all([dailyTasksAPI.list(), dailyTasksAPI.getSummary()]);
+        if (!mounted) return;
+        if (res?.data) {
           const data = res.data.map(t => ({
             id: t.id,
             title: t.name,
@@ -36,16 +37,21 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
           }));
           setTasks(data);
         }
-        const sres = await dailyTasksAPI.getStreaks();
-        if (mounted && sres?.data) {
-          const login = sres.data.find(st => st.streak_type === 'daily_login');
-          if (login) {
-            setStreak(prev => ({ ...prev, current: login.current_streak }));
-          }
+        if (summaryRes?.data) {
+          const s = summaryRes.data;
+          setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: s.week || prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
         }
-      } catch (e) {}
-    })();
-    return () => { mounted = false; };
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    fetchAll();
+
+    const listener = () => fetchAll();
+    dailyTasksListeners.add(listener);
+
+    return () => { mounted = false; dailyTasksListeners.delete(listener); };
   }, []);
 
   const completedCount = tasks.filter((t) => t.completed).length;
