@@ -313,7 +313,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="AddProduct"
               component={AddProductScreen}
-              options={{ headerShown: true, title: t("screens.addProduct") }}
+              options={{ headerShown: false, title: t("screens.addProduct") }}
             />
             <Stack.Screen
               name="Camera"
