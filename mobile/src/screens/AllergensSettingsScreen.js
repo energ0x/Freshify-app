@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, KeyboardAvoidingView, Platform, Alert
+  TextInput, KeyboardAvoidingView, Platform, Alert, StatusBar
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
 import useAuthStore from '../store/authStore';
@@ -13,6 +14,7 @@ export default function AllergensSettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
   const { colors: COLORS, theme } = useThemeStore();
+  const insets = useSafeAreaInsets();
 
   const initialTranslatedAllergens = useMemo(() => [
     t('allergens.milk'), t('allergens.nuts'), t('allergens.eggs'),
@@ -26,7 +28,7 @@ export default function AllergensSettingsScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const isDark = theme === 'dark';
-  const styles = getStyles(COLORS, isDark);
+  const styles = getStyles(COLORS, isDark, insets);
 
   useEffect(() => {
     if (user?.allergens) {
@@ -89,6 +91,15 @@ export default function AllergensSettingsScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('screens.allergensSettings', 'Налаштування алергенів')}</Text>
+      </View>
+
       <View style={styles.content}>
         <Text style={styles.subtitle}>
           {t('allergens.description')}
@@ -136,10 +147,39 @@ export default function AllergensSettingsScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, isDark) => StyleSheet.create({
+const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: insets.top || 20,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5,
+  },
+  backButton: {
+      marginTop: 16,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
   },
   content: {
     flex: 1,
@@ -222,6 +262,9 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
   footer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 24,
+    paddingBottom: insets.bottom || 24,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderColor: COLORS.border,
   },
 });

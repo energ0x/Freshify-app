@@ -10,7 +10,7 @@ import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
-export default function HistoryScreen() {
+export default function HistoryScreen({ navigation }) {
   const { t } = useTranslation();
   const { consumedProducts, fetchConsumedProducts } = useProductStore();
   const [search, setSearch] = useState('');
@@ -74,8 +74,14 @@ export default function HistoryScreen() {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
 
-      {/* ── Обгортка пошуку, що продовжує системний Header ── */}
       <View style={styles.header}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('screens.history', 'Історія')}</Text>
+        </View>
+
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.onSurfaceVariant} style={styles.searchIcon} />
           <TextInput
@@ -121,11 +127,9 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background
   },
-
-  // ─── Header Extension ──────────────────────────────────────────────────────
   header: {
+    paddingTop: insets.top || 20,
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 24,
     backgroundColor: COLORS.surface,
     borderBottomLeftRadius: 24,
@@ -136,6 +140,22 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     zIndex: 10,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+    letterSpacing: 0.5,
+  },
+  backButton: {
+    marginTop: 12,
   },
   searchContainer: {
     flexDirection: 'row',

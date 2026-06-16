@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert
+  TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, StatusBar
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useThemeStore from '../store/themeStore';
 import useProductStore from '../store/productStore';
 import { useCategories } from '../hooks/useCategories';
@@ -16,9 +17,10 @@ export default function CategoriesScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
   const { categories, loading, error, createCategory, deleteCategory, restoreDefaultCategories } = useCategories();
   const [newCategoryName, setNewCategoryName] = useState('');
+  const insets = useSafeAreaInsets();
 
   const isDark = theme === 'dark';
-  const styles = getStyles(COLORS, isDark);
+  const styles = getStyles(COLORS, isDark, insets);
 
   const handleAddCategory = async () => {
     const trimmed = newCategoryName.trim();
@@ -108,6 +110,15 @@ export default function CategoriesScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('screens.categories', 'Категорії')}</Text>
+      </View>
+
       <View style={styles.content}>
         <View style={styles.inputContainer}>
           <TextInput
@@ -142,10 +153,39 @@ export default function CategoriesScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, isDark) => StyleSheet.create({
+const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: insets.top || 20,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5,
+  },
+  backButton: {
+      marginTop: 16,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
   },
   content: {
     flex: 1,

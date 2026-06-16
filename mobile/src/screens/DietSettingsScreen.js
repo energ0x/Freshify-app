@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, StatusBar
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CustomButton from '../components/CustomButton';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
@@ -19,12 +21,13 @@ export default function DietSettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
   const { colors: COLORS, theme } = useThemeStore();
+  const insets = useSafeAreaInsets();
 
   const [selectedDiet, setSelectedDiet] = useState('none');
   const [loading, setLoading] = useState(false);
 
   const isDark = theme === 'dark';
-  const styles = getStyles(COLORS, isDark);
+  const styles = getStyles(COLORS, isDark, insets);
 
   useEffect(() => {
     if (user?.dietary_preference) {
@@ -53,6 +56,15 @@ export default function DietSettingsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('screens.dietSettings', 'Налаштування дієти')}</Text>
+      </View>
+
       <View style={styles.content}>
         <Text style={styles.subtitle}>
           {t('settings.dietSubtitle', 'Це допоможе нам точніше аналізувати продукти та пропонувати релевантні рецепти.')}
@@ -90,10 +102,39 @@ export default function DietSettingsScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, isDark) => StyleSheet.create({
+const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: insets.top || 20,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5,
+  },
+  backButton: {
+      marginTop: 16,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
   },
   content: {
     flex: 1,
@@ -170,6 +211,9 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
   footer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 24,
+    paddingBottom: insets.bottom || 24,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderColor: COLORS.border,
   },
 });

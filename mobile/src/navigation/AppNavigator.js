@@ -332,7 +332,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="History"
               component={HistoryScreen}
-              options={{ headerShown: true, title: t("screens.history") }}
+              options={{ headerShown: false, title: t("screens.history") }}
             />
             <Stack.Screen
               name="Recipes"
@@ -342,7 +342,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Achievements"
               component={AchievementsScreen}
-              options={{ headerShown: true, title: t("screens.achievements") }}
+              options={{ headerShown: false, title: t("screens.achievements") }}
             />
             <Stack.Screen
               name="Premium"
@@ -360,20 +360,20 @@ export default function AppNavigator() {
             <Stack.Screen
               name="DietSettings"
               component={DietSettingsScreen}
-              options={{ headerShown: true, title: t("screens.dietSettings") }}
+              options={{ headerShown: false, title: t("screens.dietSettings") }}
             />
             <Stack.Screen
               name="AllergensSettings"
               component={AllergensSettingsScreen}
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: t("screens.allergensSettings"),
               }}
             />
             <Stack.Screen
               name="Categories"
               component={CategoriesScreen}
-              options={{ headerShown: true, title: t("screens.categories") }}
+              options={{ headerShown: false, title: t("screens.categories") }}
             />
             <Stack.Screen
               name="DailyTasks"

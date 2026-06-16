@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import useAuthStore from '../store/authStore';
@@ -23,9 +24,10 @@ export default function AchievementsScreen({ navigation }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const { user, refreshUser } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const isDark = theme === 'dark';
-  const styles = getStyles(COLORS, isDark);
+  const styles = getStyles(COLORS, isDark, insets);
 
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,54 +92,91 @@ export default function AchievementsScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
+    <View style={styles.container}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
-      <TouchableOpacity style={styles.headerCard} activeOpacity={0.8} onPress={() => navigation.navigate('Leagues')}>
-        <View style={styles.leagueRow}>
-          <View style={[styles.leagueIconBg, { backgroundColor: `${currentLeague.color}15` }]}>
-            <Ionicons name={currentLeague.icon} size={36} color={currentLeague.color} />
-          </View>
-          <View style={styles.leagueInfo}>
-            <Text style={styles.levelText}>{t('achievements.level')} {currentLevel}</Text>
-            <Text style={styles.leagueName}>{t(currentLeague.titleKey)}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color={COLORS.outline} />
-        </View>
-
-        <View style={styles.xpContainer}>
-          <View style={styles.xpTextRow}>
-            <Text style={styles.xpText}>{t('achievements.experience')}</Text>
-            <Text style={[styles.xpValues, { color: currentLeague.color }]}>
-              {currentXP} <Text style={{ color: COLORS.text }}>/ {nextLevelXP}</Text>
-            </Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: currentLeague.color }]} />
-          </View>
-          <Text style={styles.xpHint}>{t('achievements.xpLeft', { xp: nextLevelXP - currentXP })}</Text>
-        </View>
-      </TouchableOpacity>
-
-      <View style={styles.achievementsSection}>
-        <Text style={styles.sectionLabel}>{t('achievements.yourAchievements')}</Text>
-        {loading ? (
-          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
-        ) : (
-          <View style={styles.gridContainer}>
-            {achievements.map(renderAchievement)}
-          </View>
-        )}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('screens.achievements', 'Досягнення')}</Text>
       </View>
 
-    </ScrollView>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity style={styles.headerCard} activeOpacity={0.8} onPress={() => navigation.navigate('Leagues')}>
+          <View style={styles.leagueRow}>
+            <View style={[styles.leagueIconBg, { backgroundColor: `${currentLeague.color}15` }]}>
+              <Ionicons name={currentLeague.icon} size={36} color={currentLeague.color} />
+            </View>
+            <View style={styles.leagueInfo}>
+              <Text style={styles.levelText}>{t('achievements.level')} {currentLevel}</Text>
+              <Text style={styles.leagueName}>{t(currentLeague.titleKey)}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color={COLORS.outline} />
+          </View>
+
+          <View style={styles.xpContainer}>
+            <View style={styles.xpTextRow}>
+              <Text style={styles.xpText}>{t('achievements.experience')}</Text>
+              <Text style={[styles.xpValues, { color: currentLeague.color }]}>
+                {currentXP} <Text style={{ color: COLORS.text }}>/ {nextLevelXP}</Text>
+              </Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: currentLeague.color }]} />
+            </View>
+            <Text style={styles.xpHint}>{t('achievements.xpLeft', { xp: nextLevelXP - currentXP })}</Text>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.achievementsSection}>
+          <Text style={styles.sectionLabel}>{t('achievements.yourAchievements')}</Text>
+          {loading ? (
+            <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
+          ) : (
+            <View style={styles.gridContainer}>
+              {achievements.map(renderAchievement)}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
-const getStyles = (COLORS, isDark) => StyleSheet.create({
+const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: insets.top || 20,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5,
+  },
+  backButton: {
+      marginTop: 16,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
   },
   content: {
     paddingHorizontal: 20,
