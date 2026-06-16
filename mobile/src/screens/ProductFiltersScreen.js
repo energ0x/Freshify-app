@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 export default function ProductFiltersScreen({ navigation, route }) {
   const { t } = useTranslation();
@@ -99,7 +100,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.chipText, selectedCategoryId === category.id ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                    {category.name}
+                    {getTranslatedCategoryName(category.name, t)}
                   </Text>
                 </TouchableOpacity>
               ))}

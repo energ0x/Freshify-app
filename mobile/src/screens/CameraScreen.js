@@ -5,11 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { aiAPI, productsAPI } from '../services/api';
 import { COLORS } from '../utils/constants';
 import CustomButton from '../components/CustomButton';
-import {useTranslation} from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 export default function CameraScreen({ navigation, route }) {
   const { t } = useTranslation();
   const mode = route.params?.mode || 'product'; 
+  const lang = route.params?.lang || 'uk'; // <-- ДОДАНО ОТРИМАННЯ МОВИ
 
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
@@ -35,7 +36,8 @@ export default function CameraScreen({ navigation, route }) {
     setLoading(true);
     
     try {
-      const response = await productsAPI.analyzeBarcode(data);
+      // Передаємо lang у запит
+      const response = await productsAPI.analyzeBarcode(data, lang); 
 
       if (response?.data?.error) {
         Alert.alert(t('common.attention'), response.data.error);
@@ -58,7 +60,8 @@ export default function CameraScreen({ navigation, route }) {
     setLoading(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
-      const response = await aiAPI.analyzeImage(photo.uri);
+      // ДОДАНО: Передаємо mode (product або receipt) у запит
+      const response = await aiAPI.analyzeImage(photo.uri, lang, mode); 
 
       if (response?.data?.error) {
         Alert.alert(t('common.attention'), response.data.error);
@@ -91,7 +94,6 @@ export default function CameraScreen({ navigation, route }) {
         }}
       >
         <View style={styles.overlay}>
-
           <Text style={styles.instructionText}>{getInstructionText()}</Text>
 
           {mode === 'barcode' && (
@@ -127,31 +129,8 @@ const styles = StyleSheet.create({
   camera: { flex: 1 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.15)', justifyContent: 'space-between' },
   closeButton: { position: 'absolute', top: 50, left: 20, zIndex: 10 },
-  
-  instructionText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 100,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-    paddingHorizontal: 20,
-  },
-  
-  barcodeFrame: {
-    width: 250,
-    height: 150,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    alignSelf: 'center',
-    marginTop: 'auto',
-    marginBottom: 'auto',
-    borderRadius: 16,
-  },
-
+  instructionText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center', marginTop: 100, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4, paddingHorizontal: 20 },
+  barcodeFrame: { width: 250, height: 150, borderWidth: 2, borderColor: COLORS.primary, backgroundColor: 'rgba(255,255,255,0.05)', alignSelf: 'center', marginTop: 'auto', marginBottom: 'auto', borderRadius: 16 },
   controls: { paddingBottom: 50, alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
   captureButton: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.3)', justifyContent: 'center', alignItems: 'center' },
   captureInner: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff' },

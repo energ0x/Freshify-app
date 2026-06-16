@@ -6,6 +6,7 @@ import useProductStore from '../store/productStore';
 import { useCategories } from '../hooks/useCategories';
 import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 export default function CategoriesScreen({ navigation }) {
   const { t } = useTranslation();
@@ -88,7 +89,7 @@ export default function CategoriesScreen({ navigation }) {
 
   const renderItem = (item) => (
     <View key={item.id} style={styles.card}>
-      <Text style={styles.itemTitle}>{item.name}</Text>
+      <Text style={styles.itemTitle}>{getTranslatedCategoryName(item.name, t)}</Text>
       <TouchableOpacity onPress={() => handleDeleteCategory(item.id)} style={styles.deleteBtn}>
         <Ionicons name="trash-outline" size={22} color={COLORS.danger} />
       </TouchableOpacity>

@@ -18,6 +18,7 @@ async def websocket_recipe_generator(
     websocket: WebSocket,
     include_grocery: bool = Query(False),
     token: str = Query(...),
+    lang: str = Query("uk"), # <-- ДОДАНО
 ):
     await websocket.accept()
     db: Session = next(get_db())
@@ -40,10 +41,10 @@ async def websocket_recipe_generator(
 
         products = get_products(db, user.id)
         if not products:
-            await websocket.send_text("У вас немає продуктів для генерації рецептів.")
+            empty_msg = "You have no products to generate recipes from." if lang == "en" else "У вас немає продуктів для генерації рецептів."
+            await websocket.send_text(empty_msg)
             return
 
-        # Charge only after confirming there are products to generate from
         if not user.is_premium:
             user.recipe_generations_count += 1
             db.commit()
@@ -65,6 +66,7 @@ async def websocket_recipe_generator(
                 user_diet=user.dietary_preference,
                 user_allergens=user.allergens,
                 include_grocery=include_grocery,
+                lang=lang, # <-- ДОДАНО
             ):
                 await websocket.send_text(chunk)
 
@@ -91,7 +93,8 @@ async def websocket_recipe_generator(
     except Exception as e:
         logger.error("Recipe WS error: %s", e)
         try:
-            await websocket.send_text("\n\n**Помилка:** Не вдалося згенерувати рецепти.")
+            error_msg = "\n\n**Error:** Failed to generate recipes." if lang == "en" else "\n\n**Помилка:** Не вдалося згенерувати рецепти."
+            await websocket.send_text(error_msg)
         except Exception:
             pass
     finally:

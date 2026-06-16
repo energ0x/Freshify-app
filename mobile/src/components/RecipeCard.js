@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import { groceryAPI } from '../services/api';
 
 const RecipeCard = ({ content }) => {
+  const { t } = useTranslation();
   const { colors: COLORS } = useThemeStore();
   const styles = getStyles(COLORS);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -12,31 +14,52 @@ const RecipeCard = ({ content }) => {
   const [addedToGrocery, setAddedToGrocery] = useState(false);
 
   const parseContent = () => {
+    // Відкидаємо порожні рядки
     const lines = content.split('\n').filter(line => line.trim() !== '');
     if (lines.length === 0) return null;
 
-    const name = lines[0].replace('##', '').trim();
-    const description = lines[1] || '';
+    // Назва (перший рядок, очищаємо від '##')
+    const name = lines[0].replace(/^##\s*/, '').trim();
 
-    const metaLine = lines.find(line => line.includes('**Час:**'));
-    const time = metaLine?.match(/\*\*Час:\*\* (.*?)( |$)/)?.[1] || '';
-    const difficulty = metaLine?.match(/\*\*Складність:\*\* (.*)/)?.[1] || '';
+    // Знаходимо рядок з метаданими (Час та Складність)
+    const metaIndex = lines.findIndex(line => line.includes('**') && line.includes('|'));
+    
+    // Опис – це все, що між назвою та мета-рядком (або 2-й рядок, якщо мета немає)
+    const descriptionEnd = metaIndex !== -1 ? metaIndex : 2;
+    const description = lines.slice(1, descriptionEnd).join(' ').trim();
 
-    const ingredientsIndex = lines.findIndex(line => line.includes('### Інгредієнти:'));
-    const missingIngredientsIndex = lines.findIndex(line => line.includes('### Треба докупити:'));
-    const instructionsIndex = lines.findIndex(line => line.includes('### Приготування:'));
+    let time = '';
+    let difficulty = '';
+    
+    // Розумний парсинг часу та складності (вирізає жирний шрифт, залишає лише значення)
+    if (metaIndex !== -1) {
+      const parts = lines[metaIndex].split('|');
+      if (parts.length >= 2) {
+        time = parts[0].replace(/\*\*.*?\*\*/g, '').replace(/^:\s*/, '').trim();
+        difficulty = parts[1].replace(/\*\*.*?\*\*/g, '').replace(/^:\s*/, '').trim();
+      }
+    }
 
-    const ingredients = lines.slice(
-      ingredientsIndex + 1,
-      missingIngredientsIndex !== -1 ? missingIngredientsIndex : instructionsIndex
-    ).map(line => line.replace('-', '').trim());
+    // Шукаємо індекси заголовків незалежно від мови (розумний regex)
+    const ingredientsIndex = lines.findIndex(line => line.startsWith('###') && /(Інгредієнти|Ingredients)/i.test(line));
+    const missingIngredientsIndex = lines.findIndex(line => line.startsWith('###') && /(Треба докупити|To buy)/i.test(line));
+    const instructionsIndex = lines.findIndex(line => line.startsWith('###') && /(Приготування|Instructions)/i.test(line));
 
-    const missingIngredients = missingIngredientsIndex !== -1 ? lines.slice(
-      missingIngredientsIndex + 1,
-      instructionsIndex
-    ).map(line => line.replace('-', '').trim()) : [];
+    // Визначаємо межі блоків
+    const ingredientsEnd = missingIngredientsIndex !== -1 ? missingIngredientsIndex : instructionsIndex;
+    
+    // Витягуємо списки
+    const ingredients = ingredientsIndex !== -1 && ingredientsEnd !== -1 
+      ? lines.slice(ingredientsIndex + 1, ingredientsEnd).filter(l => l.trim() !== '').map(line => line.replace(/^-\s*/, '').trim()) 
+      : [];
 
-    const instructions = lines.slice(instructionsIndex + 1).map(line => line.replace(/^\d+\.\s*/, '').trim());
+    const missingIngredients = missingIngredientsIndex !== -1 && instructionsIndex !== -1
+      ? lines.slice(missingIngredientsIndex + 1, instructionsIndex).filter(l => l.trim() !== '').map(line => line.replace(/^-\s*/, '').trim())
+      : [];
+
+    const instructions = instructionsIndex !== -1
+      ? lines.slice(instructionsIndex + 1).filter(l => l.trim() !== '').map(line => line.replace(/^\d+\.\s*/, '').trim())
+      : [];
 
     return { name, description, time, difficulty, ingredients, missingIngredients, instructions };
   };
@@ -64,11 +87,11 @@ const RecipeCard = ({ content }) => {
         successCount++;
       }
 
-      Alert.alert("Успіх", `Додано ${successCount} ${successCount === 1 ? 'продукт' : 'продуктів'} до списку покупок!`);
+      Alert.alert(t('common.success'), t('recipeCard.addedItems', { count: successCount }));
       setAddedToGrocery(true);
     } catch (error) {
       console.error("Error adding to grocery list:", error);
-      Alert.alert("Помилка", "Не вдалося додати деякі продукти до списку покупок.");
+      Alert.alert(t('common.error'), t('recipeCard.addError'));
     } finally {
       setAddingToGrocery(false);
     }
@@ -81,7 +104,7 @@ const RecipeCard = ({ content }) => {
           <Text style={styles.recipeName}>{recipe.name}</Text>
           <View style={styles.recipeMeta}>
             <Ionicons name="time-outline" size={16} color={COLORS.textLight} />
-            <Text style={styles.metaText}>{recipe.time} хв</Text>
+            <Text style={styles.metaText}>{recipe.time}</Text>
             <Ionicons name="bar-chart-outline" size={16} color={COLORS.textLight} style={{ marginLeft: 12 }} />
             <Text style={styles.metaText}>{recipe.difficulty}</Text>
           </View>
@@ -91,9 +114,9 @@ const RecipeCard = ({ content }) => {
 
       {isExpanded && (
         <View style={styles.recipeDetails}>
-          <Text style={styles.description}>{recipe.description}</Text>
+          {recipe.description ? <Text style={styles.description}>{recipe.description}</Text> : null}
 
-          <Text style={styles.sectionTitle}>Інгредієнти:</Text>
+          <Text style={styles.sectionTitle}>{t('recipeCard.ingredients')}</Text>
           {recipe.ingredients.map((ing, idx) => (
             <View key={idx} style={styles.listItem}>
               <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.success} style={styles.listIcon} />
@@ -104,7 +127,7 @@ const RecipeCard = ({ content }) => {
           {recipe.missingIngredients.length > 0 && (
             <>
               <View style={styles.missingHeaderContainer}>
-                <Text style={[styles.sectionTitle, { color: COLORS.warning, marginBottom: 0 }]}>Треба докупити:</Text>
+                <Text style={[styles.sectionTitle, { color: COLORS.warning, marginBottom: 0 }]}>{t('recipeCard.missing')}</Text>
                 <TouchableOpacity
                   style={[
                     styles.addToGroceryButton,
@@ -118,12 +141,12 @@ const RecipeCard = ({ content }) => {
                   ) : addedToGrocery ? (
                     <>
                       <Ionicons name="checkmark-outline" size={16} color={COLORS.onPrimary} />
-                      <Text style={styles.addToGroceryText}>Додано!</Text>
+                      <Text style={styles.addToGroceryText}>{t('recipeCard.added')}</Text>
                     </>
                   ) : (
                     <>
                       <Ionicons name="cart-outline" size={16} color={COLORS.onPrimary} />
-                      <Text style={styles.addToGroceryText}>Додати всі</Text>
+                      <Text style={styles.addToGroceryText}>{t('recipeCard.addAll')}</Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -140,7 +163,7 @@ const RecipeCard = ({ content }) => {
             </>
           )}
 
-          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>Приготування:</Text>
+          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>{t('recipeCard.instructions')}</Text>
           {recipe.instructions.map((step, idx) => (
             <Text key={idx} style={styles.stepItem}><Text style={styles.stepNumber}>{idx + 1}.</Text> {step}</Text>
           ))}
@@ -151,7 +174,7 @@ const RecipeCard = ({ content }) => {
 };
 
 const getStyles = (COLORS) => StyleSheet.create({
-    recipeCard: {
+  recipeCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 24,
     marginBottom: 16,

@@ -21,7 +21,10 @@
     "confirm": "Confirm",
     "close": "Close",
     "done": "Done",
-    "choose": "Choose"
+    "choose": "Choose",
+    "from": "From",
+    "to": "To",
+    "all": "All"
   },
   "tabs": {
     "products": "Products",
@@ -40,7 +43,8 @@
     "dietSettings": "My Diet",
     "allergensSettings": "My Allergens",
     "categories": "Categories",
-    "dailyTasks": "Daily Tasks"
+    "dailyTasks": "Daily Tasks",
+    "editProduct": "Edit Product"
   },
   "categories": {
     "deleteTitle": "Delete Category",
@@ -50,7 +54,22 @@
     "restoreTitle": "Restore defaults",
     "restoreMessage": "Are you sure you want to restore default categories? This will replace your current categories",
     "addPlaceholder": "New category name...",
-    "restoreDefaults": "Restore defaults"
+    "restoreDefaults": "Restore defaults",
+    "defaults": {
+      "dairy": "Dairy Products",
+      "meatAndFish": "Meat & Fish",
+      "vegetables": "Vegetables",
+      "fruits": "Fruits",
+      "greens": "Greens",
+      "breadAndBakery": "Bread & Bakery",
+      "drinks": "Drinks",
+      "cannedGoods": "Canned Goods",
+      "cerealsAndGrains": "Cereals & Grains",
+      "frozenFoods": "Frozen Foods",
+      "saucesAndSpices": "Sauces & Spices",
+      "sweets": "Sweets",
+      "other": "Other"
+    }
   },
   "errors": {
     "createCategory": "Failed to create category",
@@ -143,6 +162,16 @@
     "loading": "AI Chef is thinking...",
     "emptyTitle": "Generate recipes",
     "emptyText": "Tap the button to get meal ideas based on the products in your fridge"
+  },
+  "recipeCard": {
+    "ingredients": "Ingredients:",
+    "missing": "To buy:",
+    "instructions": "Instructions:",
+    "added": "Added!",
+    "addAll": "Add all",
+    "addedItems_one": "Added {{count}} item to the grocery list!",
+    "addedItems_other": "Added {{count}} items to the grocery list!",
+    "addError": "Failed to add some items to the grocery list."
   },
   "grocery": {
     "title": "Grocery List",
@@ -269,7 +298,20 @@
     "consumptionByCategory": "Consumption by Category",
     "noConsumptionData": "No consumption data for the last 30 days",
     "aiRecommendationsTitle": "AI Dietitian Recommendations",
-    "getAdvice": "Get advice"
+    "getAdvice": "Get advice",
+    "periods": {
+      "1m": "1 month",
+      "3m": "3 months",
+      "6m": "6 months",
+      "1y": "1 year",
+      "all": "All time",
+      "custom": "Custom"
+    },
+    "macrosDynamics": "Macros Dynamics",
+    "calories": "Calories",
+    "macros": "Macros",
+    "kcal": "Kcal",
+    "noData": "No data"
   },
   "camera": {
     "permissionMsg": "The app needs camera access to recognize products",
