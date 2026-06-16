@@ -95,8 +95,18 @@ def get_analytics(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
     ).group_by("day").order_by("day").all()
 
-    active_quantity = db.query(func.sum(Product.quantity)).filter(
-        and_(Product.user_id == current_user.id, Product.is_active == True)
+    piece_units = ('pcs', 'шт')
+    unit_lower = func.lower(func.coalesce(Product.unit, ''))
+    cond_is_piece = unit_lower.in_(piece_units)
+    active_quantity = db.query(
+        func.sum(
+            case(
+                (cond_is_piece, Product.quantity),
+                else_=1
+            )
+        )
+    ).filter(
+        and_(Product.user_id == current_user.id, Product.is_active == True, Product.quantity > 0)
     ).scalar()
 
     return {
