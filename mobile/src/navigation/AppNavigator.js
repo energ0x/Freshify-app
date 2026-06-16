@@ -361,7 +361,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Recipes"
               component={RecipesScreen}
-              options={{ headerShown: true, title: t("screens.recipes") }}
+              options={{ headerShown: false, title: t("screens.recipes") }}
             />
             <Stack.Screen
               name="Achievements"

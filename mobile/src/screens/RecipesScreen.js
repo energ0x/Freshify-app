@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, StatusBar, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, StatusBar, Animated, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -15,6 +15,7 @@ const RECIPES_STORAGE_KEY = 'generated_recipes';
 
 export default function RecipesScreen() {
   const { t, i18n } = useTranslation();
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
   const [recipes, setRecipes] = useState([]);
@@ -69,7 +70,6 @@ export default function RecipesScreen() {
     try {
       await AsyncStorage.removeItem(RECIPES_STORAGE_KEY);
       const token = await SecureStore.getItemAsync('auth_token');
-      // Отримуємо мову
       const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
       
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
@@ -79,7 +79,6 @@ export default function RecipesScreen() {
          wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
       }
       
-      // Додаємо параметр lang до запиту
       const ws = new WebSocket(`${wsUrl}/recipes/ws/generate?include_grocery=${includeGrocery}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
@@ -132,7 +131,13 @@ export default function RecipesScreen() {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
       <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+        </TouchableOpacity>
+
+        {/* Заголовок під стрілкою */}
         <Text style={styles.headerTitle}>{t('recipes.title')}</Text>
+
         <View style={styles.controls}>
           <View style={styles.switchContainer}>
             <Text style={styles.switchLabel}>{t('recipes.includeGrocery')}</Text>
@@ -186,7 +191,9 @@ export default function RecipesScreen() {
 const getStyles = (COLORS, insets) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: { paddingTop: insets.top || 20, paddingBottom: 16, backgroundColor: COLORS.surface, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, paddingHorizontal: 20, marginBottom: 16 },
+  headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, marginBottom: 8 },
+  backButton: { padding: 10, marginRight: 8 },
+  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, paddingHorizontal: 20, flex: 1, marginBottom: 8},
   controls: { paddingHorizontal: 20 },
   switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, backgroundColor: COLORS.surfaceVariant, padding: 16, borderRadius: 16 },
   switchLabel: { fontSize: 16, color: COLORS.text, fontWeight: '500' },

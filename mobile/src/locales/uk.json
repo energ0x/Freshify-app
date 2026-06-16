@@ -215,7 +215,8 @@
     "emptyText": "Додайте свій перший продукт, щоб почати відстежувати їжу",
     "productDeleted": "Продукт видалено",
     "consumeTitle": "Спожити продукт",
-    "consumeAvailable": "Доступно: {{quantity}} {{unit}}"
+    "consumeAvailable": "Доступно: {{quantity}} {{unit}}",
+    "filtersSubtitle": "Налаштуйте відображення продуктів для зручного пошуку та аналізу"
   },
   "settings": {
     "title": "Профіль",

@@ -213,7 +213,8 @@
     "emptyText": "Add your first product to start tracking your food",
     "productDeleted": "Product deleted",
     "consumeTitle": "Consume Product",
-    "consumeAvailable": "Available: {{quantity}} {{unit}}"
+    "consumeAvailable": "Available: {{quantity}} {{unit}}",
+    "filtersSubtitle": "Customize product display for easy search and analysis"
   },
   "settings": {
     "title": "Profile",

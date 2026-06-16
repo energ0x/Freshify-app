@@ -66,7 +66,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.subtitle}>
-          Налаштуйте відображення продуктів для зручного пошуку та аналізу.
+          {t('home.filtersSubtitle')}
         </Text>
         <View style={styles.columnsContainer}>
           <View style={styles.column}>
