@@ -109,14 +109,14 @@ export default function LeaguesScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
-      {/* ── Консистентний Header ── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>{t('leagues.title', 'Карта Рівнів')}</Text>
+      </View>
 
+      <View style={styles.subHeader}>
         <View style={styles.myStatsRow}>
           <View style={styles.statPill}>
             <Ionicons name="star" size={18} color="#F1C40F" />
@@ -168,7 +168,28 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
 
   // ─── Header ────────────────────────────────────────────────────────────────
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     paddingTop: insets.top || 20,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.surface,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5,
+  },
+  backButton: {
+      marginTop: 16,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
+  },
+  subHeader: {
     paddingHorizontal: 20,
     paddingBottom: 24,
     backgroundColor: COLORS.surface,
@@ -179,23 +200,9 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    zIndex: 10,
-  },
-  backButton: {
-                    marginTop: 16,
-
-    marginBottom: 12,
-    alignSelf: 'flex-start',
-  },
-  headerTitle: {
-      flexDirection: 'row',       // Розташовує елементи в один рядок
-alignItems: 'center',       // Центрує їх по вертикалі
-    gap: 12,
-    fontSize: 32,
-    fontWeight: '800',
-    color: COLORS.text,
-    letterSpacing: 0.5,
-    marginBottom: 20,
+    zIndex: 5,
+    marginTop: -24,
+    paddingTop: 32,
   },
   myStatsRow: {
     flexDirection: 'row',
