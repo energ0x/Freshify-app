@@ -1,3 +1,10 @@
+/**
+ * @file CategoriesScreen.js
+ * @description Screen for managing product categories. Allows users to view the list of existing categories,
+ * add custom categories, delete unused ones, and restore default categories.
+ * Validates whether categories are currently in use by active or consumed products before permitting deletion.
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
@@ -12,16 +19,32 @@ import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
+/**
+ * CategoriesScreen component.
+ * Provides category management actions.
+ * 
+ * @param {object} props.navigation - React Navigation handle.
+ */
 export default function CategoriesScreen({ navigation }) {
+  // Localization hook.
   const { t } = useTranslation();
+  // Dynamic application styling.
   const { colors: COLORS, theme } = useThemeStore();
-  const { categories, loading, error, createCategory, deleteCategory, restoreDefaultCategories } = useCategories();
-  const [newCategoryName, setNewCategoryName] = useState('');
+  // Safe area helper for dynamic status bars.
   const insets = useSafeAreaInsets();
+  
+  // Destructure categories, state, and operation endpoints from custom React hook.
+  const { categories, loading, error, createCategory, deleteCategory, restoreDefaultCategories } = useCategories();
+  // Component local state for typing a new category name.
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  /**
+   * Dispatches create request to the backend for a new custom category.
+   * Clears text input upon success or alerts user of API error.
+   */
   const handleAddCategory = async () => {
     const trimmed = newCategoryName.trim();
     if (trimmed) {
@@ -35,11 +58,23 @@ export default function CategoriesScreen({ navigation }) {
     }
   };
 
+  /**
+   * Handles deletion of a category.
+   * Performs validation against the product store state:
+   * Checks both active products and consumed history. If the category ID matches any product,
+   * deletion is disallowed. Otherwise, prompts user with confirmation before API call.
+   * 
+   * @param {string|number} id - Target category ID to delete.
+   */
   const handleDeleteCategory = async (id) => {
     const ps = useProductStore.getState();
+    
+    // Check if category is used in active products list
     const usedInProducts = (ps.products || []).some(p => p.category_id === id || (p.category_obj && p.category_obj.id === id));
+    // Check if category is used in consumed products list
     const usedInConsumed = (ps.consumedProducts || []).some(p => p.category_id === id || (p.category_obj && p.category_obj.id === id));
 
+    // Show validation alert if category is currently referenced
     if (usedInProducts || usedInConsumed) {
       Alert.alert(
         t('categories.deleteInUseTitle') || t('common.attention'),
@@ -49,6 +84,7 @@ export default function CategoriesScreen({ navigation }) {
       return;
     }
 
+    // Confirmation dialog before deleting an unused category
     Alert.alert(
       t('categories.deleteTitle'),
       t('categories.deleteMessage'),
@@ -70,6 +106,9 @@ export default function CategoriesScreen({ navigation }) {
     );
   };
 
+  /**
+   * Prompts user and invokes API endpoint to restore system-default categories.
+   */
   const handleRestoreDefaults = async () => {
     Alert.alert(
       t('categories.restoreTitle'),
@@ -91,19 +130,27 @@ export default function CategoriesScreen({ navigation }) {
     );
   };
 
+  /**
+   * Helper to render individual category cards.
+   * 
+   * @param {object} item - Category object containing id and name.
+   */
   const renderItem = (item) => (
     <View key={item.id} style={styles.card}>
       <Text style={styles.itemTitle}>{getTranslatedCategoryName(item.name, t)}</Text>
+      {/* Delete button linked to safety check */}
       <TouchableOpacity onPress={() => handleDeleteCategory(item.id)} style={styles.deleteBtn} activeOpacity={0.7}>
         <Ionicons name="trash-outline" size={20} color={COLORS.danger ?? '#FF3B30'} />
       </TouchableOpacity>
     </View>
   );
 
+  // Full-screen loading state layout
   if (loading) {
     return <ActivityIndicator style={styles.center} size="large" color={COLORS.primary} />;
   }
 
+  // Full-screen error state layout
   if (error) {
     return <View style={styles.center}><Text style={{ color: COLORS.danger }}>{t('errors.loadingCategories')}</Text></View>;
   }
@@ -112,6 +159,7 @@ export default function CategoriesScreen({ navigation }) {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Header section with back navigation */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -119,7 +167,9 @@ export default function CategoriesScreen({ navigation }) {
         <Text style={styles.headerTitle}>{t('screens.categories', 'Категорії')}</Text>
       </View>
 
+      {/* Main Body */}
       <View style={styles.content}>
+        {/* Container for entering and submitting new categories */}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -136,10 +186,12 @@ export default function CategoriesScreen({ navigation }) {
           )}
         </View>
 
+        {/* Scrollable list of categories */}
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           {categories.map(c => renderItem(c))}
         </ScrollView>
 
+        {/* Footer with restore action button */}
         <View style={styles.footer}>
           <CustomButton
             title={t('categories.restoreDefaults')}
@@ -153,6 +205,14 @@ export default function CategoriesScreen({ navigation }) {
   );
 }
 
+/**
+ * Computes component stylesheet dynamically.
+ * 
+ * @param {object} COLORS - App colors.
+ * @param {boolean} isDark - Flag representing dark mode status.
+ * @param {object} insets - Safe area details.
+ * @returns {object} StyleSheet layout.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,

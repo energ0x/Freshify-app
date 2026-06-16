@@ -1,3 +1,11 @@
+/**
+ * @file SettingsScreen.js
+ * @description Profile and Settings dashboard screen.
+ * Handles language toggles, dark theme config, native notification permissions,
+ * responsible consumption donations configuration, system sync themes, 
+ * achievements tracking widgets, and logging out.
+ */
+
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView, View, Text, StyleSheet, Switch, Alert, Linking,
@@ -18,6 +26,7 @@ import { CHARITY } from '../utils/constants';
 
 import DailyTasksWidget from '../components/DailyTasksWidget';
 
+// Preset donation organizations
 const AVAILABLE_CHARITIES = [
   CHARITY,
   { name: 'Фонд Сергія Притули', url: 'https://prytulafoundation.org' },
@@ -25,11 +34,16 @@ const AVAILABLE_CHARITIES = [
   { name: 'Госпітальєри', url: 'https://www.hospitallers.life/' },
 ];
 
+// Supported application languages
 const LANGUAGES = [
   { code: 'uk', name: 'Українська 🇺🇦' },
   { code: 'en', name: 'English 🇬🇧' }
 ];
 
+/**
+ * Reusable Setting Row Component.
+ * Renders an icon on the left, a text label, and customizable interactables on the right (like chevron or Switch).
+ */
 const SettingItem = ({ icon, title, value, onPress, iconBgColor, rightComponent, styles, COLORS }) => (
   <TouchableOpacity
     style={styles.settingRow}
@@ -54,30 +68,48 @@ const SettingItem = ({ icon, title, value, onPress, iconBgColor, rightComponent,
   </TouchableOpacity>
 );
 
+/**
+ * SettingsScreen component.
+ * Incorporates profile display, game mechanics (XP and badges), personalization controls,
+ * food donation configurations, and standard account operations.
+ * 
+ * @param {Object} props - Navigation components.
+ * @param {Object} props.navigation - React navigation navigator.
+ */
 export default function SettingsScreen({ navigation }) {
   const { t, i18n } = useTranslation();
+  
+  // Destructure global user profile context and logout method
   const { user, logout } = useAuthStore();
+  
+  // Theme controllers from global theme store
   const { theme, toggleTheme, colors: COLORS, isSystemTheme, setSystemTheme } = useThemeStore();
 
+  // Settings states
   const [donationSettings, setDonationSettings] = useState({ auto_donate: false });
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [achievements, setAchievements] = useState([]);
 
+  // Safe area & navigation styling offsets
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
+  // Dialog overlays control states
   const [selectedCharity, setSelectedCharity] = useState(AVAILABLE_CHARITIES[0]);
   const [charityModalVisible, setCharityModalVisible] = useState(false);
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
+  // Localization settings parser
   const currentLangCode = i18n.language?.startsWith('uk') ? 'uk' : 'en';
   const currentLangName = LANGUAGES.find(l => l.code === currentLangCode)?.name || 'English 🇬🇧';
 
+  // Fetch initial preferences on screen load
   useEffect(() => {
     loadSettings();
     checkNotificationStatus();
   }, []);
 
+  // Sync achievements data from backend API whenever screen gains focus
   useFocusEffect(
     useCallback(() => {
       const fetchAchievements = async () => {
@@ -92,6 +124,9 @@ export default function SettingsScreen({ navigation }) {
     }, [])
   );
 
+  /**
+   * Fetches donation preferences from backend API.
+   */
   const loadSettings = async () => {
     try {
       const res = await settingsAPI.getDonation();
@@ -101,6 +136,9 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  /**
+   * Verifies if app is configured to send push notifications, checking device system authorization.
+   */
   const checkNotificationStatus = async () => {
     try {
       const storedPreference = await AsyncStorage.getItem('notifications_enabled');
@@ -115,6 +153,10 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  /**
+   * Configures local notifications preferences on off switches.
+   * Requests OS permission if enabling notifications. Cancels any scheduled events if disabling.
+   */
   const handleToggleNotifications = async (value) => {
     if (value) {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -139,22 +181,32 @@ export default function SettingsScreen({ navigation }) {
     }
   };
 
+  /**
+   * Submits updated automatic food donation preferences to the API.
+   */
   const handleToggleDonation = async (value) => {
     setDonationSettings(prev => ({ ...prev, auto_donate: value }));
     try {
       await settingsAPI.updateDonation({ auto_donate: value });
     } catch {
+      // Revert in case of API failure
       setDonationSettings(prev => ({ ...prev, auto_donate: !value }));
       Alert.alert(t('common.error'), t('settings.settingsSaveError'));
     }
   };
 
+  /**
+   * Updates primary application language dynamically.
+   */
   const handleLanguageChange = async (code) => {
     await AsyncStorage.setItem('app_language', code);
     i18n.changeLanguage(code);
     setLanguageModalVisible(false);
   };
 
+  /**
+   * Displays log out confirmation warning alert.
+   */
   const handleLogout = () => {
     Alert.alert(t('settings.logoutConfirmTitle'), t('settings.logoutConfirmMsg'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -162,10 +214,14 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
+  // Gamification formulas
   const level = user ? Math.floor((user.xp_points || 0) / 100) + 1 : 1;
   const unlockedAchievementsCount = achievements.filter(a => a.completed).length;
   const totalAchievementsCount = achievements.length || 6;
 
+  /**
+   * Shares user statistics and level using native device sheet interface.
+   */
   const handleShareSuccess = async () => {
     try {
       await Share.share({
@@ -183,7 +239,7 @@ export default function SettingsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
-      {/* ── Консистентний Header ── */}
+      {/* Screen Title Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('tabs.profile', 'Профіль')}</Text>
       </View>
@@ -193,7 +249,7 @@ export default function SettingsScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
 
-        {/* ── Профіль ───────────────────────────────────────────── */}
+        {/* ── Profile Header Card ───────────────────────────────────────────── */}
         <View style={styles.profileCard}>
           <View style={styles.profileBanner}>
             <View style={styles.bCircle1} />
@@ -220,7 +276,7 @@ export default function SettingsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* ── Мій Прогрес ────────────────────────────────────── */}
+        {/* ── Gamification and Progress Widget ────────────────────────────────── */}
         <Text style={styles.sectionLabel}>{t('settings.myProgress')}</Text>
 
         <DailyTasksWidget navigation={navigation} isClosable={false} />
@@ -255,12 +311,13 @@ export default function SettingsScreen({ navigation }) {
           <Ionicons name="chevron-forward" size={22} color={COLORS.outline} style={{ marginLeft: 8 }} />
         </TouchableOpacity>
 
+        {/* Share buttons */}
         <TouchableOpacity style={styles.shareBtn} onPress={handleShareSuccess} activeOpacity={0.8}>
           <Ionicons name="share-social-outline" size={22} color={COLORS.onPrimaryContainer} />
           <Text style={styles.shareBtnText}>{t('settings.shareSuccess')}</Text>
         </TouchableOpacity>
 
-        {/* ── Преміум ── */}
+        {/* Premium features promotion card */}
         <TouchableOpacity
           style={styles.premiumCard}
           onPress={() => navigation.navigate('Premium')}
@@ -275,7 +332,7 @@ export default function SettingsScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
-        {/* ── Персоналізація ─────────────────────────────────────────────── */}
+        {/* ── Personalization Configuration Options ───────────────────────────── */}
         <Text style={styles.sectionLabel}>{t('settings.personalization')}</Text>
         <View style={styles.card}>
           <SettingItem
@@ -342,7 +399,7 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        {/* ── Харчування ─────────────────────────────────────────────────── */}
+        {/* ── Nutrition Configuration Options ──────────────────────────────────── */}
         <Text style={styles.sectionLabel}>{t('settings.nutrition')}</Text>
         <View style={styles.card}>
           <SettingItem
@@ -376,7 +433,7 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        {/* ── Відповідальне споживання ────────────────────────────────────── */}
+        {/* ── Responsible Consumption / Food Donations ───────────────────────── */}
         <Text style={styles.sectionLabel}>{t('settings.responsibleConsumption')}</Text>
 
         <View style={styles.card}>
@@ -419,7 +476,7 @@ export default function SettingsScreen({ navigation }) {
           )}
         </View>
 
-        {/* ── Акаунт ────────────────────────────────────────────────────── */}
+        {/* ── Account and Logout Operations ──────────────────────────────────── */}
         <Text style={styles.sectionLabel}>{t('settings.account')}</Text>
         <TouchableOpacity style={styles.logoutCard} onPress={handleLogout} activeOpacity={0.8}>
           <View style={[styles.iconBox, { backgroundColor: 'transparent' }]}>
@@ -430,7 +487,7 @@ export default function SettingsScreen({ navigation }) {
 
       </ScrollView>
 
-      {/* ── Модалка: Зміна мови ── */}
+      {/* ── Language Switcher Modal Overlay ── */}
       <Modal visible={languageModalVisible} animationType="fade" transparent onRequestClose={() => setLanguageModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setLanguageModalVisible(false)}>
           <View style={styles.bottomSheet}>
@@ -453,7 +510,7 @@ export default function SettingsScreen({ navigation }) {
         </TouchableOpacity>
       </Modal>
 
-      {/* ── Charity Modal ── */}
+      {/* ── Charity/Fund Selector Modal Overlay ── */}
       <Modal visible={charityModalVisible} animationType="fade" transparent onRequestClose={() => setCharityModalVisible(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setCharityModalVisible(false)}>
           <View style={styles.bottomSheet}>
@@ -470,6 +527,7 @@ export default function SettingsScreen({ navigation }) {
                   <Ionicons name={selectedCharity.name === charity.name ? 'radio-button-on' : 'radio-button-off'} size={24} color={selectedCharity.name === charity.name ? COLORS.primary : COLORS.outline} />
                   <Text style={[styles.sheetOptionText, selectedCharity.name === charity.name && { color: COLORS.primary, fontWeight: '700' }]}>{charity.name}</Text>
                 </View>
+                {/* External link indicator to view charity information */}
                 <TouchableOpacity onPress={() => Linking.openURL(charity.url)}>
                   <Ionicons name="open-outline" size={24} color={COLORS.primary} />
                 </TouchableOpacity>
@@ -482,6 +540,9 @@ export default function SettingsScreen({ navigation }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, tabBarHeight, isDark) => {
   const premiumBg = isDark ? COLORS.primaryContainer : COLORS.primary;
   const premiumText = isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary;
@@ -493,7 +554,6 @@ const getStyles = (COLORS, insets, tabBarHeight, isDark) => {
     header: {
       paddingTop: insets.top || 20,
       paddingHorizontal: 20,
-      // paddingBottom: 20,
       backgroundColor: COLORS.surface,
       borderBottomLeftRadius: 24,
       borderBottomRightRadius: 24,

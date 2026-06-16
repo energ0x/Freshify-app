@@ -1,3 +1,10 @@
+/**
+ * @file Dietary Preference Selection Screen
+ * @description Renders a lists of options to collect the user's dietary preferences 
+ * (Vegetarian, Vegan, Pescatarian, etc.) during onboarding.
+ * Synchronizes options to the profile storage via authentication services.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, StatusBar
@@ -8,6 +15,7 @@ import CustomButton from '../../components/CustomButton';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 
+// Static keys representing supported dietary groups along with translation identifiers
 const DIET_KEYS = [
   { id: 'none', titleKey: 'diets.noneTitle', descKey: 'diets.noneDesc' },
   { id: 'vegetarian', titleKey: 'diets.vegetarianTitle', descKey: 'diets.vegetarianDesc' },
@@ -16,6 +24,13 @@ const DIET_KEYS = [
   { id: 'flexitarian', titleKey: 'diets.flexitarianTitle', descKey: 'diets.flexitarianDesc' },
 ];
 
+/**
+ * DietScreen onboarding selection page.
+ * 
+ * @param {Object} props
+ * @param {Object} props.navigation - React Navigation helper.
+ * @returns {React.ReactElement} DietScreen component.
+ */
 export default function DietScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
@@ -28,12 +43,16 @@ export default function DietScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  // Sync state selection with currently authenticated user profile
   useEffect(() => {
     if (user?.dietary_preference) {
       setSelectedDiet(user.dietary_preference);
     }
   }, [user]);
 
+  /**
+   * Persists selected dietary preference to API and routes to the next onboarding step.
+   */
   const handleNext = async () => {
     setLoading(true);
     const res = await updateProfile({ dietary_preference: selectedDiet });
@@ -50,11 +69,13 @@ export default function DietScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
 
+      {/* Screen Title and explanation */}
       <View style={styles.header}>
         <Text style={styles.title}>{t('onboarding.dietTitle')}</Text>
         <Text style={styles.subtitle}>{t('onboarding.dietSubtitle')}</Text>
       </View>
 
+      {/* Scrollable list containing selectable dietary choices */}
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {DIET_KEYS.map((diet) => {
           const isSelected = selectedDiet === diet.id;
@@ -65,6 +86,7 @@ export default function DietScreen({ navigation }) {
               onPress={() => setSelectedDiet(diet.id)}
               activeOpacity={0.8}
             >
+              {/* Radio indicator circle representing current select state */}
               <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
                 {isSelected && <View style={styles.radioDot} />}
               </View>
@@ -79,6 +101,7 @@ export default function DietScreen({ navigation }) {
         })}
       </ScrollView>
 
+      {/* Action footer button */}
       <View style={styles.footer}>
         <CustomButton
           title={t('common.next')}
@@ -91,6 +114,14 @@ export default function DietScreen({ navigation }) {
   );
 }
 
+/**
+ * Creates dynamic styles corresponding to device metrics, safe zone margins, and theme palette.
+ * 
+ * @param {Object} COLORS - Theme palette colors.
+ * @param {boolean} isDark - Active theme setting status.
+ * @param {Object} insets - Screen safe inset coordinates.
+ * @returns {Object} React Native StyleSheet styles object.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
@@ -99,7 +130,7 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
 
   header: {
     paddingHorizontal: 24,
-    paddingTop: Math.max(insets.top + 20, 60), // Гарантований відступ від верху
+    paddingTop: Math.max(insets.top + 20, 60), // Guarantees margin safety at the top
     paddingBottom: 24,
     alignItems: 'center',
   },

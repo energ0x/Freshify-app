@@ -1,3 +1,10 @@
+/**
+ * @file GuideScreen.js
+ * @description The onboarding presentation slider screen.
+ * Displays educational illustrations/slides describing the application features,
+ * with flatlist-based pagination indicators, next page actions, and completion flow.
+ */
+
 import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, Dimensions, FlatList, Image, StatusBar
@@ -10,12 +17,14 @@ import useThemeStore from '../../store/themeStore';
 
 const { width } = Dimensions.get('window');
 
+// Local map of assets loaded by onboarding slides
 const IMAGE_MAP = {
   scan: require('../../assets/scan.png'),
   apple: require('../../assets/apple-core.png'),
   chef: require('../../assets/chef.png'),
 };
 
+// Data structure declaring properties for guide pagination pages
 const SLIDE_KEYS = [
   {
     id: '1',
@@ -37,6 +46,11 @@ const SLIDE_KEYS = [
   }
 ];
 
+/**
+ * GuideScreen screen presenting app tutorials through a horizontal FlatList.
+ * 
+ * @returns {React.ReactElement} The rendered GuideScreen.
+ */
 export default function GuideScreen() {
   const { t } = useTranslation();
   const { finishOnboarding } = useAuthStore();
@@ -49,6 +63,10 @@ export default function GuideScreen() {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  /**
+   * Action handler triggered when clicking the "Next" button.
+   * If on intermediate slides, triggers list scroll. If on final slide, terminates onboarding session.
+   */
   const handleNext = () => {
     if (currentIndex < SLIDE_KEYS.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
@@ -57,6 +75,10 @@ export default function GuideScreen() {
     }
   };
 
+  /**
+   * List listener tracking when a new slide becomes centered.
+   * Updates state representation to shift active dot position index.
+   */
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
       setCurrentIndex(viewableItems[0].index);
@@ -65,8 +87,10 @@ export default function GuideScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Configure device status bar appearance based on theme settings */}
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
 
+      {/* Main onboarding horizontal content slides */}
       <FlatList
         ref={flatListRef}
         data={SLIDE_KEYS}
@@ -89,6 +113,7 @@ export default function GuideScreen() {
         )}
       />
 
+      {/* Slider pagination indicator dots */}
       <View style={styles.indicatorContainer}>
         {SLIDE_KEYS.map((_, index) => (
           <View
@@ -101,6 +126,7 @@ export default function GuideScreen() {
         ))}
       </View>
 
+      {/* Screen action footer button */}
       <View style={styles.footer}>
         <CustomButton
           title={currentIndex === SLIDE_KEYS.length - 1 ? t('guide.start', 'Почати роботу ✨') : t('common.next', 'Далі')}
@@ -112,6 +138,14 @@ export default function GuideScreen() {
   );
 }
 
+/**
+ * Creates dynamic styles corresponding to device metrics, safe zone margins, and theme palette.
+ * 
+ * @param {Object} COLORS - Theme palette colors.
+ * @param {boolean} isDark - Active theme setting status.
+ * @param {Object} insets - Screen safe inset coordinates.
+ * @returns {Object} React Native StyleSheet styles object.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,

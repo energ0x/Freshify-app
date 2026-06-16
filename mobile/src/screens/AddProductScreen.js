@@ -1,3 +1,10 @@
+/**
+ * @file AddProductScreen.js
+ * @description Screen for adding new products, either manually or via AI analysis.
+ * Supports adding multiple products at once (multi-form), taking photos or scanning barcodes/receipts,
+ * automatic calorie calculation, category creation on the fly, and image uploads.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   ScrollView, View, Text, TextInput, StyleSheet, Alert,
@@ -17,11 +24,20 @@ import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from 'react-i18next';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
+/**
+ * AddProductScreen component.
+ * Manages manual product entry fields and coordinates AI recognition results.
+ * 
+ * @param {object} props.navigation - React Navigation handle.
+ * @param {object} props.route - Route parameters, which can pass down AI analysis results.
+ */
 export default function AddProductScreen({ navigation, route }) {
   const { t, i18n } = useTranslation();
   const { addProduct } = useProductStore();
   const { colors: COLORS, theme } = useThemeStore();
   const { categories, createCategory } = useCategories();
+  
+  // State tracking saving operation loading indicators.
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -29,6 +45,11 @@ export default function AddProductScreen({ navigation, route }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  /**
+   * Returns a blank template for a new product entry.
+   * 
+   * @returns {object} Form blueprint.
+   */
   const getInitialForm = () => ({
     name: '',
     category_id: null,
@@ -44,14 +65,24 @@ export default function AddProductScreen({ navigation, route }) {
     carbohydrates: '',
   });
 
+  // State array containing the list of forms (allows multi-product additions).
   const [forms, setForms] = useState([getInitialForm()]);
 
+  // Sync first available category once categories data is loaded from API.
   useEffect(() => {
     if (categories.length > 0) {
       setForms(prev => prev.map(f => f.category_id ? f : { ...f, category_id: categories[0].id }));
     }
   }, [categories]);
 
+  /**
+   * Computes calories based on the classic 4-9-4 macro formula.
+   * 
+   * @param {string} proteins - Grams of proteins.
+   * @param {string} fats - Grams of fats.
+   * @param {string} carbohydrates - Grams of carbohydrates.
+   * @returns {string} Calculated calories count.
+   */
   const calculateCalories = (proteins, fats, carbohydrates) => {
     const p = parseFloat(proteins) || 0;
     const f = parseFloat(fats) || 0;
@@ -61,16 +92,26 @@ export default function AddProductScreen({ navigation, route }) {
     return totalCalories > 0 ? Math.round(totalCalories).toString() : '';
   };
 
+  /**
+   * Converts product predictions received from the AI model (vision / barcode / receipt)
+   * into local form entries. Optionally creates custom categories if recommended by AI.
+   * 
+   * @param {Array} dataList - Predicted products from the backend.
+   * @param {string} imageUriFromCamera - Captured photo path.
+   */
   const processAiResultList = async (dataList, imageUriFromCamera) => {
     const newForms = [];
 
     for (let i = 0; i < dataList.length; i++) {
       const data = dataList[i];
       const expiry = new Date();
+      
+      // Add shelf life days predicted by the model to today's date
       if (data.estimated_shelf_life_days) {
         expiry.setDate(expiry.getDate() + data.estimated_shelf_life_days);
       }
 
+      // Resolve category: try matching existing IDs or create a new category suggestion
       let catId = data.category_id || (categories.length > 0 ? categories[0].id : null);
       if (data.category_suggestion && !catId) {
         try {
@@ -91,6 +132,7 @@ export default function AddProductScreen({ navigation, route }) {
         expiry_date: expiry,
         notes: '',
         image_url: data.image_url || null,
+        // Assign photo uri if first product in the list and no server url is present
         localImageUri: (i === 0 && imageUriFromCamera && !data.image_url) ? imageUriFromCamera : (data.image_url || null),
         calories: calculateCalories(p, f, c),
         proteins: p,
@@ -98,6 +140,7 @@ export default function AddProductScreen({ navigation, route }) {
         carbohydrates: c,
       });
 
+      // Show allergen warnings if detected in the product
       if (data.has_allergen) {
         Alert.alert(
           t('addProduct.attentionAllergenTitle'),
@@ -111,6 +154,7 @@ export default function AddProductScreen({ navigation, route }) {
     }
   };
 
+  // Listen for AI results passed back from CameraScreen.
   useEffect(() => {
     if (route.params?.aiResult) {
       const data = route.params.aiResult;
@@ -128,6 +172,11 @@ export default function AddProductScreen({ navigation, route }) {
     }
   }, [route.params?.aiResult]);
 
+  /**
+   * Opens the system image library to select a custom photo for the product.
+   * 
+   * @param {number} index - Index of the target form item.
+   */
   const pickImage = async (index) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -143,6 +192,14 @@ export default function AddProductScreen({ navigation, route }) {
     }
   };
 
+  /**
+   * Modifies a specific property on a given form item.
+   * Recalculates calories if any nutritional values are changed.
+   * 
+   * @param {number} index - Target product index.
+   * @param {string} field - Object property key to update.
+   * @param {*} value - New value to assign.
+   */
   const updateForm = (index, field, value) => {
     const updatedForms = [...forms];
     updatedForms[index][field] = value;
@@ -153,22 +210,35 @@ export default function AddProductScreen({ navigation, route }) {
            updatedForms[index].fats,
            updatedForms[index].carbohydrates
        );
-    }
+     }
 
     setForms(updatedForms);
   };
 
+  /**
+   * Removes a form block. Retains at least one active block.
+   * 
+   * @param {number} index - Index of the form block to remove.
+   */
   const removeForm = (index) => {
     if (forms.length > 1) {
       setForms(forms.filter((_, i) => i !== index));
     }
   };
 
+  /**
+   * Appends a new blank form configuration to the list.
+   */
   const addEmptyForm = () => {
     setForms([...forms, { ...getInitialForm(), category_id: categories.length > 0 ? categories[0].id : null }]);
   };
 
+  /**
+   * Submits all forms to the backend database.
+   * Uploads local images to the server first, then sends the structured payload to the add API.
+   */
   const handleSave = async () => {
+    // Basic presence validation
     for (let i = 0; i < forms.length; i++) {
       if (!forms[i].name) return Alert.alert(t('common.error'), t('addProduct.nameRequired', { index: i + 1 }));
     }
@@ -180,11 +250,13 @@ export default function AddProductScreen({ navigation, route }) {
       for (const form of forms) {
         let finalImageUrl = form.image_url;
 
+        // Upload custom image if present locally and not already hosted
         if (form.localImageUri && !form.localImageUri.startsWith('http')) {
           const uploadRes = await productsAPI.uploadImage(form.localImageUri);
           finalImageUrl = uploadRes.data.image_url;
         }
 
+        // Send payload to products store action
         const res = await addProduct({
           ...form,
           image_url: finalImageUrl,
@@ -201,6 +273,7 @@ export default function AddProductScreen({ navigation, route }) {
 
       setLoading(false);
 
+      // Verify all product additions completed successfully
       if (savedCount === forms.length) {
         navigation.goBack();
       } else {
@@ -212,6 +285,7 @@ export default function AddProductScreen({ navigation, route }) {
     }
   };
 
+  // Build picker items mapping keys to localized text
   const unitItems = UNITS.map(u => ({
     label: t(`units.${u}`, { defaultValue: u }),
     value: u
@@ -227,6 +301,7 @@ export default function AddProductScreen({ navigation, route }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Screen Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -235,24 +310,30 @@ export default function AddProductScreen({ navigation, route }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        
+        {/* Scan Actions section for importing products via AI */}
         <Text style={styles.sectionLabel}>{t('addProduct.addWithAI')}</Text>
         <View style={styles.scanRow}>
+          {/* Camera photo recognition */}
           <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'product', lang })} activeOpacity={0.8}>
             <Ionicons name="camera" size={26} color={COLORS.primary} />
             <Text style={styles.scanBtnText}>{t('addProduct.photo')}</Text>
           </TouchableOpacity>
 
+          {/* Barcode details lookup */}
           <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'barcode', lang })} activeOpacity={0.8}>
             <Ionicons name="barcode" size={26} color={COLORS.primary} />
             <Text style={styles.scanBtnText}>{t('addProduct.barcode')}</Text>
           </TouchableOpacity>
 
+          {/* Receipt receipt OCR text extraction */}
           <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('Camera', { mode: 'receipt', lang })} activeOpacity={0.8}>
             <Ionicons name="receipt" size={26} color={COLORS.primary} />
             <Text style={styles.scanBtnText}>{t('addProduct.receipt')}</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Iterative rendering for each product form block */}
         {forms.map((form, index) => (
           <View key={index} style={styles.formCard}>
             <View style={styles.formHeader}>
@@ -264,6 +345,7 @@ export default function AddProductScreen({ navigation, route }) {
               )}
             </View>
 
+            {/* Product Image Section */}
             <View style={styles.imageSection}>
               <TouchableOpacity style={styles.imagePlaceholder} onPress={() => pickImage(index)} activeOpacity={0.8}>
                 {form.localImageUri ? (
@@ -277,6 +359,7 @@ export default function AddProductScreen({ navigation, route }) {
               </TouchableOpacity>
             </View>
 
+            {/* Name Input Field */}
             <View style={styles.section}>
               <Text style={styles.label}>{t('productDetail.nameLabel')}</Text>
               <TextInput
@@ -288,6 +371,7 @@ export default function AddProductScreen({ navigation, route }) {
               />
             </View>
 
+            {/* Quantity and Measurement Unit parameters */}
             <View style={styles.row}>
               <View style={[styles.section, { flex: 1 }]}>
                 <Text style={styles.label}>{t('productDetail.qtyLabel')}</Text>
@@ -309,6 +393,7 @@ export default function AddProductScreen({ navigation, route }) {
               </View>
             </View>
 
+            {/* Category selection dropdown picker */}
             <View style={styles.section}>
               <CustomPicker
                 label={t('productDetail.categoryLabel')}
@@ -318,6 +403,7 @@ export default function AddProductScreen({ navigation, route }) {
               />
             </View>
 
+            {/* Expiry Date selector */}
             <View style={styles.section}>
               <DatePicker
                 label={t('addProduct.expiryLabel')}
@@ -328,9 +414,11 @@ export default function AddProductScreen({ navigation, route }) {
               />
             </View>
 
+            {/* Nutritional properties: KBJU */}
             <View style={styles.section}>
               <Text style={styles.label}>{t('addProduct.macrosLabel')}</Text>
               <View style={styles.macroRow}>
+                {/* Proteins */}
                 <View style={styles.macroInputContainer}>
                   <TextInput
                     style={[styles.input, styles.macroInput]}
@@ -341,6 +429,7 @@ export default function AddProductScreen({ navigation, route }) {
                     placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                 </View>
+                {/* Fats */}
                 <View style={styles.macroInputContainer}>
                   <TextInput
                     style={[styles.input, styles.macroInput]}
@@ -351,6 +440,7 @@ export default function AddProductScreen({ navigation, route }) {
                     placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                 </View>
+                {/* Carbohydrates */}
                 <View style={styles.macroInputContainer}>
                   <TextInput
                     style={[styles.input, styles.macroInput]}
@@ -361,6 +451,7 @@ export default function AddProductScreen({ navigation, route }) {
                     placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                 </View>
+                {/* Calories (Read-only since automatically calculated) */}
                 <View style={styles.macroInputContainer}>
                   <TextInput
                     style={[styles.input, styles.macroInput, { backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7', opacity: 0.8 }]}
@@ -374,6 +465,7 @@ export default function AddProductScreen({ navigation, route }) {
               </View>
             </View>
 
+            {/* Optional text area notes */}
             <View style={styles.section}>
               <Text style={styles.label}>{t('addProduct.notesOptional')}</Text>
               <TextInput
@@ -390,11 +482,13 @@ export default function AddProductScreen({ navigation, route }) {
           </View>
         ))}
 
+        {/* Append more product templates button */}
         <TouchableOpacity style={styles.addMoreBtn} onPress={addEmptyForm} activeOpacity={0.8}>
           <Ionicons name="add-circle" size={24} color={COLORS.primary} />
           <Text style={styles.addMoreText}>{t('addProduct.addMore')}</Text>
         </TouchableOpacity>
 
+        {/* Submit action button */}
         <CustomButton
           title={`${t('common.save')} (${forms.length})`}
           onPress={handleSave}
@@ -406,6 +500,14 @@ export default function AddProductScreen({ navigation, route }) {
   );
 }
 
+/**
+ * Computes component styles dynamically based on the current theme and device safety boundaries.
+ * 
+ * @param {object} COLORS - Dynamic theme variables.
+ * @param {boolean} isDark - Dark theme flag.
+ * @param {object} insets - Safe screen padding boundaries.
+ * @returns {object} StyleSheet collection.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {

@@ -1,3 +1,9 @@
+/**
+ * @file DietSettingsScreen.js
+ * @description Screen for configuring dietary preferences (e.g. Vegetarian, Vegan, Pescatarian).
+ * Syncs the selection with the user profile on the backend to customize AI recommendations.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, StatusBar
@@ -9,6 +15,7 @@ import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
 
+// Available dietary preferences with localized translation keys
 const DIET_KEYS = [
   { id: 'none', titleKey: 'diets.noneTitle', descKey: 'diets.noneDesc' },
   { id: 'vegetarian', titleKey: 'diets.vegetarianTitle', descKey: 'diets.vegetarianDesc' },
@@ -17,24 +24,41 @@ const DIET_KEYS = [
   { id: 'flexitarian', titleKey: 'diets.flexitarianTitle', descKey: 'diets.flexitarianDesc' },
 ];
 
+/**
+ * DietSettingsScreen Component.
+ * Enables selecting a primary dietary lifestyle option.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation router.
+ */
 export default function DietSettingsScreen({ navigation }) {
   const { t } = useTranslation();
+
+  // Pull active user session and update actions
   const { user, updateProfile } = useAuthStore();
+
+  // Retrieve active theme colors
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
 
+  // Local states for chosen preference and loading status
   const [selectedDiet, setSelectedDiet] = useState('none');
   const [loading, setLoading] = useState(false);
 
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  // Load existing profile's dietary setting on mount/update
   useEffect(() => {
     if (user?.dietary_preference) {
       setSelectedDiet(user.dietary_preference);
     }
   }, [user]);
 
+  /**
+   * Submits selected diet preference to the user profile update API.
+   * If successful, prompts success alert and returns to settings.
+   */
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -58,6 +82,7 @@ export default function DietSettingsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Screen Title Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -66,10 +91,12 @@ export default function DietSettingsScreen({ navigation }) {
       </View>
 
       <View style={styles.content}>
+        {/* Instructive subtitle */}
         <Text style={styles.subtitle}>
           {t('settings.dietSubtitle', 'Це допоможе нам точніше аналізувати продукти та пропонувати релевантні рецепти.')}
         </Text>
 
+        {/* Scrollable list of dietary option cards */}
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           {DIET_KEYS.map((diet) => {
             const isSelected = selectedDiet === diet.id;
@@ -80,9 +107,12 @@ export default function DietSettingsScreen({ navigation }) {
                 onPress={() => setSelectedDiet(diet.id)}
                 activeOpacity={0.8}
               >
+                {/* Visual radio button indicator */}
                 <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
                   {isSelected && <View style={styles.radioDot} />}
                 </View>
+                
+                {/* Localized titles and explanations */}
                 <View style={styles.textContainer}>
                   <Text style={[styles.dietTitle, isSelected && styles.selectedDietTitle]}>
                     {t(diet.titleKey)}
@@ -95,6 +125,7 @@ export default function DietSettingsScreen({ navigation }) {
         </ScrollView>
       </View>
 
+      {/* Footer holding the save button */}
       <View style={styles.footer}>
         <CustomButton title={t('common.save', 'Зберегти')} onPress={handleSave} loading={loading} />
       </View>
@@ -102,6 +133,9 @@ export default function DietSettingsScreen({ navigation }) {
   );
 }
 
+/**
+ * Generates custom styles based on safe-area status parameters and theme colors.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,

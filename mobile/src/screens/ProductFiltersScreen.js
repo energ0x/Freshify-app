@@ -1,3 +1,10 @@
+/**
+ * @file ProductFiltersScreen.js
+ * @description Screen for configuring product filters and sorting preferences.
+ * Users can filter products by category and sort them by expiry date, alphabet, or quantity.
+ * Selected filters are returned to the calling Products screen via navigation parameters.
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, StatusBar
@@ -9,19 +16,37 @@ import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
+/**
+ * ProductFiltersScreen component.
+ * Allows users to choose a category filter and sorting configuration.
+ * 
+ * @param {object} props.navigation - React Navigation handle.
+ * @param {object} props.route - Navigation route parameters containing current filters and present categories.
+ */
 export default function ProductFiltersScreen({ navigation, route }) {
+  // Translation hook for multi-language string retrieval.
   const { t } = useTranslation();
+  // Theme hook to style buttons and container dynamically.
   const { colors: COLORS, theme } = useThemeStore();
+  // Retrieves safe area insets to handle notch and home indicator spacing.
   const insets = useSafeAreaInsets();
 
   const isDark = theme === 'dark';
 
+  // Extract initial filters and categories list passed via routing params.
   const { currentFilters, presentCategories = [] } = route.params || {};
 
+  // Local state initialized with current active filters.
   const [selectedCategoryId, setSelectedCategoryId] = useState(currentFilters?.selectedCategoryId ?? null);
   const [sortBy, setSortBy] = useState(currentFilters?.sortBy ?? null);
   const [sortDirection, setSortDirection] = useState(currentFilters?.sortDirection ?? 'asc');
 
+  /**
+   * Toggles the sort direction when pressing an already active sorting key.
+   * Otherwise, switches to the new sorting key with default ascending order.
+   * 
+   * @param {string} type - Sorting parameter ('expiry', 'alphabet', or 'quantity').
+   */
   const handleSortPress = (type) => {
     if (sortBy === type) {
       setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
@@ -31,6 +56,12 @@ export default function ProductFiltersScreen({ navigation, route }) {
     }
   };
 
+  /**
+   * Renders an arrow up/down icon next to the active sorting option.
+   * 
+   * @param {string} type - Sorting parameter to compare with active selection.
+   * @returns {React.Component|null} Ionicons component or null if not currently selected.
+   */
   const renderSortIcon = (type) => {
     if (sortBy !== type) return null;
     return (
@@ -43,6 +74,10 @@ export default function ProductFiltersScreen({ navigation, route }) {
     );
   };
 
+  /**
+   * Applies the current filter state and navigates back to the Products list screen.
+   * Uses merge: true to update parameters on the target screen.
+   */
   const handleApply = () => {
     navigation.navigate({
       name: 'Products',
@@ -51,12 +86,16 @@ export default function ProductFiltersScreen({ navigation, route }) {
     });
   };
 
+  /**
+   * Resets all filter and sorting states back to default (no category, no sort).
+   */
   const resetFilters = () => {
     setSelectedCategoryId(null);
     setSortBy(null);
     setSortDirection('asc');
   };
 
+  // Generate dynamic styles based on theme and safety notches.
   const styles = getStyles(COLORS, insets, isDark);
 
   return (
@@ -65,6 +104,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
 
       {/* ─── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
+        {/* Close Button to return back without applying modifications */}
         <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="close" size={28} color={COLORS.text} />
         </TouchableOpacity>
@@ -81,7 +121,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
           {t('home.filtersSubtitle', 'Налаштуйте відображення ваших продуктів')}
         </Text>
 
-        {/* ─── Категорії ────────────────────────────────────────────────────── */}
+        {/* ─── Category Selection Card ───────────────────────────────────────── */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <View style={styles.iconWrap}>
@@ -90,7 +130,9 @@ export default function ProductFiltersScreen({ navigation, route }) {
             <Text style={styles.sectionTitle}>{t('home.filterCategory', 'Категорія')}</Text>
           </View>
 
+          {/* List of categories styled as selection chips */}
           <View style={styles.chipContainer}>
+            {/* Default 'All' selection option */}
             <TouchableOpacity
               style={[styles.chip, selectedCategoryId === null ? styles.chipSelected : styles.chipUnselected]}
               onPress={() => setSelectedCategoryId(null)}
@@ -102,6 +144,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
               {selectedCategoryId === null && <Ionicons name="checkmark" size={16} color={COLORS.primary} style={{ marginLeft: 6 }} />}
             </TouchableOpacity>
 
+            {/* Render actual categories from products list */}
             {presentCategories.map(category => {
               const isSelected = selectedCategoryId === category.id;
               return (
@@ -121,7 +164,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* ─── Сортування ───────────────────────────────────────────────────── */}
+        {/* ─── Sort Selection Card ───────────────────────────────────────────── */}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <View style={styles.iconWrap}>
@@ -130,7 +173,9 @@ export default function ProductFiltersScreen({ navigation, route }) {
             <Text style={styles.sectionTitle}>{t('home.sortBy', 'Сортування')}</Text>
           </View>
 
+          {/* Chips for sorting criteria */}
           <View style={styles.chipContainer}>
+            {/* Sort by Expiry Date */}
             <TouchableOpacity
               style={[styles.chip, sortBy === 'expiry' ? styles.chipSelected : styles.chipUnselected]}
               onPress={() => handleSortPress('expiry')}
@@ -142,6 +187,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
               {renderSortIcon('expiry')}
             </TouchableOpacity>
 
+            {/* Sort by Name (Alphabetical) */}
             <TouchableOpacity
               style={[styles.chip, sortBy === 'alphabet' ? styles.chipSelected : styles.chipUnselected]}
               onPress={() => handleSortPress('alphabet')}
@@ -153,6 +199,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
               {renderSortIcon('alphabet')}
             </TouchableOpacity>
 
+            {/* Sort by Quantity */}
             <TouchableOpacity
               style={[styles.chip, sortBy === 'quantity' ? styles.chipSelected : styles.chipUnselected]}
               onPress={() => handleSortPress('quantity')}
@@ -168,8 +215,9 @@ export default function ProductFiltersScreen({ navigation, route }) {
 
       </ScrollView>
 
-      {/* ─── Footer ───────────────────────────────────────────────────────── */}
+      {/* ─── Bottom Action Buttons ────────────────────────────────────────── */}
       <View style={styles.footer}>
+        {/* Reset Filter State Button */}
         <CustomButton
           title={t('common.resetAll', 'Скинути')}
           variant="outline"
@@ -177,6 +225,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
           style={styles.resetButton}
           textStyle={{ color: COLORS.danger ?? '#FF3B30' }}
         />
+        {/* Apply Filters and Exit Screen Button */}
         <CustomButton
           title={t('common.apply', 'Застосувати')}
           onPress={handleApply}
@@ -187,6 +236,14 @@ export default function ProductFiltersScreen({ navigation, route }) {
   );
 }
 
+/**
+ * Computes component styles based on active colors, device notch, and dark status.
+ * 
+ * @param {object} COLORS - Color palette variables.
+ * @param {object} insets - Safe area dimensions.
+ * @param {boolean} isDark - Flag representing dark theme mode.
+ * @returns {object} StyleSheet layout.
+ */
 const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   container: {
     flex: 1,

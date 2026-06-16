@@ -1,3 +1,10 @@
+/**
+ * @file AllergensSettingsScreen.js
+ * @description Screen for configuring food allergens (e.g. Milk, Nuts, Gluten).
+ * Allows toggling predefined allergen chips and adding custom items.
+ * Cleans emojis before saving to backend profiles to enable accurate AI analysis.
+ */
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
@@ -10,18 +17,31 @@ import CustomButton from '../components/CustomButton';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 
+/**
+ * AllergensSettingsScreen Component.
+ * Enables setting up allergen alerts.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation router.
+ */
 export default function AllergensSettingsScreen({ navigation }) {
   const { t } = useTranslation();
+
+  // Load user details and profile updater from auth store
   const { user, updateProfile } = useAuthStore();
+
+  // Color tokens and active theme configuration
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
 
+  // memoize translated versions of standard allergen names
   const initialTranslatedAllergens = useMemo(() => [
     t('allergens.milk'), t('allergens.nuts'), t('allergens.eggs'),
     t('allergens.gluten'), t('allergens.fish'), t('allergens.seafood'),
     t('allergens.soy'), t('allergens.citrus'), t('allergens.honey')
   ], [t]);
 
+  // Local state for list of available allergens, selected ones, input field, and loader
   const [allergens, setAllergens] = useState(initialTranslatedAllergens);
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
@@ -30,6 +50,8 @@ export default function AllergensSettingsScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  // Parse existing profile's allergens on component load.
+  // Emojis/unicodes are stripped when comparing local localized text to backend data.
   useEffect(() => {
     if (user?.allergens) {
       const mappedSelected = user.allergens.map(backendAllergen => {
@@ -47,6 +69,11 @@ export default function AllergensSettingsScreen({ navigation }) {
     }
   }, [user, initialTranslatedAllergens]);
 
+  /**
+   * Toggles selection state of allergen chip.
+   * 
+   * @param {string} item - Allergen text.
+   */
   const toggleAllergen = (item) => {
     if (selected.includes(item)) {
       setSelected(selected.filter(i => i !== item));
@@ -55,6 +82,9 @@ export default function AllergensSettingsScreen({ navigation }) {
     }
   };
 
+  /**
+   * Validates and appends custom text allergen to active selections list.
+   */
   const addCustomAllergen = () => {
     const text = customInput.trim();
     if (!text) return;
@@ -69,6 +99,10 @@ export default function AllergensSettingsScreen({ navigation }) {
     setCustomInput('');
   };
 
+  /**
+   * Submits cleaned allergen lists to backend API.
+   * Unicode emojis are regex stripped so backend AI models can parse texts.
+   */
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -93,6 +127,7 @@ export default function AllergensSettingsScreen({ navigation }) {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Screen Title Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -101,10 +136,12 @@ export default function AllergensSettingsScreen({ navigation }) {
       </View>
 
       <View style={styles.content}>
+        {/* Instructive subtitle */}
         <Text style={styles.subtitle}>
           {t('allergens.description')}
         </Text>
 
+        {/* Custom allergen input row */}
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
@@ -120,6 +157,7 @@ export default function AllergensSettingsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Scrollable grid of allergen chips */}
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <View style={styles.grid}>
             {allergens.map((item) => {
@@ -132,6 +170,7 @@ export default function AllergensSettingsScreen({ navigation }) {
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{item}</Text>
+                  {/* Selected checkmark indicator */}
                   {isSelected && <Ionicons name="close-circle" size={18} color={COLORS.onPrimary} style={{ marginLeft: 6 }} />}
                 </TouchableOpacity>
               );
@@ -140,6 +179,7 @@ export default function AllergensSettingsScreen({ navigation }) {
         </ScrollView>
       </View>
 
+      {/* Footer holding the save button */}
       <View style={styles.footer}>
         <CustomButton title={t('common.save')} onPress={handleSave} loading={loading} />
       </View>
@@ -147,6 +187,9 @@ export default function AllergensSettingsScreen({ navigation }) {
   );
 }
 
+/**
+ * Returns dynamic stylesheet configuration based on active theme colors and safe-area notch heights.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,

@@ -1,3 +1,10 @@
+/**
+ * @file PremiumScreen.js
+ * @description Screen detailing Premium features and pricing options.
+ * Initiates the subscription process: calls the backend premium activation endpoint,
+ * opens a payment link (Monobank jar), and notifies the user upon successful activation.
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -9,12 +16,21 @@ import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import { authAPI } from '../services/api';
 
+/**
+ * PremiumScreen component.
+ * Allows users to choose a plan and subscribe.
+ * 
+ * @param {object} props.navigation - React Navigation handle.
+ */
 export default function PremiumScreen({ navigation }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
+  
+  // Local state for the selected plan option. Defaulting to yearly.
   const [selectedPlan, setSelectedPlan] = useState('yearly');
 
+  // Hardcoded key properties for premium benefit items.
   const PREMIUM_FEATURES = [
     { id: 1, title: t('premium.f1_title'), desc: t('premium.f1_desc'), icon: 'infinite', color: '#3498DB' },
     { id: 2, title: t('premium.f2_title'), desc: t('premium.f2_desc'), icon: 'restaurant', color: '#E67E22' },
@@ -22,12 +38,18 @@ export default function PremiumScreen({ navigation }) {
     { id: 4, title: t('premium.f4_title'), desc: t('premium.f4_desc'), icon: 'star', color: '#F1C40F' },
   ];
 
+  /**
+   * Orchestrates the subscription sequence:
+   * 1. Calls API to change premium state on the backend database.
+   * 2. Opens the Monobank payment link in an external web browser.
+   * 3. Displays success confirmation dialogue and routes user back.
+   */
   const handleSubscribe = async () => {
     try {
-      // 1. Активація преміуму на бекенді
+      // 1. Activate premium in backend store
       await authAPI.activatePremium();
 
-      // 2. Відкриття посилання
+      // 2. Open payment gateway URL externally
       const url = 'https://send.monobank.ua/4abA62Fckj';
       const supported = await Linking.canOpenURL(url);
 
@@ -37,7 +59,7 @@ export default function PremiumScreen({ navigation }) {
         console.error("Don't know how to open this URL: " + url);
       }
 
-      // 3. Показ повідомлення про успіх
+      // 3. Inform the user of successful subscription
       Alert.alert(
         t('premium.successTitle'),
         t('premium.successMsg'),
@@ -53,6 +75,7 @@ export default function PremiumScreen({ navigation }) {
   };
 
   const isDark = theme === 'dark';
+  // Decide hero section color based on active dark theme configuration
   const heroBg = isDark ? COLORS.primaryContainer : COLORS.primary;
 
   const styles = getStyles(COLORS, insets, isDark, heroBg);
@@ -63,10 +86,13 @@ export default function PremiumScreen({ navigation }) {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
+        {/* Hero Banner header featuring branding decoration */}
         <View style={styles.heroSection}>
+          {/* Circular vector layout ornaments */}
           <View style={styles.bCircle1} />
           <View style={styles.bCircle2} />
 
+          {/* Close button to return back to settings / profile */}
           <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
             <Ionicons name="close" size={26} color="#FFF" />
           </TouchableOpacity>
@@ -81,6 +107,7 @@ export default function PremiumScreen({ navigation }) {
           </Text>
         </View>
 
+        {/* Benefits list section */}
         <View style={styles.featuresSection}>
           <Text style={styles.sectionLabel}>{t('premium.featuresTitle')}</Text>
           {PREMIUM_FEATURES.map(feature => (
@@ -96,9 +123,11 @@ export default function PremiumScreen({ navigation }) {
           ))}
         </View>
 
+        {/* Plan configuration choices */}
         <View style={styles.plansSection}>
           <Text style={styles.sectionLabel}>{t('premium.choosePlan')}</Text>
 
+          {/* Monthly plan option */}
           <TouchableOpacity
             style={[
               styles.planCard,
@@ -121,6 +150,7 @@ export default function PremiumScreen({ navigation }) {
             </View>
           </TouchableOpacity>
 
+          {/* Yearly plan option */}
           <TouchableOpacity
             style={[
               styles.planCard,
@@ -129,6 +159,7 @@ export default function PremiumScreen({ navigation }) {
             onPress={() => setSelectedPlan('yearly')}
             activeOpacity={0.8}
           >
+            {/* Promo banner highlighting the best deal */}
             <View style={styles.badgeContainer}>
               <Text style={styles.badgeText}>{t('premium.bestValue')}</Text>
             </View>
@@ -148,6 +179,7 @@ export default function PremiumScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Subscribe confirmation button and legal disclaimer */}
         <View style={styles.actionSection}>
           <TouchableOpacity style={styles.subscribeBtn} onPress={handleSubscribe} activeOpacity={0.85}>
             <Text style={styles.subscribeBtnText}>
@@ -163,6 +195,15 @@ export default function PremiumScreen({ navigation }) {
   );
 }
 
+/**
+ * Generates component styling based on theme variables and device notches.
+ * 
+ * @param {object} COLORS - Style guide colors.
+ * @param {object} insets - Safe screen padding boundaries.
+ * @param {boolean} isDark - Active dark status.
+ * @param {string} heroBg - Decided brand background color.
+ * @returns {object} StyleSheet layout.
+ */
 const getStyles = (COLORS, insets, isDark, heroBg) => StyleSheet.create({
   container: {
     flex: 1,

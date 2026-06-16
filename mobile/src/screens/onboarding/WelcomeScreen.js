@@ -1,3 +1,10 @@
+/**
+ * @file WelcomeScreen.js
+ * @description The first screen in the onboarding sequence.
+ * Greets the user and collects their name, updating their profile details
+ * via the authentication store before routing them to the diet preferences screen.
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Alert,
@@ -8,6 +15,13 @@ import CustomButton from '../../components/CustomButton';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 
+/**
+ * WelcomeScreen onboarding initialization step.
+ * 
+ * @param {Object} props
+ * @param {Object} props.navigation - React Navigation helper.
+ * @returns {React.ReactElement} WelcomeScreen component.
+ */
 export default function WelcomeScreen({ navigation }) {
   const { t } = useTranslation();
   const { updateProfile } = useAuthStore();
@@ -19,6 +33,10 @@ export default function WelcomeScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark);
 
+  /**
+   * Action handler triggered when the user submits their name.
+   * Validates input length and updates user details in profile state.
+   */
   const handleNext = async () => {
     if (!name.trim()) {
       return Alert.alert(t('common.error'), t('welcome.emptyNameError'));
@@ -42,14 +60,17 @@ export default function WelcomeScreen({ navigation }) {
     >
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
 
+      {/* Dismiss the active software keyboard when user touches outside form inputs */}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.inner}>
 
+          {/* Heading area presenting welcome prompts */}
           <View style={styles.header}>
             <Text style={styles.subtitle}>{t('welcome.subtitle')} 🌱</Text>
             <Text style={styles.title}>{t('welcome.title')}</Text>
           </View>
 
+          {/* User name text input form */}
           <View style={styles.form}>
             <TextInput
               style={styles.input}
@@ -63,6 +84,7 @@ export default function WelcomeScreen({ navigation }) {
             />
           </View>
 
+          {/* Action trigger button */}
           <View style={styles.actions}>
             <CustomButton
               title={isSubmitting ? t('welcome.saving') : t('common.next')}
@@ -78,6 +100,13 @@ export default function WelcomeScreen({ navigation }) {
   );
 }
 
+/**
+ * Creates dynamic styles corresponding to device metrics, safe zone margins, and theme palette.
+ * 
+ * @param {Object} COLORS - Theme palette colors.
+ * @param {boolean} isDark - Active theme setting status.
+ * @returns {Object} React Native StyleSheet styles object.
+ */
 const getStyles = (COLORS, isDark) => StyleSheet.create({
   container: {
     flex: 1,

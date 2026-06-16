@@ -1,3 +1,10 @@
+/**
+ * @file ProductDetailScreen.js
+ * @description Detailed view screen for a specific food product.
+ * Displays expiration alerts, notes, and quantities.
+ * Enables editing details, consuming a specific amount, or deleting the item.
+ */
+
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, Alert, ScrollView, Modal,
@@ -14,20 +21,35 @@ import { API_URL } from '../utils/constants';
 import { getExpiryLabel, getExpiryColor, formatDate } from '../utils/dateHelpers';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
+/**
+ * ProductDetailScreen Component.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.route - Route holding targeted productId param.
+ * @param {Object} props.navigation - Navigation handler.
+ */
 export default function ProductDetailScreen({ route, navigation }) {
   const { t } = useTranslation();
   const { productId } = route.params;
+
+  // Retrieve products list and operation functions from Zustand store
   const { products, deleteProduct, consumeProduct } = useProductStore();
+
+  // Retrieve theme parameters
   const { colors: COLORS, theme } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
 
   const isDark = theme === 'dark';
+  
+  // Find targeted product details from active store lists
   const product = products.find(p => p.id === productId);
 
+  // Consume dialog overlay states
   const [consumeModalVisible, setConsumeModalVisible] = useState(false);
   const [consumeAmount, setConsumeAmount] = useState('');
 
+  // Fallback screen configuration if the targeted product is not found
   if (!product) {
     const styles = getStyles(COLORS, insets, null, isDark);
     return (
@@ -46,9 +68,14 @@ export default function ProductDetailScreen({ route, navigation }) {
     );
   }
 
+  // Calculate dynamic colors based on date urgency limits
   const expiryColor = getExpiryColor(product.expiry_date, COLORS);
   const styles = getStyles(COLORS, insets, expiryColor, isDark);
 
+  /**
+   * Prompts user with delete confirmation warning alert.
+   * On confirmation, deletes the item and routes back to inventory list.
+   */
   const handleDelete = () => {
     Alert.alert(t('productDetail.deleteConfirmTitle'), t('productDetail.deleteConfirmMsg'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -64,12 +91,20 @@ export default function ProductDetailScreen({ route, navigation }) {
     ]);
   };
 
+  /**
+   * Opens the consume modal dialog.
+   * Auto-populates standard values (defaults to 1 or total remaining quantity).
+   */
   const openConsumeModal = () => {
     const defaultAmount = product.quantity >= 1 ? '1' : product.quantity.toString();
     setConsumeAmount(defaultAmount);
     setConsumeModalVisible(true);
   };
 
+  /**
+   * Submits chosen consumption quantities.
+   * Verifies remaining stock availability and redirects to list if fully consumed.
+   */
   const submitConsume = async () => {
     const amount = Number(consumeAmount.replace(',', '.'));
     if (!amount || isNaN(amount) || amount <= 0) {
@@ -86,6 +121,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     if (res.success) {
       setConsumeModalVisible(false);
       Alert.alert(t('common.success'), t('productDetail.consumeSuccessMsg'));
+      // Route user back if no stock is left
       if (product.quantity - amount <= 0) {
         navigation.goBack();
       }
@@ -100,6 +136,7 @@ export default function ProductDetailScreen({ route, navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Screen Title Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -109,6 +146,7 @@ export default function ProductDetailScreen({ route, navigation }) {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
+          {/* Display product photo if available */}
           {product.image_url && (
             <Image
                source={{ uri: product.image_url.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}` }}
@@ -116,6 +154,7 @@ export default function ProductDetailScreen({ route, navigation }) {
             />
           )}
 
+          {/* Name and CategoryBadge row */}
           <View style={styles.headerRow}>
             <View style={styles.titleContainer}>
               <Text style={styles.name}>{product.name}</Text>
@@ -123,11 +162,14 @@ export default function ProductDetailScreen({ route, navigation }) {
                 <Text style={styles.category}>{categoryName || t('productDetail.noCategory')}</Text>
               </View>
             </View>
+            
+            {/* Edit button */}
             <TouchableOpacity onPress={() => navigation.navigate('EditProduct', { productId: product.id })} style={styles.editIconBtn} activeOpacity={0.8}>
               <Ionicons name="pencil" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
+          {/* Information widgets grid (quantity vs expiry alerts) */}
           <View style={styles.infoGrid}>
              <View style={styles.infoCard}>
                 <Ionicons name="scale" size={32} color={COLORS.primary} />
@@ -143,6 +185,7 @@ export default function ProductDetailScreen({ route, navigation }) {
              </View>
           </View>
 
+          {/* Render notes if added */}
           {product.notes ? (
             <View style={styles.notesContainer}>
               <View style={styles.notesHeader}>
@@ -154,6 +197,7 @@ export default function ProductDetailScreen({ route, navigation }) {
           ) : null}
         </View>
 
+        {/* Action button triggers */}
         <View style={styles.actions}>
           <CustomButton
             title={t('productDetail.consumeBtn')}
@@ -174,7 +218,7 @@ export default function ProductDetailScreen({ route, navigation }) {
         </View>
       </ScrollView>
 
-      {/* Consume Modal */}
+      {/* Consume Modal overlay configuration */}
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.consumeModalOverlay}>
           <View style={styles.consumeModalContent}>
@@ -203,6 +247,9 @@ export default function ProductDetailScreen({ route, navigation }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
   container: {
     flex: 1,
@@ -221,7 +268,7 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ─── Header ────────────────────────────────────────────────────────────────
+  // ─── Header Styling ────────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -246,17 +293,16 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     letterSpacing: 0.5,
   },
   backButton: {
-    // Стилі для кнопки "назад"
   },
 
-  // ─── Content ───────────────────────────────────────────────────────────────
+  // ─── Content Styling ───────────────────────────────────────────────────────
   content: {
     padding: 20,
     paddingTop: 24,
     paddingBottom: (insets?.bottom || 20) + 40
   },
 
-  // ─── Main Card ─────────────────────────────────────────────────────────────
+  // ─── Main Card Styling ─────────────────────────────────────────────────────
   card: {
     backgroundColor: COLORS.surface,
     borderRadius: 24,
@@ -314,7 +360,7 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     alignItems: 'center',
   },
 
-  // ─── Info Grid ─────────────────────────────────────────────────────────────
+  // ─── Info Grid Styling ─────────────────────────────────────────────────────
   infoGrid: {
     flexDirection: 'row',
     gap: 16,
@@ -350,7 +396,7 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     marginTop: 4
   },
 
-  // ─── Notes ─────────────────────────────────────────────────────────────────
+  // ─── Notes Styling ─────────────────────────────────────────────────────────
   notesContainer: {
     backgroundColor: COLORS.surfaceVariant,
     padding: 20,
@@ -376,7 +422,7 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     fontWeight: '500'
   },
 
-  // ─── Actions ───────────────────────────────────────────────────────────────
+  // ─── Actions Styling ───────────────────────────────────────────────────────
   actions: {
     gap: 16
   },
@@ -394,7 +440,7 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     borderWidth: 1.5
   },
 
-  // ─── Consume Modal ─────────────────────────────────────────────────────────
+  // ─── Consume Modal Styling ─────────────────────────────────────────────────
   consumeModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

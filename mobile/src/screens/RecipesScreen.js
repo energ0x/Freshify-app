@@ -1,3 +1,10 @@
+/**
+ * @file RecipesScreen.js
+ * @description Screen for generating cooking recipes using Gemini AI based on items in stock.
+ * Connects to a backend WebSocket to stream AI recipe content, supports saving/loading 
+ * recipes to/from AsyncStorage, and toggle switches to include grocery items in the search.
+ */
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
@@ -14,23 +21,38 @@ import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import RecipeCard from '../components/RecipeCard';
 
+// Key used to store generated recipes locally in device storage
 const RECIPES_STORAGE_KEY = 'generated_recipes';
 
+/**
+ * RecipesScreen Component.
+ * Enables generating cooking suggestions based on active user inventory.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation router.
+ */
 export default function RecipesScreen({ navigation }) {
   const { t, i18n } = useTranslation();
+
+  // Screen states
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
   const [recipes, setRecipes] = useState([]);
 
+  // Theme configuration details
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
 
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, insets, isDark);
 
+  // Animation and WS reference trackers
   const animation = useRef(new Animated.Value(0)).current;
   const wsRef = useRef(null);
 
+  /**
+   * Loads cached recipes from AsyncStorage.
+   */
   const loadRecipesFromStorage = async () => {
     try {
       const storedRecipes = await AsyncStorage.getItem(RECIPES_STORAGE_KEY);
@@ -42,6 +64,7 @@ export default function RecipesScreen({ navigation }) {
     }
   };
 
+  // Sync recipes list from storage on focus
   useFocusEffect(
     useCallback(() => {
       if (recipes.length === 0) {
@@ -50,6 +73,7 @@ export default function RecipesScreen({ navigation }) {
     }, [recipes.length])
   );
 
+  // Close active WebSockets on component unmount
   useEffect(() => {
     return () => {
       if (wsRef.current) {
@@ -58,6 +82,11 @@ export default function RecipesScreen({ navigation }) {
     };
   }, []);
 
+  /**
+   * Starts connection to backend recipes generation WebSocket endpoint.
+   * If already active, closes the connection.
+   * Clears old cache and parses streamed chunks split by standard delimiter '---'.
+   */
   const handleGenerateRecipes = async () => {
     if (loading) {
       if (wsRef.current) {
@@ -68,14 +97,18 @@ export default function RecipesScreen({ navigation }) {
 
     setLoading(true);
     setRecipes([]);
+    
+    // Rotate the loader icon
     Animated.timing(animation, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
     try {
+      // Clear older cached recipe recommendations
       await AsyncStorage.removeItem(RECIPES_STORAGE_KEY);
+      
       const token = await SecureStore.getItemAsync('auth_token');
-      // Отримуємо мову
       const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
 
+      // Parse and construct standard websocket endpoint schemas
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) {
          wsUrl = wsUrl.replace('localhost', '10.0.2.2');
@@ -83,18 +116,20 @@ export default function RecipesScreen({ navigation }) {
          wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
       }
 
-      // Додаємо параметр lang до запиту
+      // Initialize the WebSocket connection
       const ws = new WebSocket(`${wsUrl}/recipes/ws/generate?include_grocery=${includeGrocery}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
       let messageBuffer = '';
 
+      // Append incoming stream frames and split by divider to identify recipes
       ws.onmessage = (event) => {
         messageBuffer += event.data;
         const newRecipes = messageBuffer.split('---').filter(r => r.trim() !== '');
         setRecipes(newRecipes);
       };
 
+      // Handle websocket termination events. Cache results on closing.
       ws.onclose = async () => {
         setLoading(false);
         Animated.timing(animation, { toValue: 0, duration: 300, useNativeDriver: true }).start();
@@ -123,6 +158,7 @@ export default function RecipesScreen({ navigation }) {
     }
   };
 
+  // Interpolate rotation transitions
   const rotateInterpolate = animation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg']
@@ -136,7 +172,7 @@ export default function RecipesScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
 
-      {/* ── Консистентний Header ── */}
+      {/* Screen Title Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
@@ -145,6 +181,7 @@ export default function RecipesScreen({ navigation }) {
           <Text style={styles.headerTitle}>{t('recipes.title')}</Text>
         </View>
 
+        {/* Configurations and Generate Button */}
         <View style={styles.controls}>
           <View style={styles.switchContainer}>
             <Text style={styles.switchLabel}>{t('recipes.includeGrocery')}</Text>
@@ -173,17 +210,21 @@ export default function RecipesScreen({ navigation }) {
         </View>
       </View>
 
+      {/* Main recipe card scrolls */}
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading && recipes.length === 0 ? (
+          // Center screen spinner while starting generation
           <View style={styles.center}>
             <ActivityIndicator size="large" color={COLORS.primary} />
             <Text style={styles.loadingText}>{t('recipes.loading')}</Text>
           </View>
         ) : recipes.length > 0 ? (
+           // Render streamed recipe cards
            recipes.map((recipeContent, index) => (
              <RecipeCard key={index} content={recipeContent} />
            ))
         ) : (
+          // Renders default empty list screens
           <View style={styles.empty}>
             <View style={styles.emptyIconContainer}>
               <Ionicons name="restaurant-outline" size={48} color={COLORS.primary} />
@@ -197,13 +238,16 @@ export default function RecipesScreen({ navigation }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background
   },
 
-  // ─── Header ────────────────────────────────────────────────────────────────
+  // ─── Header Styling ────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -235,7 +279,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     marginTop: 12,
   },
 
-  // ─── Controls ──────────────────────────────────────────────────────────────
+  // ─── Controls Styling ──────────────────────────────────────────────────────
   controls: {
     gap: 16
   },
@@ -262,7 +306,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     shadowRadius: 8
   },
 
-  // ─── List & States ─────────────────────────────────────────────────────────
+  // ─── List & States Styling ─────────────────────────────────────────────────
   scrollContent: {
     flexGrow: 1,
     padding: 20,
@@ -280,7 +324,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     fontWeight: '500'
   },
 
-  // ─── Empty state ───────────────────────────────────────────────────────────
+  // ─── Empty State Styling ───────────────────────────────────────────────────
   empty: {
     flex: 1,
     alignItems: 'center',

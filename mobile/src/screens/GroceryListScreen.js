@@ -1,3 +1,10 @@
+/**
+ * @file GroceryListScreen.js
+ * @description Screen for managing the user's grocery shopping list.
+ * Supports manual entries, checking/unchecking items, swipe-to-delete with Undo snackbars,
+ * and automatic synchronization of low-stock items from the fridge/pantry inventory.
+ */
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
@@ -12,13 +19,30 @@ import { useTranslation } from 'react-i18next';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 
+// Enable layout animations on Android for smooth UI transitions (e.g. checkbox state alterations)
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+/**
+ * GroceryListScreen Component.
+ * Visualizes shopping lists and handles low stock detection.
+ */
 export default function GroceryListScreen() {
   const { t } = useTranslation();
-  const { groceryItems, fetchGrocery, addGroceryItem, toggleGroceryItem, deleteGroceryItem, addFromFridge, products } = useProductStore();
+
+  // Pull grocery context actions and items from the product store
+  const { 
+    groceryItems, 
+    fetchGrocery, 
+    addGroceryItem, 
+    toggleGroceryItem, 
+    deleteGroceryItem, 
+    addFromFridge, 
+    products 
+  } = useProductStore();
+
+  // Theme styling helpers
   const { colors: COLORS, theme } = useThemeStore();
   const [newItemName, setNewItemName] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -26,19 +50,27 @@ export default function GroceryListScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const styles = getStyles(COLORS, insets, tabBarHeight);
 
+  // Deletion undo scheduling reference states
   const [pendingDelete, setPendingDelete] = useState(null);
   const deleteTimeoutRef = useRef(null);
 
+  /**
+   * Fetches current grocery items from store/API database.
+   */
   const loadData = useCallback(async () => {
     setRefreshing(true);
     await fetchGrocery();
     setRefreshing(false);
   }, [fetchGrocery]);
 
+  // Load groceries list on mount
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  /**
+   * Triggers layout animation transitions for list modifications.
+   */
   const animateList = () => {
     LayoutAnimation.configureNext({
       duration: 300,
@@ -48,12 +80,25 @@ export default function GroceryListScreen() {
     });
   };
 
+  /**
+   * Appends manual text entry to grocery item list.
+   */
   const handleAddItem = async () => {
     if (!newItemName.trim()) return;
-    const res = await addGroceryItem({ name: newItemName.trim(), quantity: 1, unit: t('grocery.defaultUnit') });
+    
+    // Add default unit (e.g., pcs) alongside manual entries
+    const res = await addGroceryItem({ 
+      name: newItemName.trim(), 
+      quantity: 1, 
+      unit: t('grocery.defaultUnit') 
+    });
     if (res.success) setNewItemName('');
   };
 
+  /**
+   * Scans current active pantry inventory and adds items that fall below 
+   * threshold (quantity < 2) automatically to the shopping list.
+   */
   const handleAddLowStock = async () => {
     const lowStockIds = products.filter(p => p.quantity < 2).map(p => p.id);
 
@@ -68,6 +113,12 @@ export default function GroceryListScreen() {
     }
   };
 
+  /**
+   * Schedules deletion with a 4-second timeout during which the user can press "Undo".
+   * Finalizes previous deletion instantly if another delete is triggered.
+   * 
+   * @param {Object} item - Grocery item to delete.
+   */
   const handleDeleteTrigger = (item) => {
     if (pendingDelete) {
       deleteGroceryItem(pendingDelete.id);
@@ -81,21 +132,33 @@ export default function GroceryListScreen() {
     }, 4000);
   };
 
+  /**
+   * Restores scheduled item deletion back to active grocery list.
+   */
   const handleUndoDelete = () => {
     clearTimeout(deleteTimeoutRef.current);
     animateList();
     setPendingDelete(null);
   };
 
+  /**
+   * Checks items as purchased when swiped left.
+   */
   const handleBuyTrigger = (item) => {
     toggleGroceryItem(item.id, true);
   };
 
+  // Exclude pending-delete items from active rendering list
   const visibleGroceryItems = groceryItems.filter(i => i.id !== pendingDelete?.id);
 
+  /**
+   * Swipeable wrapper component for each shopping list item.
+   * Implements left swipe for "Purchased" toggle, and right swipe for "Delete".
+   */
   const SwipeableGroceryItem = ({ item }) => {
     const swipeableRef = useRef(null);
 
+    // Left swipe action rendering (Mark as Purchased)
     const renderLeftActions = (progress, dragX) => {
       const opacity = dragX.interpolate({
         inputRange: [0, 20],
@@ -110,6 +173,7 @@ export default function GroceryListScreen() {
       );
     };
 
+    // Right swipe action rendering (Remove from list)
     const renderRightActions = (progress, dragX) => {
       const opacity = dragX.interpolate({
         inputRange: [-20, 0],
@@ -146,6 +210,7 @@ export default function GroceryListScreen() {
             onPress={() => toggleGroceryItem(item.id, !item.is_purchased)}
             activeOpacity={0.8}
           >
+            {/* Visual checkbox and crossed text depending on purchased status */}
             <Ionicons
               name={item.is_purchased ? "checkmark-circle" : "ellipse-outline"}
               size={28}
@@ -164,6 +229,7 @@ export default function GroceryListScreen() {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
 
+      {/* Input panel and quick actions */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('grocery.title')}</Text>
 
@@ -197,12 +263,14 @@ export default function GroceryListScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Sync low-stock button helper */}
         <TouchableOpacity style={styles.autoAddBtn} onPress={handleAddLowStock} activeOpacity={0.8}>
           <Ionicons name="sync-outline" size={20} color={COLORS.onPrimaryContainer} />
           <Text style={styles.autoAddText}>{t('grocery.addLowStock')}</Text>
         </TouchableOpacity>
       </View>
 
+      {/* Primary FlatList */}
       <FlatList
         data={visibleGroceryItems}
         keyExtractor={item => item.id}
@@ -221,6 +289,7 @@ export default function GroceryListScreen() {
         }
       />
 
+      {/* Undo deletion alert banner */}
       {pendingDelete && (
         <View style={styles.snackbar}>
           <Text style={styles.snackbarText}>{t('grocery.itemDeleted')}</Text>
@@ -233,13 +302,16 @@ export default function GroceryListScreen() {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
 
-  // ─── Header ────────────────────────────────────────────────────────────────
+  // ─── Header Styling ────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -315,7 +387,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ─── List ──────────────────────────────────────────────────────────────────
+  // ─── List Styling ──────────────────────────────────────────────────────────
   list: {
     padding: 20,
     paddingBottom: tabBarHeight + 40,
@@ -357,7 +429,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ─── Empty state ───────────────────────────────────────────────────────────
+  // ─── Empty State Styling ───────────────────────────────────────────────────
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -387,7 +459,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     lineHeight: 24,
   },
 
-  // ─── Swipe actions ─────────────────────────────────────────────────────────
+  // ─── Swipe Actions Styling ─────────────────────────────────────────────────
   swipeAction: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -406,7 +478,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     marginTop: 6,
   },
 
-  // ─── Snackbar ──────────────────────────────────────────────────────────────
+  // ─── Snackbar Styling ──────────────────────────────────────────────────────
   snackbar: {
     position: 'absolute',
     bottom: tabBarHeight + 20,

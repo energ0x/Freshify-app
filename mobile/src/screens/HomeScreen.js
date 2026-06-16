@@ -1,3 +1,10 @@
+/**
+ * @file HomeScreen.js
+ * @description Main dashboard screen of the app displaying lists of user products/food items.
+ * Supports searching, category filtering, sorting, swipe-to-delete (with undo/snackbar),
+ * swipe-to-consume (with exact quantity input modal), and navigation to recipes.
+ */
+
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, TextInput,
@@ -15,33 +22,60 @@ import CustomButton from '../components/CustomButton';
 import { useTranslation } from 'react-i18next';
 import { getDaysUntilExpiry } from '../utils/dateHelpers';
 
+// Enable layout animations on Android for smooth UI transitions (e.g. list updates)
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+/**
+ * HomeScreen Component.
+ * 
+ * Displays the user's pantry/fridge inventory.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation handler.
+ * @param {Object} props.route - Route payload containing potential filter parameters.
+ */
 export default function HomeScreen({ navigation, route }) {
+  // Localization helper
   const { t } = useTranslation();
+
+  // Load state and operations from the product inventory store
   const { products, fetchProducts, deleteProduct, consumeProduct } = useProductStore();
+
+  // Load color tokens and active theme configuration
   const { colors: COLORS, theme } = useThemeStore();
+
+  // Layout geometry helpers
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
+  // Retrieve styled component stylesheet dynamically
   const styles = getStyles(COLORS, insets, theme, tabBarHeight);
 
+  // Search input state
   const [search, setSearch] = useState('');
+
+  // Flag indicating manual pull-to-refresh execution
   const [refreshing, setRefreshing] = useState(false);
 
+  // Category and sorting states
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [sortBy, setSortBy] = useState(null);
   const [sortDirection, setSortDirection] = useState('asc');
 
+  // Temporary container for item scheduled for deletion, enabling an Undo period
   const [pendingDelete, setPendingDelete] = useState(null);
+
+  // Ref tracking the delayed execution of final deletion
   const deleteTimeoutRef = useRef(null);
 
+  // Consumption workflow states
   const [consumeModalVisible, setConsumeModalVisible] = useState(false);
   const [productToConsume, setProductToConsume] = useState(null);
   const [consumeAmount, setConsumeAmount] = useState('');
 
+  // Listen for filter parameters sent back from the Filter Screen
   useEffect(() => {
     if (route?.params?.appliedFilters) {
       const { selectedCategoryId: catId, sortBy: sort, sortDirection: dir } = route.params.appliedFilters;
@@ -51,16 +85,23 @@ export default function HomeScreen({ navigation, route }) {
     }
   }, [route?.params?.appliedFilters]);
 
+  /**
+   * Fetches product inventory from backend and controls refreshing state.
+   */
   const loadData = useCallback(async () => {
     setRefreshing(true);
     await fetchProducts();
     setRefreshing(false);
   }, [fetchProducts]);
 
+  // Execute initial data load on component mount
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  /**
+   * Resets active category filters, search input, and sorting defaults.
+   */
   const resetFilters = () => {
     setSelectedCategoryId(null);
     setSortBy(null);
@@ -68,8 +109,12 @@ export default function HomeScreen({ navigation, route }) {
     setSearch('');
   };
 
+  // Check if any filtering or sorting options are active
   const isFilterActive = selectedCategoryId !== null || sortBy !== null || search !== '';
 
+  /**
+   * Dynamically extracts categories that are present in the loaded product list.
+   */
   const presentCategories = useMemo(() => {
     const seen = new Set();
     const result = [];
@@ -82,12 +127,16 @@ export default function HomeScreen({ navigation, route }) {
     return result;
   }, [products]);
 
+  // If a category filter is selected, but is no longer present in inventory, clear the selection
   useEffect(() => {
     if (selectedCategoryId && !presentCategories.some(c => c.id === selectedCategoryId)) {
       setSelectedCategoryId(null);
     }
   }, [presentCategories, selectedCategoryId]);
 
+  /**
+   * Configures and triggers layout animations for list deletions and additions.
+   */
   const animateList = () => {
     LayoutAnimation.configureNext({
       duration: 300,
@@ -97,6 +146,13 @@ export default function HomeScreen({ navigation, route }) {
     });
   };
 
+  /**
+   * Initiates the deletion process. First schedules deletion with a 4-second timeout
+   * during which the user can press "Undo". If another delete is triggered before,
+   * it finalizes the previous one instantly.
+   * 
+   * @param {Object} item - Product item to delete.
+   */
   const handleDeleteTrigger = (item) => {
     if (pendingDelete) {
       deleteProduct(pendingDelete.id);
@@ -110,12 +166,22 @@ export default function HomeScreen({ navigation, route }) {
     }, 4000);
   };
 
+  /**
+   * Cancels the scheduled deletion and restores the item to the active inventory view.
+   */
   const handleUndoDelete = () => {
     clearTimeout(deleteTimeoutRef.current);
     animateList();
     setPendingDelete(null);
   };
 
+  /**
+   * Triggers the consumption workflow. 
+   * If quantity is 1 or less, consumes immediately. Otherwise, opens a modal
+   * for the user to input the exact amount consumed.
+   * 
+   * @param {Object} item - Product item to consume.
+   */
   const handleConsumeTrigger = async (item) => {
     const qty = Number(item.quantity);
     if (qty <= 1) {
@@ -127,6 +193,10 @@ export default function HomeScreen({ navigation, route }) {
     }
   };
 
+  /**
+   * Submits the chosen consumption quantity to the backend/store.
+   * Validates that quantity is non-zero, positive, and does not exceed available stock.
+   */
   const submitConsume = async () => {
     const amount = Number(consumeAmount.replace(',', '.'));
     if (!amount || isNaN(amount) || amount <= 0) {
@@ -142,6 +212,10 @@ export default function HomeScreen({ navigation, route }) {
     setConsumeAmount('');
   };
 
+  /**
+   * Filters and sorts the list of products based on search term, active categories, 
+   * and sort parameters. Excludes any item that is in the pending delete state.
+   */
   const filteredAndSortedProducts = products
     .filter(p => p.id !== pendingDelete?.id)
     .filter(p => {
@@ -164,14 +238,25 @@ export default function HomeScreen({ navigation, route }) {
       return sortDirection === 'asc' ? comparison : -comparison;
     });
 
+  /**
+   * Helper function to render visual indicators for sorting directions.
+   * 
+   * @param {string} type - Sorting mode ('alphabet', 'expiry', 'quantity')
+   * @returns {string|null} String indicating sorting order direction, or null.
+   */
   const renderSortArrow = (type) => {
     if (sortBy !== type) return null;
     return sortDirection === 'asc' ? ' ↑' : ' ↓';
   };
 
+  /**
+   * Custom Swipeable wrapper component for product items.
+   * Implements left swipe for "consume" actions and right swipe for "delete" actions.
+   */
   const SwipeableProductItem = ({ item }) => {
     const swipeableRef = useRef(null);
 
+    // Render visual element for left swipe (Consume action)
     const renderLeftActions = (progress, dragX) => {
       const opacity = dragX.interpolate({
         inputRange: [0, 20],
@@ -186,6 +271,7 @@ export default function HomeScreen({ navigation, route }) {
       );
     };
 
+    // Render visual element for right swipe (Delete action)
     const renderRightActions = (progress, dragX) => {
       const opacity = dragX.interpolate({
         inputRange: [-20, 0],
@@ -225,10 +311,12 @@ export default function HomeScreen({ navigation, route }) {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Header with Search and Navigation */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('home.title')}</Text>
 
         <View style={styles.searchRow}>
+          {/* Search bar container */}
           <View style={styles.searchContainer}>
             <Ionicons name="search-outline" size={20} color={COLORS.onSurfaceVariant} />
             <TextInput
@@ -245,6 +333,7 @@ export default function HomeScreen({ navigation, route }) {
             )}
           </View>
 
+          {/* Navigates to filters configuration screen */}
           <TouchableOpacity
             style={[styles.filterButton, isFilterActive && styles.filterButtonActive]}
             onPress={() => navigation.navigate('ProductFilters', {
@@ -260,6 +349,7 @@ export default function HomeScreen({ navigation, route }) {
           </TouchableOpacity>
         </View>
 
+        {/* Dynamic header row to clear active filters */}
         {isFilterActive && (
           <View style={styles.activeFiltersRow}>
             <Text style={styles.activeFiltersText}>
@@ -272,6 +362,7 @@ export default function HomeScreen({ navigation, route }) {
           </View>
         )}
 
+        {/* Option to generate cooking recipes based on current inventory */}
         {products.length > 0 && (
           <TouchableOpacity style={styles.recipesIdeaButton} onPress={() => navigation.navigate('Recipes')} activeOpacity={0.8}>
             <Ionicons name="restaurant-outline" size={20} color={COLORS.onPrimaryContainer} />
@@ -280,6 +371,7 @@ export default function HomeScreen({ navigation, route }) {
         )}
       </View>
 
+      {/* Primary list of items */}
       <FlatList
         data={filteredAndSortedProducts}
         keyExtractor={(item) => item.id.toString()}
@@ -298,6 +390,7 @@ export default function HomeScreen({ navigation, route }) {
         }
       />
 
+      {/* Temporary Snackbar with Undo button shown after item deletion */}
       {pendingDelete && (
         <View style={styles.snackbar}>
           <Text style={styles.snackbarText}>{t('home.productDeleted')}</Text>
@@ -307,6 +400,7 @@ export default function HomeScreen({ navigation, route }) {
         </View>
       )}
 
+      {/* Dialog overlay for configuring custom consumption quantity */}
       <Modal visible={consumeModalVisible} animationType="fade" transparent={true} onRequestClose={() => setConsumeModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.consumeModalContent}>
@@ -335,6 +429,9 @@ export default function HomeScreen({ navigation, route }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
   container: {
     flex: 1,
@@ -358,7 +455,7 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     color: COLORS.text,
-    marginTop: 12, // Опустили заголовок трохи нижче
+    marginTop: 12,
     marginBottom: 20,
     letterSpacing: 0.5,
   },
@@ -428,7 +525,6 @@ const getStyles = (COLORS, insets, theme, tabBarHeight) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    // Додано красиву тінь
     elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
