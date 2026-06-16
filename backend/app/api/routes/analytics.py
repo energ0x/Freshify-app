@@ -67,11 +67,31 @@ def get_analytics(
 
     nutrition = db.query(
         func.date_trunc("day", ConsumedProduct.consumed_at).label("day"),
-        func.sum(Product.calories * multiplier).label("total_calories"),
-        func.sum(Product.proteins * multiplier).label("total_proteins"),
-        func.sum(Product.fats * multiplier).label("total_fats"),
-        func.sum(Product.carbohydrates * multiplier).label("total_carbs"),
-    ).join(Product, ConsumedProduct.product_id == Product.id).filter(
+        func.sum(
+            func.coalesce(
+                ConsumedProduct.calories_consumed,
+                func.coalesce(Product.calories, 0) * multiplier
+            )
+        ).label("total_calories"),
+        func.sum(
+            func.coalesce(
+                ConsumedProduct.proteins_consumed,
+                func.coalesce(Product.proteins, 0) * multiplier
+            )
+        ).label("total_proteins"),
+        func.sum(
+            func.coalesce(
+                ConsumedProduct.fats_consumed,
+                func.coalesce(Product.fats, 0) * multiplier
+            )
+        ).label("total_fats"),
+        func.sum(
+            func.coalesce(
+                ConsumedProduct.carbohydrates_consumed,
+                func.coalesce(Product.carbohydrates, 0) * multiplier
+            )
+        ).label("total_carbs"),
+    ).outerjoin(Product, ConsumedProduct.product_id == Product.id).filter(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
     ).group_by("day").order_by("day").all()
 
