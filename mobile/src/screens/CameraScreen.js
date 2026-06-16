@@ -1,16 +1,22 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { aiAPI, productsAPI } from '../services/api';
-import { COLORS } from '../utils/constants';
+import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import { useTranslation } from 'react-i18next';
 
 export default function CameraScreen({ navigation, route }) {
   const { t } = useTranslation();
   const mode = route.params?.mode || 'product'; 
-  const lang = route.params?.lang || 'uk'; // <-- ДОДАНО ОТРИМАННЯ МОВИ
+  const lang = route.params?.lang || 'uk';
+
+  const { colors: COLORS, theme } = useThemeStore();
+  const insets = useSafeAreaInsets();
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, insets, isDark);
 
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
@@ -36,7 +42,6 @@ export default function CameraScreen({ navigation, route }) {
     setLoading(true);
     
     try {
-      // Передаємо lang у запит
       const response = await productsAPI.analyzeBarcode(data, lang); 
 
       if (response?.data?.error) {
@@ -60,7 +65,6 @@ export default function CameraScreen({ navigation, route }) {
     setLoading(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
-      // ДОДАНО: Передаємо mode (product або receipt) у запит
       const response = await aiAPI.analyzeImage(photo.uri, lang, mode); 
 
       if (response?.data?.error) {
@@ -84,6 +88,7 @@ export default function CameraScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <CameraView 
         style={styles.camera} 
         facing="back" 
@@ -94,6 +99,13 @@ export default function CameraScreen({ navigation, route }) {
         }}
       >
         <View style={styles.overlay}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+              <Ionicons name="close-outline" size={32} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{t('screens.scan')}</Text>
+          </View>
+
           <Text style={styles.instructionText}>{getInstructionText()}</Text>
 
           {mode === 'barcode' && (
@@ -122,14 +134,38 @@ export default function CameraScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   permissionContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: COLORS.background },
   permissionText: { textAlign: 'center', fontSize: 16, marginBottom: 20 },
   camera: { flex: 1 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.15)', justifyContent: 'space-between' },
-  closeButton: { position: 'absolute', top: 50, left: 20, zIndex: 10 },
-  instructionText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center', marginTop: 100, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4, paddingHorizontal: 20 },
+  
+  header: {
+    position: 'absolute',
+      gap: 12,
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: insets.top + 12,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  backButton: {
+      alignSelf: 'auto',
+  },
+
+  instructionText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center', marginTop: insets.top + 100, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4, paddingHorizontal: 20 },
   barcodeFrame: { width: 250, height: 150, borderWidth: 2, borderColor: COLORS.primary, backgroundColor: 'rgba(255,255,255,0.05)', alignSelf: 'center', marginTop: 'auto', marginBottom: 'auto', borderRadius: 16 },
   controls: { paddingBottom: 50, alignItems: 'center', justifyContent: 'flex-end', flex: 1 },
   captureButton: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.3)', justifyContent: 'center', alignItems: 'center' },

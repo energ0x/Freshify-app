@@ -319,7 +319,7 @@ export default function AppNavigator() {
               name="Camera"
               component={CameraScreen}
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: t("screens.scan"),
                 ...TransitionPresets.ModalSlideFromBottomIOS,
               }}
