@@ -16,18 +16,21 @@ import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import useAuthStore from '../store/authStore';
 
+<<<<<<< HEAD
 /**
  * Roadmap array representing levels at which users graduate to new leagues or sub-tiers.
  * Details reward structures, titles, icons, and colors.
  */
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
 const ROADMAP_DATA = [
-  { id: '1', level: 1, titleKey: 'leagues.greenSprouts', defaultTitle: 'Зелені Паростки', descKey: 'leagues.desc1', defaultDesc: 'Ваш шлях починається!\n1 ШІ-рецепт, 3 фото, 5 штрихкодів, 10 ручних додавань на місяць.', icon: 'leaf', color: '#2ECC71', isLeague: true },
-  { id: '2', level: 10, titleKey: 'leagues.advancedBeginner', defaultTitle: 'Просунутий новачок', descKey: 'leagues.desc2', defaultDesc: 'Ви втягуєтесь:\n2 ШІ-рецепти, 5 фото, 10 штрихкодів, 20 ручних додавань.', icon: 'star', color: '#27AE60', isLeague: false },
-  { id: '3', level: 50, titleKey: 'leagues.experienced', defaultTitle: 'Досвідчений', descKey: 'leagues.desc3', defaultDesc: 'Ваш еко-слід стає меншим:\n5 ШІ-рецептів, 15 фото, 30 штрихкодів, 50 ручних додавань.', icon: 'trending-up', color: '#229954', isLeague: false },
-  { id: '4', level: 101, titleKey: 'leagues.freshnessMasters', defaultTitle: 'Майстри Свіжості', descKey: 'leagues.desc4', defaultDesc: 'Ви у новій лізі!\n10 ШІ-рецептів, 30 фото, 50 штрихкодів, 100 ручних додавань.', icon: 'ribbon', color: '#3498DB', isLeague: true },
-  { id: '5', level: 150, titleKey: 'leagues.chef', defaultTitle: 'Шеф-кухар', descKey: 'leagues.desc5', defaultDesc: 'Готуємо розумно:\n15 ШІ-рецептів, 40 фото, 80 штрихкодів, 150 ручних додавань.', icon: 'restaurant', color: '#2980B9', isLeague: false },
-  { id: '6', level: 201, titleKey: 'leagues.ecoHeroes', defaultTitle: 'Еко-Герої', descKey: 'leagues.desc6', defaultDesc: 'Елітна ліга Планети!\n20 ШІ-рецептів, 50 фото, 100 штрихкодів, безліміт ручних додавань.', icon: 'planet', color: '#F1C40F', isLeague: true },
-  { id: '7', level: 300, titleKey: 'leagues.absoluteGuru', defaultTitle: 'Абсолютний Гуру', descKey: 'leagues.desc7', defaultDesc: 'Максимальний рівень!\nВи досягли досконалості у стилі Zero Waste.', icon: 'trophy', color: '#F39C12', isLeague: false },
+  { id: '1', level: 1, titleKey: 'leagues.greenSprouts', descKey: 'leagues.desc1', icon: 'leaf', color: '#2ECC71', isLeague: true },
+  { id: '2', level: 10, titleKey: 'leagues.advancedBeginner', descKey: 'leagues.desc2', icon: 'star', color: '#27AE60', isLeague: false },
+  { id: '3', level: 50, titleKey: 'leagues.experienced', descKey: 'leagues.desc3', icon: 'trending-up', color: '#229954', isLeague: false },
+  { id: '4', level: 101, titleKey: 'leagues.freshnessMasters', descKey: 'leagues.desc4', icon: 'ribbon', color: '#3498DB', isLeague: true },
+  { id: '5', level: 150, titleKey: 'leagues.chef', descKey: 'leagues.desc5', icon: 'restaurant', color: '#2980B9', isLeague: false },
+  { id: '6', level: 201, titleKey: 'leagues.ecoHeroes', descKey: 'leagues.desc6', icon: 'planet', color: '#F1C40F', isLeague: true },
+  { id: '7', level: 300, titleKey: 'leagues.absoluteGuru', descKey: 'leagues.desc7', icon: 'trophy', color: '#F39C12', isLeague: false },
 ];
 
 /**
@@ -59,7 +62,10 @@ export default function LeaguesScreen({ navigation }) {
   const currentXP = user?.xp_points || 0;
   const currentLevel = Math.floor(currentXP / 100) + 1;
 
+<<<<<<< HEAD
   // Find index of the highest level reached by the user in the roadmap array
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
   const currentLevelIndex = ROADMAP_DATA.reduce((acc, curr, index) => {
     if (currentLevel >= curr.level) return index;
     return acc;
@@ -73,7 +79,11 @@ export default function LeaguesScreen({ navigation }) {
       flatListRef.current.scrollToIndex({
         index: currentLevelIndex,
         animated: true,
+<<<<<<< HEAD
         viewPosition: 0.5 // Centers the element vertically on the viewport
+=======
+        viewPosition: 0.5
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
       });
     }
   };
@@ -91,12 +101,18 @@ export default function LeaguesScreen({ navigation }) {
 
     return (
       <View style={styles.timelineRow}>
+<<<<<<< HEAD
         {/* Vertical connector line representing progress timeline */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
         {!isLast && (
           <View style={[styles.timelineLine, { backgroundColor: isUnlocked ? item.color : COLORS.outline, opacity: isUnlocked ? 1 : 0.3 }]} />
         )}
 
+<<<<<<< HEAD
         {/* Node icon representing the milestone status */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
         <View style={[
           styles.timelineNode,
           {
@@ -105,7 +121,11 @@ export default function LeaguesScreen({ navigation }) {
             width: item.isLeague ? 64 : 48,
             height: item.isLeague ? 64 : 48,
             borderRadius: item.isLeague ? 32 : 24,
+<<<<<<< HEAD
             marginLeft: item.isLeague ? 0 : 8 // Centers small badges inline with vertical timeline line
+=======
+            marginLeft: item.isLeague ? 0 : 8
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
           }
         ]}>
           <Ionicons
@@ -115,20 +135,23 @@ export default function LeaguesScreen({ navigation }) {
           />
         </View>
 
+<<<<<<< HEAD
         {/* Milestone info card detailing restrictions and descriptions */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
         <View style={[styles.card, { opacity: isUnlocked ? 1 : 0.6 }]}>
           <View style={styles.cardHeader}>
             <Text style={[styles.cardTitle, { color: isUnlocked ? item.color : COLORS.text }]}>
-              {t(item.titleKey, item.defaultTitle)}
+              {t(item.titleKey)}
             </Text>
             <View style={[styles.levelBadge, { backgroundColor: isUnlocked ? `${item.color}15` : COLORS.surfaceVariant }]}>
               <Text style={[styles.levelBadgeText, { color: isUnlocked ? item.color : COLORS.onSurfaceVariant }]}>
-                {t('leagues.level', 'Рівень')} {item.level}
+                {t('leagues.level')} {item.level}
               </Text>
             </View>
           </View>
           <Text style={styles.cardDesc}>
-            {t(item.descKey, item.defaultDesc)}
+            {t(item.descKey)}
           </Text>
         </View>
       </View>
@@ -144,7 +167,7 @@ export default function LeaguesScreen({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('leagues.title', 'Карта Рівнів')}</Text>
+        <Text style={styles.headerTitle}>{t('leagues.title')}</Text>
       </View>
 
       {/* Stats overview banner */}
@@ -159,7 +182,7 @@ export default function LeaguesScreen({ navigation }) {
           <View style={[styles.statPill, { backgroundColor: COLORS.primaryContainer }]}>
             <Ionicons name="trending-up" size={18} color={COLORS.primary} />
             <Text style={[styles.statPillText, { color: COLORS.primary }]}>
-              {t('leagues.yourLevel', 'Ваш рівень:')} {currentLevel}
+              {t('leagues.yourLevel')} {currentLevel}
             </Text>
           </View>
         </View>
@@ -174,7 +197,10 @@ export default function LeaguesScreen({ navigation }) {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={(info) => {
+<<<<<<< HEAD
           // Fallback helper in case of listing rendering race conditions
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
           const wait = new Promise(resolve => setTimeout(resolve, 500));
           wait.then(() => {
             flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
@@ -182,14 +208,17 @@ export default function LeaguesScreen({ navigation }) {
         }}
       />
 
+<<<<<<< HEAD
       {/* Floating action button to automatically scroll to active level */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
       <TouchableOpacity
         style={styles.fab}
         onPress={jumpToMyLevel}
         activeOpacity={0.8}
       >
         <Ionicons name="location" size={22} color={COLORS.onPrimary} />
-        <Text style={styles.fabText}>{t('leagues.toMyLevel', 'До мого рівня')}</Text>
+        <Text style={styles.fabText}>{t('leagues.toMyLevel')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -209,7 +238,6 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
     backgroundColor: COLORS.background
   },
 
-  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -266,11 +294,14 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
     color: COLORS.text
   },
 
-  // ─── Timeline List ─────────────────────────────────────────────────────────
   listContent: {
     paddingHorizontal: 20,
     paddingTop: 32,
+<<<<<<< HEAD
     paddingBottom: 120 // Prevents bottom entries overlapping behind the FAB
+=======
+    paddingBottom: 120
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
   },
   timelineRow: {
     flexDirection: 'row',
@@ -292,7 +323,6 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
     borderWidth: 4
   },
 
-  // ─── Cards ─────────────────────────────────────────────────────────────────
   card: {
     flex: 1,
     marginLeft: 16,
@@ -333,7 +363,6 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
     fontWeight: '500'
   },
 
-  // ─── FAB Button ────────────────────────────────────────────────────────────
   fab: {
     position: 'absolute',
     right: 24,

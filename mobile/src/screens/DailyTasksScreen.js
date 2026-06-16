@@ -26,7 +26,6 @@ const STREAK_DATA = {
   current: 0,
   best: 0,
   week: [null, null, null, null, null, null, null],
-  weekLabels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
 };
 
 // Initial state placeholder for daily tasks
@@ -50,7 +49,12 @@ export default function DailyTasksScreen({ navigation }) {
   const [tasks, setTasks] = useState(DAILY_TASKS);
   const [streak, setStreak] = useState(STREAK_DATA);
 
+<<<<<<< HEAD
   // Synchronize daily tasks and streak details on mount.
+=======
+  const weekLabels = Array.from({ length: 7 }, (_, i) => t(`dailyTasks.weekLabels.${i}`));
+
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
   useEffect(() => {
     let mounted = true;
     
@@ -86,7 +90,6 @@ export default function DailyTasksScreen({ navigation }) {
             current: s.current || 0,
             best: s.best || 0,
             week: week.length === 7 ? week : prev.week,
-            weekLabels: s.weekLabels || prev.weekLabels
           }));
         }
       } catch (e) {
@@ -115,12 +118,15 @@ export default function DailyTasksScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+<<<<<<< HEAD
       {/* Header section with back navigation */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('dailyTasks.title', 'Щоденні місії')}</Text>
+        <Text style={styles.headerTitle}>{t('dailyTasks.title')}</Text>
       </View>
 
       <ScrollView
@@ -128,7 +134,10 @@ export default function DailyTasksScreen({ navigation }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+<<<<<<< HEAD
         {/* Streak card (Flame progress) */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
         <View style={styles.card}>
           <View style={styles.streakHeader}>
             <View style={styles.streakFlame}>
@@ -136,40 +145,46 @@ export default function DailyTasksScreen({ navigation }) {
             </View>
             <View style={styles.streakInfo}>
               <Text style={styles.streakNumber}>{streak.current}</Text>
-              <Text style={styles.streakLabel}>{t('dailyTasks.daysInRow', 'днів поспіль')}</Text>
+              <Text style={styles.streakLabel}>{t('dailyTasks.daysInRow')}</Text>
             </View>
             {/* Record / Best streak badge */}
             <View style={styles.bestStreakBadge}>
               <Ionicons name="trophy" size={16} color="#F1C40F" />
-              <Text style={styles.bestStreakText}>{t('dailyTasks.record', 'Рекорд:')} {streak.best}</Text>
+              <Text style={styles.bestStreakText}>{t('dailyTasks.record')} {streak.best}</Text>
             </View>
           </View>
 
+<<<<<<< HEAD
           {/* Weekdays dots indicator row */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
           <View style={styles.weekRow}>
-            {streak.week.map((done, i) => (
+            {weekLabels.map((label, i) => (
               <View key={i} style={styles.dayCol}>
                 <View
                   style={[
                     styles.dayDot,
-                    done === true && styles.dayDotDone,
-                    done === false && styles.dayDotMissed,
-                    done === null && { backgroundColor: COLORS.surfaceVariant },
+                    streak.week[i] === true && styles.dayDotDone,
+                    streak.week[i] === false && styles.dayDotMissed,
+                    streak.week[i] === null && { backgroundColor: COLORS.surfaceVariant },
                   ]}
                 >
-                  {done === true && <Ionicons name="checkmark" size={18} color="#fff" />}
-                  {done === false && <Ionicons name="close" size={16} color={COLORS.onSurfaceVariant} />}
+                  {streak.week[i] === true && <Ionicons name="checkmark" size={18} color="#fff" />}
+                  {streak.week[i] === false && <Ionicons name="close" size={16} color={COLORS.onSurfaceVariant} />}
                 </View>
-                <Text style={styles.dayLabel}>{streak.weekLabels[i]}</Text>
+                <Text style={styles.dayLabel}>{label}</Text>
               </View>
             ))}
           </View>
         </View>
 
+<<<<<<< HEAD
         {/* Daily progress overview */}
+=======
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
         <View style={styles.card}>
           <View style={styles.progressHeader}>
-            <Text style={styles.sectionTitle}>{t('dailyTasks.progressToday', 'Прогрес сьогодні')}</Text>
+            <Text style={styles.sectionTitle}>{t('dailyTasks.progressToday')}</Text>
             <Text style={styles.progressCount}>
               {completedCount} / {totalCount}
             </Text>
@@ -188,13 +203,17 @@ export default function DailyTasksScreen({ navigation }) {
           {/* Localized feedback hints */}
           <Text style={styles.progressHint}>
             {completedCount === totalCount
-              ? t('dailyTasks.allCompleted', '🎉 Всі завдання виконано! +{{xp}} XP зараховано', { xp: maxXP })
-              : t('dailyTasks.tasksLeft', 'Залишилось {{count}} завдань — зберіть ще +{{xp}} XP', { count: totalCount - completedCount, xp: maxXP - todayXP })}
+              ? t('dailyTasks.allCompleted', { xp: maxXP })
+              : t('dailyTasks.tasksLeft', { count: totalCount - completedCount, xp: maxXP - todayXP })}
           </Text>
         </View>
 
+<<<<<<< HEAD
         {/* Daily mission cards listing */}
         <Text style={styles.sectionLabel}>{t('dailyTasks.tasksForToday', 'Завдання на сьогодні')}</Text>
+=======
+        <Text style={styles.sectionLabel}>{t('dailyTasks.tasksForToday')}</Text>
+>>>>>>> d0999ae3534e14befbd7edddc43dc17f323a4328
 
         {tasks.map((task) => (
           <View

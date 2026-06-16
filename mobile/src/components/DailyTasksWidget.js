@@ -15,7 +15,6 @@ import { dailyTasksAPI, dailyTasksListeners } from '../services/api';
 const STREAK_DATA = {
   current: 0,
   week: [null, null, null, null, null, null, null],
-  weekLabels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
 };
 
 const DAILY_TASKS_PREVIEW = [];
@@ -71,7 +70,6 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
             current: s.current || 0,
             best: s.best || 0,
             week: week.length === 7 ? week : prev.week,
-            weekLabels: s.weekLabels || prev.weekLabels
           }));
         }
       } catch (e) {
@@ -115,10 +113,10 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
           </View>
           <View style={styles.streakTextWrap}>
             <Text style={styles.dailyStreakNumber}>
-              {streak.current} {t('dailyTasks.days', 'днів')}
+              {streak.current} {t('dailyTasks.days', { count: streak.current })}
             </Text>
             <Text style={styles.dailyStreakSub}>
-              {t('dailyTasks.currentStreak', 'поточний стрік')}
+              {t('dailyTasks.currentStreak')}
             </Text>
           </View>
         </View>
@@ -160,7 +158,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
 
       {/* Numerical summary of daily task completion status */}
       <View style={styles.dailyTasksRow}>
-        <Text style={styles.dailyTasksLabel}>{t('dailyTasks.tasksToday', 'Завдання сьогодні')}</Text>
+        <Text style={styles.dailyTasksLabel}>{t('dailyTasks.tasksToday')}</Text>
         <Text style={styles.dailyTasksCount}>
           {completedCount} / {totalCount}  ·  +{todayXP} / {maxXP} XP
         </Text>
