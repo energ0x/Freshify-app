@@ -452,20 +452,25 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   fabWrapper: {
-    position: "absolute",
+    flex: 1, // Дозволяє кнопці гармонійно ділити простір з іншими іконками
     justifyContent: "center",
     alignItems: "center",
+    // ❌ ВАЖЛИВО: Видаліть position: "absolute" та будь-які відступи типу top: -20
   },
   fabButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,  // Трохи зменшуємо з 64, щоб кнопка влізла у стандартну висоту Tab Bar
+    height: 54,
+    borderRadius: 26,
     justifyContent: "center",
     alignItems: "center",
-    elevation: 5,
+    // Тіні можна залишити, щоб кнопка все ще виділялася
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
 });
