@@ -75,12 +75,13 @@ def get_analytics(
         and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
     ).group_by("day").order_by("day").all()
 
-    # Sum quantities for items measured in pieces; for any other unit count the item as 1
-    piece_units = ['pcs','pc','шт','шт.','pieces','piece']
+    piece_units = ('pcs', 'шт')
+    unit_lower = func.lower(func.coalesce(Product.unit, ''))
+    cond_is_piece = unit_lower.in_(piece_units)
     active_quantity = db.query(
         func.sum(
             case(
-                [(func.lower(Product.unit).in_(piece_units), Product.quantity)],
+                [(cond_is_piece, Product.quantity)],
                 else_=1
             )
         )
