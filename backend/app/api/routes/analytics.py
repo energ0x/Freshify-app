@@ -81,7 +81,7 @@ def get_analytics(
     active_quantity = db.query(
         func.sum(
             case(
-                [(cond_is_piece, Product.quantity)],
+                (cond_is_piece, Product.quantity),
                 else_=1
             )
         )
