@@ -1,3 +1,12 @@
+/**
+ * @file CameraScreen.js
+ * @description Camera integration screen using Expo Camera.
+ * Supports three scan modes:
+ * 1. Barcode scanner: Real-time scan matching against product databases.
+ * 2. Product analyzer: Photo upload to Gemini AI to extract name/expiration/details.
+ * 3. Receipt analyzer: Photo upload to scan multiple bought items.
+ */
+
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -8,25 +17,38 @@ import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
 import { useTranslation } from 'react-i18next';
 
+/**
+ * CameraScreen Component.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation handler.
+ * @param {Object} props.route - Route holding params like mode and language.
+ */
 export default function CameraScreen({ navigation, route }) {
   const { t } = useTranslation();
+  
+  // Scan mode options: 'barcode', 'product' (AI photo), or 'receipt' (AI recipe)
   const mode = route.params?.mode || 'product'; 
   const lang = route.params?.lang || 'uk';
 
+  // Theme configuration details
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, insets, isDark);
 
+  // Hook validating device camera permissions
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
   const [scanned, setScanned] = useState(false);
   const cameraRef = useRef(null);
 
+  // Return blank container if permissions state is not resolved yet
   if (!permission) {
     return <View style={styles.container} />;
   }
 
+  // Display request permission screen if not yet authorized
   if (!permission.granted) {
     return (
       <View style={styles.permissionContainer}>
@@ -36,12 +58,17 @@ export default function CameraScreen({ navigation, route }) {
     );
   }
 
+  /**
+   * Barcode scanner callback.
+   * Resolves barcodes of formats EAN13, EAN8, etc. and routes to product addition screen.
+   */
   const handleBarcodeScanned = async ({ type, data }) => {
     if (scanned || mode !== 'barcode') return;
     setScanned(true);
     setLoading(true);
     
     try {
+      // Analyze barcode ID via backend API
       const response = await productsAPI.analyzeBarcode(data, lang); 
 
       if (response?.data?.error) {
@@ -51,6 +78,7 @@ export default function CameraScreen({ navigation, route }) {
         return;
       }
 
+      // Navigate to AddProduct form populated with AI-extracted values
       navigation.navigate('AddProduct', { aiResult: response.data });
     } catch (error) {
       Alert.alert(t('common.error'), t('camera.unrecognizedBarcode'));
@@ -59,12 +87,19 @@ export default function CameraScreen({ navigation, route }) {
     }
   };
 
+  /**
+   * Captures photograph using active camera frame.
+   * Compresses photo and uploads image to Gemini analyzer endpoint.
+   */
   const takePicture = async () => {
     if (!cameraRef.current) return;
 
     setLoading(true);
     try {
+      // Capture frame
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.5 });
+      
+      // Upload captured frame to AI API
       const response = await aiAPI.analyzeImage(photo.uri, lang, mode); 
 
       if (response?.data?.error) {
@@ -73,6 +108,7 @@ export default function CameraScreen({ navigation, route }) {
         return;
       }
 
+      // Navigate to AddProduct form populated with AI-extracted values
       navigation.navigate('AddProduct', { aiResult: response.data, imageUri: photo.uri });
     } catch (error) {
       Alert.alert(t('common.error'), t('camera.unrecognizedImage'));
@@ -80,6 +116,9 @@ export default function CameraScreen({ navigation, route }) {
     }
   };
 
+  /**
+   * Helper mapping local guide messages to screen depending on scanning mode.
+   */
   const getInstructionText = () => {
     if (mode === 'barcode') return t('camera.pointAtBarcode');
     if (mode === 'receipt') return t('camera.photoReceipt');
@@ -89,6 +128,7 @@ export default function CameraScreen({ navigation, route }) {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
       <CameraView 
         style={styles.camera} 
         facing="back" 
@@ -99,6 +139,7 @@ export default function CameraScreen({ navigation, route }) {
         }}
       >
         <View style={styles.overlay}>
+          {/* Header toolbar */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
               <Ionicons name="close-outline" size={32} color="#fff" />
@@ -106,14 +147,18 @@ export default function CameraScreen({ navigation, route }) {
             <Text style={styles.headerTitle}>{t('screens.scan')}</Text>
           </View>
 
+          {/* Guide text overlay */}
           <Text style={styles.instructionText}>{getInstructionText()}</Text>
 
+          {/* Barcode scanner target bounds frame */}
           {mode === 'barcode' && (
             <View style={styles.barcodeFrame} />
           )}
 
+          {/* Bottom control panel */}
           <View style={styles.controls}>
             {loading ? (
+              // Loading screen overlays during AI processes
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
                 <Text style={styles.loadingText}>
@@ -121,6 +166,7 @@ export default function CameraScreen({ navigation, route }) {
                 </Text>
               </View>
             ) : (
+              // Capture trigger button (hidden in barcode scanner auto-recognition mode)
               mode !== 'barcode' && (
                 <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
                   <View style={styles.captureInner} />
@@ -134,6 +180,9 @@ export default function CameraScreen({ navigation, route }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   permissionContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: COLORS.background },
@@ -143,7 +192,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   
   header: {
     position: 'absolute',
-      gap: 12,
+    gap: 12,
     top: 0,
     left: 0,
     right: 0,

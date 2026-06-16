@@ -1,19 +1,41 @@
+"""
+Gemini Service Module.
+
+Integrates Google Gemini's multimodal and text generation capabilities to offer
+product recognition from images/receipts, recipe generation matching user dietary
+constraints/allergens, and diet recommendations derived from user intake history.
+"""
+
 import json
 from google import genai
 from google.genai import types
 from app.core.config import get_settings
 
+# Fetch configurations (including API key) using the cached getter.
 settings = get_settings()
 
+# Initialize Gemini Client if API key is present in environment variables.
 api_key = str(settings.gemini_api_key) if settings.gemini_api_key else None
 client = genai.Client(api_key=api_key) if api_key else None
 
+# Define models to be used for text-based tasks and visual recognition.
 TEXT_MODEL_NAME = 'gemma-4-26b-a4b-it'
 VISION_MODEL_NAME = 'gemini-3.1-flash-lite-preview'
 
 
 async def clean_stream(response_stream):
-    """Фільтрує процес міркування моделі під час стрімінгу."""
+    """
+    Filter out thinking/reasoning thoughts from the text response stream.
+
+    Processes chunks of streaming response text, searching for 'Thinking...'
+    and '...done thinking.' tags, and omitting text between them from the output generator.
+
+    Parameters:
+        response_stream: The asynchronous response generator from the Gemini client.
+
+    Yields:
+        str: Cleaned text chunks.
+    """
     buffer = ""
     is_thinking = False
     start_tag = "Thinking..."
@@ -25,6 +47,7 @@ async def clean_stream(response_stream):
 
         buffer += chunk.text
 
+        # If we are not currently skipping a thinking block, look for the start tag.
         if not is_thinking:
             if start_tag in buffer:
                 pre_text, rest = buffer.split(start_tag, 1)
@@ -33,20 +56,24 @@ async def clean_stream(response_stream):
                 buffer = rest
                 is_thinking = True
             else:
+                # Buffer safe slice length to avoid outputting a partial start tag match.
                 safe_len = len(buffer) - len(start_tag) + 1
                 if safe_len > 0:
                     yield buffer[:safe_len]
                     buffer = buffer[safe_len:]
 
+        # If inside a thinking block, look for the end tag to resume outputting text.
         if is_thinking:
             if end_tag in buffer:
                 _, buffer = buffer.split(end_tag, 1)
                 buffer = buffer.lstrip()
                 is_thinking = False
             else:
+                # Maintain just enough buffer to match end tag if split across chunks.
                 if len(buffer) > len(end_tag):
                     buffer = buffer[-len(end_tag):]
 
+    # Flush final remaining buffer if not in the thinking state.
     if not is_thinking and buffer:
         if not start_tag.startswith(buffer):
             yield buffer
@@ -60,10 +87,29 @@ async def analyze_product_image(
         lang: str = "uk",
         mode: str = "product"
 ) -> dict:
+    """
+    Analyze food/receipt images using Gemini Multimodal vision capabilities.
+
+    Accepts image bytes, matches recognized foods against available categories,
+    computes estimated shelf-lives, identifies allergen warnings based on user details,
+    and returns a structured JSON payload detailing recognized products with macronutrients.
+
+    Parameters:
+        image_bytes (bytes): Image file content.
+        mime_type (str): Mime type of the image.
+        user_allergens (list[str] | None): User allergen list to trigger warnings.
+        available_categories (list[str] | None): Permissible category names.
+        lang (str): Response language preference ('uk' or 'en').
+        mode (str): Processing mode, 'receipt' to parse food from receipts, 'product' for raw items.
+
+    Returns:
+        dict: Parsed JSON containing array of products or error information.
+    """
+    # Build prompt components containing allergies and categories.
     allergens_prompt = f"User is allergic to: {', '.join(user_allergens)}." if user_allergens else "User has no known allergies."
     categories_prompt = f"Available categories: {', '.join(available_categories)}." if available_categories else "No categories available."
 
-    # Налаштовуємо поведінку залежно від того, що ми фотографуємо
+    # Adjust instructions depending on receipt parsing mode vs direct product photos.
     if mode == "receipt":
         task_instruction = """
         The image is a store receipt. Read the text carefully and extract ONLY food items. 
@@ -76,9 +122,10 @@ async def analyze_product_image(
         For each item, estimate its macronutrients (proteins, fats, carbs) per 100g based on typical values.
         """
 
+    # Construct complete prompt structure detailing specific instructions and JSON output schema.
     prompt = f"""You are an expert nutritionist and food recognition assistant.
 {task_instruction}
-
+ 
 1.  **Identify the products** and provide their names in {"Ukrainian" if lang == "uk" else "English"}. If it's a receipt, use a clean, readable name based on the receipt text (e.g., 'Milk 2.5%' instead of 'MLK 2.5% BTL').
 2.  **Categorize the products.** Choose the BEST category ONLY from this list: {categories_prompt}
 3.  **Check for allergens.** The user's allergies are: {allergens_prompt}. Do the products contain any of these?
@@ -110,12 +157,14 @@ If the image does not contain any food products, return:
         return {"error": "Gemini API ключ не налаштовано"}
 
     try:
+        # Load raw bytes into Gemini Part wrapper.
         image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
         config = types.GenerateContentConfig(
             response_mime_type="application/json",
-            temperature=0.2 # Знижуємо температуру для більшої точності макросів
+            temperature=0.2 # Use lower temperature for consistent macronutrient/shelf-life estimates
         )
 
+        # Call vision API asynchronously.
         response = await client.aio.models.generate_content(
             model=VISION_MODEL_NAME,
             contents=[prompt, image_part],
@@ -132,8 +181,23 @@ async def generate_recipes(
         user_diet: str | None = None,
         user_allergens: list[str] | None = None,
         include_grocery: bool = False,
-    lang: str = "uk"
+        lang: str = "uk"
 ):
+    """
+    Generate tailored food recipes matching user's stored products, diet, and allergens.
+
+    Operates as an async generator, streaming recipe response content chunk by chunk.
+    Enforces rules such as avoiding non-food ingredients, filtering malicious injections,
+    performing Google Search queries to ground recipes, and choosing formatting options
+    based on the include_grocery argument.
+
+    Parameters:
+        products (list[dict]): Available ingredients list.
+        user_diet (str | None): Target diet restriction name.
+        user_allergens (list[str] | None): Allergen avoidance lists.
+        include_grocery (bool): If True, missing items can be recommended under a 'To buy' header.
+        lang (str): Target output language.
+    """
     product_list = "\n".join(
         f"- {p['name']} ({p.get('category', '')}, {p.get('quantity', 1)} {p.get('unit', 'pcs')})"
         for p in products
@@ -143,7 +207,7 @@ async def generate_recipes(
     diet_prompt = f"Diet: {user_diet}." if user_diet and user_diet != 'none' else "No specific diet."
     allergens_prompt = f"Allergies: {', '.join(user_allergens)}." if user_allergens else "No known allergies."
 
-    # Локалізовані рядки для промпту
+    # Localization configuration for the generated template.
     if lang == "uk":
         lang_name = "Ukrainian"
         fallback_message = "Недостатньо інгредієнтів для створення повноцінної страви."
@@ -152,7 +216,7 @@ async def generate_recipes(
         ingredients_header = "### Інгредієнти:"
         to_buy_header = "### Треба докупити:"
         instructions_header = "### Приготування:"
-    else:  # за замовчуванням англійська
+    else:  # Default to English
         lang_name = "English"
         fallback_message = "Not enough ingredients to create a complete dish."
         time_header = "**Time:**"
@@ -161,11 +225,13 @@ async def generate_recipes(
         to_buy_header = "### To buy:"
         instructions_header = "### Instructions:"
 
+    # Define rule for grocery items usage based on request.
     if include_grocery:
         grocery_rule = f"You CAN use extra ingredients to build complete dishes. List ALL missing items strictly under '{to_buy_header}'."
     else:
         grocery_rule = f"Use ONLY the validated ingredients + basic pantry items (salt, pepper, oil, water). Do NOT add main ingredients. NEVER output the '{to_buy_header}' section."
 
+    # Complete text instructions with safety guards and execution steps.
     prompt = f"""You are a professional culinary AI. Your goal is to suggest REAL, established culinary dishes.
 
     Available ingredients:
@@ -204,6 +270,7 @@ async def generate_recipes(
         return
 
     try:
+        # Perform asynchronous streaming generation with Google Search grounding.
         response_stream = await client.aio.models.generate_content_stream(
             model=TEXT_MODEL_NAME,
             contents=prompt,
@@ -221,7 +288,18 @@ async def generate_recipes(
         print(f"Error streaming recipes with Gemini: {e}")
         yield {"\n\n**Помилка:** Не вдалося згенерувати рецепти." if lang == "uk" else "\n\n**Error:** Failed to generate recipes."}
 
+
 async def stream_diet_recommendations(consumed_data: list[dict], lang: str = "uk"):
+    """
+    Generate nutritional recommendations based on user's consumed food logs.
+
+    Runs an asynchronous response stream to analyze food intake frequency
+    and output a brief diagnostic message and a few concrete improvement tips.
+
+    Parameters:
+        consumed_data (list[dict]): The items consumed by the user over a period.
+        lang (str): Target output language.
+    """
     if not consumed_data:
         yield {"Недостатньо даних для аналізу раціону. Починайте фіксувати споживання продуктів!" if lang == "uk" else "Insufficient data to analyze your diet. Start logging your food intake!"}
         return
@@ -231,6 +309,7 @@ async def stream_diet_recommendations(consumed_data: list[dict], lang: str = "uk
         for item in consumed_data
     )
 
+    # Simple prompt defining constraints for short nutritional summary.
     prompt = f"""You are a concise nutritionist.
         Consumed food list:
         {consumed_list}
@@ -256,6 +335,7 @@ async def stream_diet_recommendations(consumed_data: list[dict], lang: str = "uk
         return
 
     try:
+        # Call streaming text generation.
         response_stream = await client.aio.models.generate_content_stream(
             model=TEXT_MODEL_NAME,
             contents=prompt,

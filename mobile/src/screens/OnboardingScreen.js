@@ -1,3 +1,10 @@
+/**
+ * @file OnboardingScreen.js
+ * @description Screen component for the onboarding workflow. Displays a series of slides
+ * introducing the application features (scanning products, monitoring freshness, smart lists)
+ * using a horizontal paginated FlatList, complete with page indicators and skip/next buttons.
+ */
+
 import React, { useState, useRef } from 'react';
 import { 
   View, 
@@ -12,38 +19,52 @@ import CustomButton from '../components/CustomButton';
 import useAuthStore from '../store/authStore';
 import { COLORS } from '../utils/constants';
 
+// Retrieve window dimensions to size slides to fit full-width screen dynamically
 const { width, height } = Dimensions.get('window');
 
+/**
+ * Static slides array containing details for each onboarding screen.
+ */
 const slides = [
   {
     id: '1',
     title: 'Скануйте продукти',
     description: 'Зробіть фото продукту, і наш ШІ автоматично визначить його термін придатності',
-    // image: require('../../assets/onboarding-1.png'),
     imageUri: 'https://cdn-icons-png.flaticon.com/512/3143/3143636.png',
   },
   {
     id: '2',
     title: 'Слідкуйте за свіжістю',
     description: 'Отримуйте сповіщення до того, як продукти зіпсуються',
-    // image: require('../../assets/onboarding-2.png'),
     imageUri: 'https://cdn-icons-png.flaticon.com/512/2913/2913520.png',
   },
   {
     id: '3',
     title: 'Розумні списки',
     description: 'Формуйте списки покупок на основі того, що закінчилося в холодильнику',
-    // image: require('../../assets/onboarding-3.png'),
     imageUri: 'https://cdn-icons-png.flaticon.com/512/1004/1004313.png',
   }
 ];
 
+/**
+ * OnboardingScreen component.
+ * Manages rendering of onboarding steps and persists completion state.
+ * 
+ * @param {object} props.navigation - React Navigation reference.
+ */
 export default function OnboardingScreen({ navigation }) {
+  // State tracking the current page index.
   const [currentIndex, setCurrentIndex] = useState(0);
+  // Reference to the FlatList component to programmatic control scrolling.
   const flatListRef = useRef(null);
   
+  // Retrieve the method to mark onboarding as completed from Auth store.
   const { finishOnboarding } = useAuthStore();
 
+  /**
+   * Finalizes onboarding. Calls the finishOnboarding action if available,
+   * otherwise redirects directly to the main application stack.
+   */
   const handleSkipOrFinish = () => {
     if (finishOnboarding) {
       finishOnboarding(); 
@@ -52,6 +73,10 @@ export default function OnboardingScreen({ navigation }) {
     }
   };
 
+  /**
+   * Handles click on the Next/Start button.
+   * If not on the last page, scroll to the next slide; otherwise, finish onboarding.
+   */
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
       flatListRef.current.scrollToIndex({ index: currentIndex + 1 });
@@ -60,6 +85,12 @@ export default function OnboardingScreen({ navigation }) {
     }
   };
 
+  /**
+   * Calculates the current active page index based on horizontal scroll offset of the FlatList.
+   * Called on scroll momentum completion.
+   * 
+   * @param {object} e - Scroll event details containing content offset.
+   */
   const updateCurrentIndex = (e) => {
     const contentOffsetX = e.nativeEvent.contentOffset.x;
     const newIndex = Math.round(contentOffsetX / width);
@@ -68,11 +99,14 @@ export default function OnboardingScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Header section containing the Skip button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleSkipOrFinish}>
           <Text style={styles.skipText}>Пропустити</Text>
         </TouchableOpacity>
       </View>
+      
+      {/* Horizontal FlatList for onboarding slides */}
       <FlatList
         ref={flatListRef}
         data={slides}
@@ -95,9 +129,9 @@ export default function OnboardingScreen({ navigation }) {
         )}
       />
 
-      {/* Нижня частина: індикатори та кнопка */}
+      {/* Footer containing progress dots and the primary progression button */}
       <View style={styles.footer}>
-        {/* Точки-індикатори */}
+        {/* Carousel indicators representing each slide */}
         <View style={styles.indicatorContainer}>
           {slides.map((_, index) => (
             <View
@@ -109,6 +143,8 @@ export default function OnboardingScreen({ navigation }) {
             />
           ))}
         </View>
+        
+        {/* Next page / Complete button */}
         <CustomButton 
           title={currentIndex === slides.length - 1 ? "Почати роботу" : "Далі"} 
           onPress={handleNext} 
@@ -118,6 +154,7 @@ export default function OnboardingScreen({ navigation }) {
   );
 }
 
+// Styling definitions for onboarding components
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background || '#fff' },
   header: {

@@ -1,3 +1,10 @@
+/**
+ * @file LeaguesScreen.js
+ * @description Screen displaying the complete levels roadmap (timeline) and league transitions.
+ * Highlights unlocked/locked statuses based on the user's XP.
+ * Provides a floating action button (FAB) to automatically scroll to the user's active level milestone.
+ */
+
 import React, { useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, StatusBar
@@ -9,7 +16,10 @@ import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import useAuthStore from '../store/authStore';
 
-// Роадмеп (Карта розвитку)
+/**
+ * Roadmap array representing levels at which users graduate to new leagues or sub-tiers.
+ * Details reward structures, titles, icons, and colors.
+ */
 const ROADMAP_DATA = [
   { id: '1', level: 1, titleKey: 'leagues.greenSprouts', defaultTitle: 'Зелені Паростки', descKey: 'leagues.desc1', defaultDesc: 'Ваш шлях починається!\n1 ШІ-рецепт, 3 фото, 5 штрихкодів, 10 ручних додавань на місяць.', icon: 'leaf', color: '#2ECC71', isLeague: true },
   { id: '2', level: 10, titleKey: 'leagues.advancedBeginner', defaultTitle: 'Просунутий новачок', descKey: 'leagues.desc2', defaultDesc: 'Ви втягуєтесь:\n2 ШІ-рецепти, 5 фото, 10 штрихкодів, 20 ручних додавань.', icon: 'star', color: '#27AE60', isLeague: false },
@@ -20,53 +30,73 @@ const ROADMAP_DATA = [
   { id: '7', level: 300, titleKey: 'leagues.absoluteGuru', defaultTitle: 'Абсолютний Гуру', descKey: 'leagues.desc7', defaultDesc: 'Максимальний рівень!\nВи досягли досконалості у стилі Zero Waste.', icon: 'trophy', color: '#F39C12', isLeague: false },
 ];
 
+/**
+ * LeaguesScreen component.
+ * Visualizes levels and milestones on a vertical timeline.
+ * 
+ * @param {object} props.navigation - React Navigation handle.
+ */
 export default function LeaguesScreen({ navigation }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const { user, refreshUser } = useAuthStore();
   const insets = useSafeAreaInsets();
+  
+  // Reference to the FlatList component to scroll to specific indexes.
   const flatListRef = useRef(null);
 
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  // Sync user profile statistics on screen focus
   useFocusEffect(
     useCallback(() => {
       refreshUser();
     }, [])
   );
 
+  // Parse user level details
   const currentXP = user?.xp_points || 0;
   const currentLevel = Math.floor(currentXP / 100) + 1;
 
-  // Знаходимо індекс поточного рівня користувача
+  // Find index of the highest level reached by the user in the roadmap array
   const currentLevelIndex = ROADMAP_DATA.reduce((acc, curr, index) => {
     if (currentLevel >= curr.level) return index;
     return acc;
   }, 0);
 
+  /**
+   * Programmatically scrolls to the active level index, centering it in view.
+   */
   const jumpToMyLevel = () => {
     if (flatListRef.current) {
       flatListRef.current.scrollToIndex({
         index: currentLevelIndex,
         animated: true,
-        viewPosition: 0.5 // Центрує елемент на екрані
+        viewPosition: 0.5 // Centers the element vertically on the viewport
       });
     }
   };
 
+  /**
+   * Renders vertical timelines connecting roadmap cards.
+   * Nodes are colored if unlocked, and display lock badges if restricted.
+   * 
+   * @param {object} param0.item - Node data representing level configuration.
+   * @param {number} param0.index - Timeline row index.
+   */
   const renderItem = ({ item, index }) => {
     const isUnlocked = currentLevel >= item.level;
     const isLast = index === ROADMAP_DATA.length - 1;
 
     return (
       <View style={styles.timelineRow}>
-        {/* Вертикальна лінія таймлайну */}
+        {/* Vertical connector line representing progress timeline */}
         {!isLast && (
           <View style={[styles.timelineLine, { backgroundColor: isUnlocked ? item.color : COLORS.outline, opacity: isUnlocked ? 1 : 0.3 }]} />
         )}
 
-        {/* Іконка-вузол на таймлайні */}
+        {/* Node icon representing the milestone status */}
         <View style={[
           styles.timelineNode,
           {
@@ -75,7 +105,7 @@ export default function LeaguesScreen({ navigation }) {
             width: item.isLeague ? 64 : 48,
             height: item.isLeague ? 64 : 48,
             borderRadius: item.isLeague ? 32 : 24,
-            marginLeft: item.isLeague ? 0 : 8 // Вирівнювання маленьких іконок по центру лінії
+            marginLeft: item.isLeague ? 0 : 8 // Centers small badges inline with vertical timeline line
           }
         ]}>
           <Ionicons
@@ -85,7 +115,7 @@ export default function LeaguesScreen({ navigation }) {
           />
         </View>
 
-        {/* Картка з описом */}
+        {/* Milestone info card detailing restrictions and descriptions */}
         <View style={[styles.card, { opacity: isUnlocked ? 1 : 0.6 }]}>
           <View style={styles.cardHeader}>
             <Text style={[styles.cardTitle, { color: isUnlocked ? item.color : COLORS.text }]}>
@@ -109,6 +139,7 @@ export default function LeaguesScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Screen Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -116,12 +147,15 @@ export default function LeaguesScreen({ navigation }) {
         <Text style={styles.headerTitle}>{t('leagues.title', 'Карта Рівнів')}</Text>
       </View>
 
+      {/* Stats overview banner */}
       <View style={styles.subHeader}>
         <View style={styles.myStatsRow}>
+          {/* XP Pill */}
           <View style={styles.statPill}>
             <Ionicons name="star" size={18} color="#F1C40F" />
             <Text style={styles.statPillText}>{currentXP} XP</Text>
           </View>
+          {/* Level Pill */}
           <View style={[styles.statPill, { backgroundColor: COLORS.primaryContainer }]}>
             <Ionicons name="trending-up" size={18} color={COLORS.primary} />
             <Text style={[styles.statPillText, { color: COLORS.primary }]}>
@@ -131,6 +165,7 @@ export default function LeaguesScreen({ navigation }) {
         </View>
       </View>
 
+      {/* Timeline FlatList */}
       <FlatList
         ref={flatListRef}
         data={ROADMAP_DATA}
@@ -139,7 +174,7 @@ export default function LeaguesScreen({ navigation }) {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         onScrollToIndexFailed={(info) => {
-          // Запобігає помилці, якщо елемент ще не відрендерився
+          // Fallback helper in case of listing rendering race conditions
           const wait = new Promise(resolve => setTimeout(resolve, 500));
           wait.then(() => {
             flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
@@ -147,7 +182,7 @@ export default function LeaguesScreen({ navigation }) {
         }}
       />
 
-      {/* Плаваюча кнопка (FAB) для переходу до поточного рівня */}
+      {/* Floating action button to automatically scroll to active level */}
       <TouchableOpacity
         style={styles.fab}
         onPress={jumpToMyLevel}
@@ -160,6 +195,14 @@ export default function LeaguesScreen({ navigation }) {
   );
 }
 
+/**
+ * Computes component layout styles dynamically depending on theme configuration.
+ * 
+ * @param {object} COLORS - Guide colors.
+ * @param {boolean} isDark - Active dark status.
+ * @param {object} insets - Safe area dimensions.
+ * @returns {object} StyleSheet layout.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
@@ -227,7 +270,7 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingTop: 32,
-    paddingBottom: 120 // Більше місця знизу, щоб остання картка не перекривалась FAB
+    paddingBottom: 120 // Prevents bottom entries overlapping behind the FAB
   },
   timelineRow: {
     flexDirection: 'row',

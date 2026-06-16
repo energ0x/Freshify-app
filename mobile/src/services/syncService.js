@@ -1,35 +1,55 @@
+/**
+ * @file syncService.js
+ * @description Synchronization service responsible for draining the offline queue.
+ * Orders transactions by entity dependency (e.g., categories must be created before products referencing them),
+ * communicates with the remote REST API, updates temporary client IDs with database primary keys, and patches
+ * subsequent operations in the queue that depend on the newly created records.
+ */
+
 import * as syncQueue from './syncQueue';
 import { productsAPI, groceryAPI, categoriesAPI } from './api';
 
+// Lock variable to prevent concurrent queue drain executions.
 let isDraining = false;
 
+/**
+ * Main queue processing loop.
+ * Processes actions in the offline queue, resolving dependencies and communicating with the API.
+ * 
+ * @param {object} stores - Object containing product and category stores.
+ * @param {object} stores.product - Product Zustand store instance.
+ * @param {object} stores.category - Category Zustand store instance.
+ */
 export const drainQueue = async (stores) => {
   if (isDraining) return;
   isDraining = true;
 
   try {
-    // Невелика затримка, щоб дочекатися можливих завершальних записів в AsyncStorage
+    // Small timeout to allow any pending AsyncStorage operations to fully complete/persist.
     await new Promise((r) => setTimeout(r, 80));
 
-    // Пріоритети для типів операцій (менше -> виконувати раніше)
+    /**
+     * Determines sorting priorities for offline actions.
+     * Ensures dependent creations (e.g. Category -> Product) execute in order.
+     * Lower values execute first.
+     * 
+     * @param {object} op - A queue operation element.
+     * @returns {number} Numeric priority weight.
+     */
     const priorityOf = (op) => {
-      // Явні пріоритети (менше значення => виконувати раніше)
-      // Відповідно до вимоги: створення категорій -> створення продуктів (холодильник) -> додавання у список покупок
-      // Видалення категорій має бути найнижчий пріоритет (виконується найпізніше)
       const map = {
         'category:create': 0,
         'category:update': 5,
         'category:restore_defaults': 6,
-        'category:delete': 100,
+        'category:delete': 100, // Deletions of categories are delayed till the end
 
         'product:create': 10,
         'product:update': 15,
-        // place consume AFTER grocery:add_from_fridge so that moves from fridge -> grocery
-        // are applied before consuming/decreasing fridge quantities
+        // Consuming must occur AFTER grocery:add_from_fridge moves to avoid premature subtraction
         'product:consume': 21,
         'product:delete': 90,
 
-        // Додавання у корзину з холодильника має чекати на створення продуктів (тому після product:create)
+        // Adding to grocery list from fridge relies on the product existing first
         'grocery:add_from_fridge': 20,
         'grocery:create': 30,
         'grocery:toggle': 31,
@@ -37,16 +57,18 @@ export const drainQueue = async (stores) => {
       };
 
       const key = `${op.entity}:${op.operation}`;
-      return map[key] !== undefined ? map[key] : 50; // дефолтна середня пріоритетність
+      return map[key] !== undefined ? map[key] : 50; // Default priority for unmapped entries
     };
+    
     const productState = stores.product.getState();
     const categoryState = stores.category.getState();
 
-    // Обробляємо операції по одній, переотримуючи чергу щоразу — це запобігає пропуску останніх елементів
-    // Якщо черга порожня — робимо кілька коротких повторів, щоб врахувати можливі затримки запису в AsyncStorage
+    // Loop through operations one by one. Re-fetching queue on each cycle avoids missing newly appended items.
     let emptyRetries = 0;
     while (true) {
       let ops = await syncQueue.getAll();
+      
+      // If queue is empty, attempt a few retries with delay to account for filesystem write lags.
       if (!ops || ops.length === 0) {
         if (emptyRetries < 3) {
           emptyRetries++;
@@ -57,12 +79,13 @@ export const drainQueue = async (stores) => {
         break;
       }
 
-      // Сортуємо тут (priority first, then by createdAt asc)
+      // Sort queue by priority first, then by creation date.
       ops.sort((a, b) => {
         const pa = priorityOf(a);
         const pb = priorityOf(b);
         if (pa < pb) return -1;
         if (pa > pb) return 1;
+        
         const dateA = new Date(a.createdAt);
         const dateB = new Date(b.createdAt);
         if (dateA < dateB) return -1;
@@ -70,15 +93,18 @@ export const drainQueue = async (stores) => {
         return 0;
       });
 
+      // Target the highest-priority operation first.
       const op = ops[0];
       try {
         let response = null;
 
+        // Route operation based on entity and type.
         if (op.entity === 'product') {
           if (op.operation === 'create') {
             response = await productsAPI.create(op.payload);
+            // Replace temporary client ID in state with real database ID
             productState.patchTempId('product', op.tempId, response.data.id);
-            // Оновлюємо інші операції в черзі, які посилаються на тимчасовий id
+            // Patch references to the temp ID in other operations down the queue
             await patchLaterOps(op.tempId, response.data.id);
           } else if (op.operation === 'update') {
             response = await productsAPI.update(op.serverId, op.payload);
@@ -98,6 +124,7 @@ export const drainQueue = async (stores) => {
             await groceryAPI.delete(op.serverId);
           } else if (op.operation === 'add_from_fridge') {
             response = await groceryAPI.addFromFridge(op.payload.product_ids);
+            // Match and swap temporary list item IDs with database IDs
             if (op.tempIds && response.data) {
               for (let j = 0; j < op.tempIds.length && j < response.data.length; j++) {
                 productState.patchTempId('grocery', op.tempIds[j], response.data[j].id);
@@ -119,18 +146,16 @@ export const drainQueue = async (stores) => {
           }
         }
 
-        // Запит успішний
+        // Operation succeeded: remove it from the queue.
         await syncQueue.dequeue(op.id);
       } catch (error) {
-        // Якщо є відповідь від сервера (4xx, 5xx), або це якась помилка, яку ми отримали від сервера
         if (error.response) {
           const status = error.response.status;
           if (status >= 400 && status < 500) {
-            // Клієнтська помилка (404, 422, 403, 409). Запит неправильний або дані недійсні.
-            // Немає сенсу його повторювати, видаляємо з черги.
+            // Client error (400-499): Invalid/malformed data. Discard to prevent queue blockage.
             await syncQueue.dequeue(op.id);
           } else if (status >= 500) {
-            // Серверна помилка (500, 502, 503). Можна спробувати ще раз.
+            // Server error (500-599): Retry up to 5 times.
             op.retryCount = (op.retryCount || 0) + 1;
             if (op.retryCount >= 5) {
               await syncQueue.dequeue(op.id);
@@ -139,7 +164,7 @@ export const drainQueue = async (stores) => {
             }
           }
         } else {
-          // Мережева помилка (немає інтернету, таймаут). Можна спробувати ще раз.
+          // Network connection error: Increment retry count and preserve in queue.
           op.retryCount = (op.retryCount || 0) + 1;
           if (op.retryCount >= 5) {
             await syncQueue.dequeue(op.id);
@@ -148,16 +173,15 @@ export const drainQueue = async (stores) => {
           }
         }
       }
-
     }
 
-    // Після всіх операцій оновлюємо дані
+    // Refresh store states after finishing synchronization.
     productState.fetchProducts().catch(() => {});
     productState.fetchGrocery().catch(() => {});
     productState.fetchConsumedProducts().catch(() => {});
     categoryState.fetchCategories().catch(() => {});
 
-    // Оновлюємо pendingCount
+    // Update pendingCount state variable.
     const finalOps = await syncQueue.getAll();
     stores.product.setState({ pendingCount: finalOps.length });
   } finally {
@@ -165,21 +189,26 @@ export const drainQueue = async (stores) => {
   }
 };
 
+/**
+ * Scans remaining items in the queue and replaces occurrences of a temporary client ID
+ * with the newly acquired server database ID.
+ * Orders dependent operations to run immediately after their respective creation operation.
+ * 
+ * @param {string} tempId - The temporary client-side ID.
+ * @param {string|number} realId - The database primary key.
+ */
 async function patchLaterOps(tempId, realId) {
-  // Оновлюємо всі операції в сховищі, які посилаються на тимчасовий id
-  // І переставляємо залежні операції так, щоб вони йшли безпосередньо після створення
   try {
     const ops = await syncQueue.getAll();
     if (!ops || ops.length === 0) return;
 
-    // Зберігаємо послідовність оригінальних операцій
     const referencing = [];
     let changed = false;
 
+    // Replace matching IDs in payload references and updates
     for (let i = 0; i < ops.length; i++) {
       const op = ops[i];
-      // Пропускаємо операцію, яка сама є створенням з цим tempId
-      // (її будемо використовувати як опорну точку для вставки)
+      // Skip the creation operation that uses this tempId
       if (op.tempId === tempId) continue;
 
       let refs = false;
@@ -209,26 +238,22 @@ async function patchLaterOps(tempId, realId) {
 
     if (!changed) return;
 
-    // Тепер побудуємо новий масив операцій: при зустрічі операції-створення з tempId
-    // вставимо одразу після неї всі залежні операції (в порядку їхнього оригінального з'явлення)
+    // Restructure the queue order, inserting dependent operations immediately after creation.
     const finalOps = [];
     for (let i = 0; i < ops.length; i++) {
       const op = ops[i];
       if (op.tempId === tempId) {
         finalOps.push(op);
-        // вставляємо залежні, але упевнимося, що ми не дублюємо
         for (const r of referencing) {
-          // не вставляємо, якщо r === op
           if (r === op) continue;
           finalOps.push(r);
         }
       } else {
-        // не додаємо ті, що ми вже вставили як referencing
         if (!referencing.includes(op)) finalOps.push(op);
       }
     }
 
-    // Якщо не знайшли оп-створення (може бути інший тип), просто збережемо оновлені ops
+    // Replace queue with the patched sequence if creation was present.
     const hasCreate = ops.some(o => o.tempId === tempId);
     if (hasCreate) {
       await syncQueue.replaceAll(finalOps);
@@ -239,6 +264,5 @@ async function patchLaterOps(tempId, realId) {
     console.warn('patchLaterOps failed', e);
   }
 }
-
 
 export default { drainQueue };

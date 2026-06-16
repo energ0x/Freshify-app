@@ -1,8 +1,26 @@
+/**
+ * @file CustomPicker.js
+ * @description A custom modal-based selector/dropdown component for React Native.
+ * Used to display and pick from a list of option items on both iOS and Android.
+ */
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 
+/**
+ * CustomPicker component displaying a touchable field that launches a choice Modal overlay.
+ * 
+ * @param {Object} props
+ * @param {string} [props.label] - Explanatory label title displayed above the dropdown field.
+ * @param {Object[]} props.items - Array of options to select from.
+ * @param {string|number} props.items[].label - Visual string of the option.
+ * @param {any} props.items[].value - Backend or programmatic value of the option.
+ * @param {any} props.selectedValue - Currently selected option value.
+ * @param {Function} props.onValueChange - Callback triggered when a new option is clicked.
+ * @returns {React.ReactElement} The CustomPicker component.
+ */
 export default function CustomPicker({
   label,
   items,
@@ -17,6 +35,14 @@ export default function CustomPicker({
   const selectedItem = items.find(item => item.value === selectedValue);
   const selectedLabel = selectedItem ? selectedItem.label : `Обрати ${label?.toLowerCase() || 'значення'}`;
 
+  /**
+   * Renders a single selectable item inside the FlatList.
+   * Highlights the current active selection with a primary theme background color and checkmark icon.
+   * 
+   * @param {Object} itemContainer
+   * @param {Object} itemContainer.item - The option object containing label and value.
+   * @returns {React.ReactElement} The touchable row component.
+   */
   const renderItem = ({ item }) => {
     const isSelected = item.value === selectedValue;
     return (
@@ -38,8 +64,10 @@ export default function CustomPicker({
 
   return (
     <View style={styles.container}>
+      {/* Label header displayed above the select container */}
       {label && <Text style={styles.label}>{label}</Text>}
 
+      {/* Button component triggering the overlay modal */}
       <TouchableOpacity
         style={styles.pickerButton}
         onPress={() => setModalVisible(true)}
@@ -51,6 +79,7 @@ export default function CustomPicker({
         <Ionicons name="chevron-down" size={20} color={COLORS.onSurfaceVariant} />
       </TouchableOpacity>
 
+      {/* Choice selection Modal */}
       <Modal
         visible={modalVisible}
         transparent={true}
@@ -62,6 +91,7 @@ export default function CustomPicker({
           activeOpacity={1}
           onPress={() => setModalVisible(false)}
         >
+          {/* Inner card holding the options list */}
           <View style={styles.modalContent}>
             <FlatList
               data={items}
@@ -77,6 +107,13 @@ export default function CustomPicker({
   );
 }
 
+/**
+ * Generates Stylesheet rules according to theme state.
+ * 
+ * @param {Object} COLORS - Theme colors configuration.
+ * @param {boolean} isDark - Dark mode check.
+ * @returns {Object} React Native StyleSheet styles object.
+ */
 const getStyles = (COLORS, isDark) => StyleSheet.create({
   container: {
     marginBottom: 20,
@@ -93,9 +130,9 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceVariant,
-    borderRadius: 16, // Округлення як у наших інпутів
+    borderRadius: 16, // Matching input element curvature
     paddingHorizontal: 16,
-    height: 56, // Висота як у наших інпутів
+    height: 56, // Uniform input field height
   },
   pickerButtonText: {
     fontSize: 16,
@@ -133,7 +170,7 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
     alignItems: 'center',
   },
   itemSelected: {
-    backgroundColor: `${COLORS.primary}15`, // Легкий фон для вибраного
+    backgroundColor: `${COLORS.primary}15`, // Light primary tint background for selected state
   },
   itemText: {
     fontSize: 16,

@@ -1,13 +1,37 @@
+/**
+ * @file MarkdownRenderer.js
+ * @description A lightweight, custom React Native Markdown rendering component.
+ * It strips emojis, handles inline bold text, displays dividers, bold headings,
+ * and renders lists with success icons.
+ */
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 
+/**
+ * MarkdownRenderer component to parse and render a simplified subset of Markdown.
+ * Supported features include:
+ * - List elements started by '*' or '-' mapped to checklist items.
+ * - Double asterisks '**' representing bold text.
+ * - Three dashes '---' representing horizontal separators/dividers.
+ * 
+ * @param {Object} props
+ * @param {string} props.content - The raw markdown text to be rendered.
+ * @returns {React.ReactElement} The parsed and styled text elements.
+ */
 const MarkdownRenderer = ({ content }) => {
   const { colors: COLORS } = useThemeStore();
   const styles = getStyles(COLORS);
 
-  // Removes common emojis that the AI might still generate despite instructions
+  /**
+   * Helper function that strips emojis from the input string.
+   * Helps ensure the UI looks clean and compliant with typography choices.
+   * 
+   * @param {string} str - The target string to strip emojis from.
+   * @returns {string} Cleaned string without emojis.
+   */
   const stripEmojis = (str) => {
     return str.replace(/[\u{1F600}-\u{1F64F}]/gu, '') // Emoticons
       .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Misc Symbols and Pictographs
@@ -22,6 +46,12 @@ const MarkdownRenderer = ({ content }) => {
       .replace(/[\u{2700}-\u{27BF}]/gu, ''); // Dingbats
   };
 
+  /**
+   * Parses text for bold symbols (**text**) and renders matching blocks with bold styles.
+   * 
+   * @param {string} text - Text block containing possible bold markup.
+   * @returns {React.ReactNode[]} Array of Text components styled appropriately.
+   */
   const renderInlineStyles = (text) => {
     // Split by ** to find bold sections
     const parts = text.split('**');
@@ -34,6 +64,12 @@ const MarkdownRenderer = ({ content }) => {
     });
   };
 
+  /**
+   * Line-by-line parser and component generator for markdown markup.
+   * Handles dividers, full headings, lists, and standard paragraphs.
+   * 
+   * @returns {React.ReactNode[]} List of elements generated from lines of text.
+   */
   const renderContent = () => {
     const lines = content.split('\n');
     
@@ -48,7 +84,7 @@ const MarkdownRenderer = ({ content }) => {
         return <View key={index} style={styles.divider} />;
       }
 
-      // Check if it's a heading-like line that is fully bold
+      // Check if it's a heading-like line that is fully bold (e.g. **Heading**)
       if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**') && trimmedLine.split('**').length === 3) {
          return (
           <Text key={index} style={styles.boldHeading}>
@@ -76,6 +112,12 @@ const MarkdownRenderer = ({ content }) => {
   return <View>{renderContent()}</View>;
 };
 
+/**
+ * Styles generator based on the active theme.
+ * 
+ * @param {Object} COLORS - Theme palette colors.
+ * @returns {Object} StyleSheet object.
+ */
 const getStyles = (COLORS) => StyleSheet.create({
   divider: {
     height: 1,

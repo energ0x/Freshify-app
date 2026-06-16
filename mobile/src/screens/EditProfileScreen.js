@@ -1,3 +1,9 @@
+/**
+ * @file EditProfileScreen.js
+ * @description Screen for editing the user's profile information (name, email, and password).
+ * Integrates with authentication stores, theme state, safe-area inserts, and localization (i18next).
+ */
+
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -17,15 +23,33 @@ import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/authStore';
 import useThemeStore from '../store/themeStore';
 
+/**
+ * EditProfileScreen component.
+ * Allows users to update their profile details like full name, email, and change their account password.
+ * 
+ * @param {Object} props - Component properties.
+ * @param {Object} props.navigation - React Navigation navigation object.
+ */
 export default function EditProfileScreen({ navigation }) {
+  // Localization hook for multi-language support
   const { t } = useTranslation();
+
+  // Authentication store for user profile data and updating profile API/action call
   const { user, updateProfile } = useAuthStore();
+
+  // Theme store hooks for managing theme-based colors and mode (light/dark)
   const { colors: COLORS, theme } = useThemeStore();
+
+  // Safe area hook to handle screen padding/insets on devices with notches
   const insets = useSafeAreaInsets();
 
+  // Helper check for dark mode
   const isDark = theme === 'dark';
 
+  // State flag to track ongoing API/service save operations
   const [saving, setSaving] = useState(false);
+
+  // Local state form object representing profile data and optional password change
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
@@ -33,8 +57,11 @@ export default function EditProfileScreen({ navigation }) {
     new_password: '',
     confirmPassword: '',
   });
+
+  // Local state for tracking form validation errors mapped to field keys
   const [editErrors, setEditErrors] = useState({});
 
+  // Populate form fields with current logged-in user details once the user data is available
   useEffect(() => {
     if (user) {
       setEditForm(prev => ({
@@ -45,11 +72,22 @@ export default function EditProfileScreen({ navigation }) {
     }
   }, [user]);
 
+  /**
+   * Validates the profile edit form entries.
+   * checks for:
+   * - Name length (minimum 2 characters)
+   * - Valid email presence and format
+   * - Correct password strength and confirmation match if updating password
+   * 
+   * @returns {boolean} True if the form is valid, false otherwise.
+   */
   const validateEditForm = () => {
     const errors = {};
     if (editForm.name.trim().length < 2) errors.name = t('validation.nameShort');
     if (!editForm.email.trim()) errors.email = t('validation.emailEmpty');
     if (!editForm.email.includes('@')) errors.email = t('validation.emailInvalid');
+    
+    // Check password rules only if user attempts to change the password
     if (editForm.new_password && editForm.new_password.length < 6)
       errors.new_password = t('validation.passShort');
     if (editForm.new_password && !editForm.current_password)
@@ -61,10 +99,16 @@ export default function EditProfileScreen({ navigation }) {
     return Object.keys(errors).length === 0;
   };
 
+  /**
+   * Handles submitting profile updates to the authentication store/service.
+   * If saving succeeds, alerts the user and navigates back. Otherwise displays an error alert.
+   */
   const handleSaveProfile = async () => {
     if (!validateEditForm()) return;
 
     setSaving(true);
+    
+    // Construct request body, omitting password fields if not being updated
     const updateData = {
       name: editForm.name.trim(),
       email: editForm.email.trim(),
@@ -74,6 +118,7 @@ export default function EditProfileScreen({ navigation }) {
       }),
     };
 
+    // Perform profile update API call
     const res = await updateProfile(updateData);
     setSaving(false);
 
@@ -85,9 +130,11 @@ export default function EditProfileScreen({ navigation }) {
     }
   };
 
+  // Determine background and text colors for the top hero section based on active theme
   const heroBg = isDark ? COLORS.primaryContainer : COLORS.primary;
   const heroContentColor = isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary;
 
+  // Retrieve styled component stylesheet dynamically
   const styles = getStyles(COLORS, insets, isDark, heroBg, heroContentColor);
 
   return (
@@ -103,15 +150,18 @@ export default function EditProfileScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ─── Hero Section ────────────────────────────────────────────── */}
+          {/* ─── Hero Header Section ────────────────────────────────────────── */}
           <View style={styles.heroSection}>
+            {/* Visual background circles for aesthetic styling */}
             <View style={styles.bCircle1} />
             <View style={styles.bCircle2} />
 
+            {/* Back button to dismiss the screen */}
             <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
               <Ionicons name="close" size={26} color={heroContentColor} />
             </TouchableOpacity>
 
+            {/* Generic user avatar placeholder */}
             <View style={styles.avatarContainer}>
               <Ionicons name="person" size={40} color={heroContentColor} />
             </View>
@@ -121,6 +171,7 @@ export default function EditProfileScreen({ navigation }) {
 
           {/* ─── Form Container ──────────────────────────────────────────── */}
           <View style={styles.formContainer}>
+            {/* Map over form configuration to generate input fields dynamically */}
             {[
               { key: 'name', label: t('settings.nameLabel'), placeholder: t('settings.namePlaceholder'), secure: false },
               { key: 'email', label: t('settings.emailLabel'), placeholder: t('settings.emailPlaceholder'), secure: false, keyboard: 'email-address' },
@@ -143,6 +194,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
             ))}
 
+            {/* Render password confirmation field only when user fills the new password input */}
             {editForm.new_password !== '' ? (
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>{t('settings.confirmPasswordLabel')}</Text>
@@ -162,7 +214,7 @@ export default function EditProfileScreen({ navigation }) {
           </View>
         </ScrollView>
 
-        {/* ─── Actions ─────────────────────────────────────────────────── */}
+        {/* ─── Actions Section (Save Button) ─────────────────────────────────── */}
         <View style={styles.actionSection}>
           <TouchableOpacity
              style={styles.saveBtn}
@@ -180,6 +232,9 @@ export default function EditProfileScreen({ navigation }) {
   );
 }
 
+/**
+ * Returns dynamic stylesheet configuration based on active theme colors and device status bar insets.
+ */
 const getStyles = (COLORS, insets, isDark, heroBg, heroContentColor) => StyleSheet.create({
   container: {
     flex: 1,
@@ -190,7 +245,7 @@ const getStyles = (COLORS, insets, isDark, heroBg, heroContentColor) => StyleShe
     flexGrow: 1
   },
 
-  // ─── Hero Section ──────────────────────────────────────────────────────────
+  // ─── Hero Section Styling ──────────────────────────────────────────────────
   heroSection: {
     backgroundColor: heroBg,
     paddingTop: insets.top + 20,
@@ -243,7 +298,7 @@ const getStyles = (COLORS, insets, isDark, heroBg, heroContentColor) => StyleShe
     letterSpacing: 0.5,
   },
 
-  // ─── Form Elements ─────────────────────────────────────────────────────────
+  // ─── Form Elements Styling ─────────────────────────────────────────────────
   formContainer: {
     paddingHorizontal: 24,
     gap: 20,
@@ -281,7 +336,7 @@ const getStyles = (COLORS, insets, isDark, heroBg, heroContentColor) => StyleShe
     marginLeft: 4,
   },
 
-  // ─── Actions ───────────────────────────────────────────────────────────────
+  // ─── Actions Styling ───────────────────────────────────────────────────────
   actionSection: {
     paddingHorizontal: 24,
     paddingVertical: 16,

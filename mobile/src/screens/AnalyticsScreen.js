@@ -1,3 +1,10 @@
+/**
+ * @file AnalyticsScreen.js
+ * @description Screeen for food and nutrition analytics dashboard.
+ * Renders macro dynamics history line chart, product consumption pie charts,
+ * and handles real-time Gemini AI health/consumption advice via WebSocket streams.
+ */
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { ScrollView, View, Text, StyleSheet, Dimensions, ActivityIndicator, RefreshControl, TouchableOpacity, StatusBar, Animated, Platform } from 'react-native';
 import { PieChart, LineChart } from 'react-native-chart-kit';
@@ -15,9 +22,13 @@ import useThemeStore from '../store/themeStore';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
+// Calculate screen geometry for responsive chart dimensions
 const screenWidth = Dimensions.get('window').width;
+
+// Define default color scheme for the category pie chart segments
 const chartColors = ['#2ECC71', '#3498DB', '#9B59B6', '#E67E22', '#E74C3C', '#1ABC9C', '#F1C40F'];
 
+// Specific colors mapping to different macronutrient types
 const MACRO_COLORS = {
   calories: '#E74C3C',
   proteins: '#3498DB',
@@ -25,6 +36,7 @@ const MACRO_COLORS = {
   carbs: '#2ECC71',
 };
 
+// Selectable analytics filtering periods
 const PERIODS = [
   { id: '1m', labelKey: 'analytics.periods.1m', fallback: '1 місяць', days: 30 },
   { id: '3m', labelKey: 'analytics.periods.3m', fallback: '3 місяці', days: 90 },
@@ -34,29 +46,50 @@ const PERIODS = [
   { id: 'custom', labelKey: 'analytics.periods.custom', fallback: 'Кастомний', days: null },
 ];
 
+/**
+ * AnalyticsScreen Component.
+ * Visualizes user's food consumption stats and requests AI generation of healthy suggestions.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation router helper.
+ */
 export default function AnalyticsScreen({ navigation }) {
   const { t, i18n } = useTranslation();
+  
+  // Analytics statistics data state fetched from backend
   const [data, setData] = useState(null);
+  
+  // Loading indicators for normal analytics loading and AI streaming
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAi, setLoadingAi] = useState(false);
+  
+  // Accumulated markdown text from the AI WebSocket stream
   const [streamedText, setStreamedText] = useState('');
 
+  // Selected period controls
   const [activePeriod, setActivePeriod] = useState(PERIODS[0]);
   const [activeChartFilter, setActiveChartFilter] = useState('all');
 
+  // Custom date boundaries when Custom range period is selected
   const [customDateRange, setCustomDateRange] = useState({
     start: new Date(new Date().setDate(new Date().getDate() - 7)),
     end: new Date()
   });
 
+  // Dynamic theme styling references
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const styles = getStyles(COLORS, insets, tabBarHeight, theme);
 
+  // Animation and WS reference trackers
   const animation = useRef(new Animated.Value(0)).current;
   const wsRef = useRef(null);
 
+  /**
+   * Fetches statistics from analytics API.
+   * Parses active configurations (custom date ranges vs fixed days limits).
+   */
   const loadStats = useCallback(async () => {
     setLoadingStats(true);
     try {
@@ -76,6 +109,8 @@ export default function AnalyticsScreen({ navigation }) {
     }
   }, [activePeriod, customDateRange]);
 
+  // Load new stats whenever the selected period changes.
+  // Ensures active websockets are disposed of when user leaves the screen.
   useFocusEffect(
     useCallback(() => {
       loadStats();
@@ -85,10 +120,17 @@ export default function AnalyticsScreen({ navigation }) {
     }, [loadStats])
   );
 
+  /**
+   * Handles user switching time periods.
+   */
   const handlePeriodChange = (period) => {
     setActivePeriod(period);
   };
 
+  /**
+   * Connects to a backend WebSocket to request real-time streaming AI recommendations.
+   * If already streaming, calling this cancels the active connection and aborts.
+   */
   const handleGenerateRecs = async () => {
     if (loadingAi) {
       if (wsRef.current) wsRef.current.close();
@@ -100,19 +142,25 @@ export default function AnalyticsScreen({ navigation }) {
 
     setLoadingAi(true);
     setStreamedText('');
+    
+    // Rotate indicator icon to signify active process
     Animated.timing(animation, { toValue: 1, duration: 300, useNativeDriver: true }).start();
 
     try {
+      // Securely fetch authorization credentials
       const token = await SecureStore.getItemAsync('auth_token');
       const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
 
+      // Parse and construct standard websocket endpoint schemas
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) wsUrl = wsUrl.replace('localhost', '10.0.2.2');
       else if (Platform.OS === 'android' && wsUrl.includes('127.0.0.1')) wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
 
+      // Initialize the WebSocket connection
       const ws = new WebSocket(`${wsUrl}/analytics/ws/ai-recommendations?days=${activePeriod.days || 30}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
+      // Event listeners for WebSocket messages, terminations, and errors
       ws.onmessage = (event) => setStreamedText(prev => prev + event.data);
       ws.onclose = () => {
         setLoadingAi(false);
@@ -130,9 +178,11 @@ export default function AnalyticsScreen({ navigation }) {
     }
   };
 
+  // Interpolation helper for button rotation animation
   const rotateInterpolate = animation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   const animatedStyle = { transform: [{ rotate: rotateInterpolate }] };
 
+  // Render a full-screen loading spinner during the initial stats fetch
   if (loadingStats && !data) {
     return (
       <View style={styles.center}>
@@ -142,6 +192,7 @@ export default function AnalyticsScreen({ navigation }) {
     );
   }
 
+  // Map category data to format expected by the react-native-chart-kit PieChart
   const pieChartData = data?.by_category?.map((item, index) => ({
     name: getTranslatedCategoryName(item.category, t),
     population: item.total,
@@ -150,11 +201,13 @@ export default function AnalyticsScreen({ navigation }) {
     legendFontSize: 12,
   })) || [];
 
+  // Parse nutrition timeline histories
   const rawNutritionData = data?.nutrition_history || [];
 
   let finalLabels = [];
   let finalData = { calories: [], proteins: [], fats: [], carbs: [] };
 
+  // Prepare fallback coordinates if analytics history datasets are empty or small
   if (rawNutritionData.length === 0) {
     finalLabels = [t('analytics.noData', 'Немає даних'), ' '];
     finalData = { calories: [0, 0], proteins: [0, 0], fats: [0, 0], carbs: [0, 0] };
@@ -177,6 +230,7 @@ export default function AnalyticsScreen({ navigation }) {
     };
   }
 
+  // Construct LineChart dataset configurations based on active macro filters
   const nutritionDatasets = [];
   if (activeChartFilter === 'all' || activeChartFilter === 'calories') {
     nutritionDatasets.push({ data: finalData.calories, color: () => MACRO_COLORS.calories, strokeWidth: 2 });
@@ -196,6 +250,7 @@ export default function AnalyticsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
 
+      {/* Screen title header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('analytics.title')}</Text>
       </View>
@@ -205,6 +260,7 @@ export default function AnalyticsScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={loadingStats} onRefresh={loadStats} colors={[COLORS.primary]} />}
         showsVerticalScrollIndicator={false}
       >
+        {/* Top summary counter cards */}
         <View style={styles.statsRow}>
           <TouchableOpacity style={styles.statCard} activeOpacity={0.8} onPress={() => navigation.navigate('Products')}>
             <Text style={styles.statValue}>{data?.total_products_in_fridge || 0}</Text>
@@ -217,9 +273,11 @@ export default function AnalyticsScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Nutritional Macronutrients (KCAL, Proteins, Fats, Carbs) Dynamics */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('analytics.macrosDynamics', 'Динаміка КБЖВ')}</Text>
 
+          {/* Period selector horizontal carousel */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodContainer} contentContainerStyle={{ gap: 8 }}>
             {PERIODS.map(period => (
               <TouchableOpacity
@@ -234,6 +292,7 @@ export default function AnalyticsScreen({ navigation }) {
             ))}
           </ScrollView>
 
+          {/* Custom Datepicker boundary inputs when Custom Period is active */}
           {activePeriod.id === 'custom' && (
             <View style={styles.customDateContainer}>
               <View style={styles.datePickerWrapper}>
@@ -256,7 +315,7 @@ export default function AnalyticsScreen({ navigation }) {
             </View>
           )}
 
-          {/* Segmented Control для фільтрів */}
+          {/* Chart dataset selection controls (All vs KCAL vs macros) */}
           <View style={styles.chartFilterContainer}>
              <TouchableOpacity onPress={() => setActiveChartFilter('all')} style={[styles.filterBtn, activeChartFilter === 'all' && styles.filterBtnActive]}>
                 <Text style={[styles.filterBtnText, activeChartFilter === 'all' && styles.filterBtnTextActive]}>{t('common.all', 'Всі')}</Text>
@@ -269,6 +328,7 @@ export default function AnalyticsScreen({ navigation }) {
              </TouchableOpacity>
           </View>
 
+          {/* Scrollable Line Chart rendering macro data */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <LineChart
               data={lineChartData}
@@ -289,6 +349,7 @@ export default function AnalyticsScreen({ navigation }) {
             />
           </ScrollView>
 
+          {/* Color legends mapping to macro parameters */}
           <View style={styles.legendContainer}>
             <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.calories}]}/><Text style={styles.legendText}>{t('analytics.kcal', 'Ккал')}</Text></View>
             <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.proteins}]}/><Text style={styles.legendText}>{t('addProduct.proteins', 'Білки')}</Text></View>
@@ -297,6 +358,7 @@ export default function AnalyticsScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Categories consumption pie chart */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('analytics.consumptionByCategory')}</Text>
           {pieChartData.length > 0 ? (
@@ -315,6 +377,7 @@ export default function AnalyticsScreen({ navigation }) {
           )}
         </View>
 
+        {/* AI Recommendations integration module */}
         <View style={styles.sectionAi}>
           <View style={styles.aiHeader}>
             <Ionicons name="sparkles" size={26} color={COLORS.primary} />
@@ -328,6 +391,7 @@ export default function AnalyticsScreen({ navigation }) {
             <Text style={styles.generateButtonText}>{loadingAi ? t('common.cancel') : t('analytics.getAdvice')}</Text>
           </TouchableOpacity>
 
+          {/* Formatted Markdown viewer for streams */}
           {streamedText ? (
             <View style={styles.aiTextContainer}>
               <MarkdownRenderer content={streamedText} />
@@ -339,11 +403,14 @@ export default function AnalyticsScreen({ navigation }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, tabBarHeight, theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
 
-  // ─── Header ────────────────────────────────────────────────────────────────
+  // ─── Header Styling ────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
@@ -369,7 +436,7 @@ const getStyles = (COLORS, insets, tabBarHeight, theme) => StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: tabBarHeight + 40 },
   loadingText: { marginTop: 16, fontSize: 15, fontWeight: '500', color: COLORS.onSurfaceVariant },
 
-  // ─── Stats Cards ───────────────────────────────────────────────────────────
+  // ─── Stats Cards Styling ───────────────────────────────────────────────────
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 16 },
   statCard: {
     flex: 1,
@@ -387,7 +454,7 @@ const getStyles = (COLORS, insets, tabBarHeight, theme) => StyleSheet.create({
   statValue: { fontSize: 36, fontWeight: '800', color: COLORS.primary },
   statLabel: { fontSize: 14, color: COLORS.onSurfaceVariant, marginTop: 8, textAlign: 'center', fontWeight: '600' },
 
-  // ─── Sections ──────────────────────────────────────────────────────────────
+  // ─── Sections Styling ──────────────────────────────────────────────────────
   section: {
     backgroundColor: COLORS.surface,
     marginBottom: 24,
@@ -402,7 +469,7 @@ const getStyles = (COLORS, insets, tabBarHeight, theme) => StyleSheet.create({
   sectionTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text, marginBottom: 20 },
   emptyText: { textAlign: 'center', color: COLORS.onSurfaceVariant, paddingVertical: 30, fontSize: 15 },
 
-  // ─── Period Pills ──────────────────────────────────────────────────────────
+  // ─── Period Pills Styling ──────────────────────────────────────────────────
   periodContainer: { marginBottom: 20, paddingBottom: 4 },
   periodPill: {
     paddingHorizontal: 16,
@@ -422,7 +489,7 @@ const getStyles = (COLORS, insets, tabBarHeight, theme) => StyleSheet.create({
   },
   datePickerWrapper: { flex: 1 },
 
-  // ─── Segmented Control (Chart Filters) ─────────────────────────────────────
+  // ─── Segmented Control Styling ─────────────────────────────────────────────
   chartFilterContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.surfaceVariant,
@@ -452,7 +519,7 @@ const getStyles = (COLORS, insets, tabBarHeight, theme) => StyleSheet.create({
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendText: { fontSize: 13, fontWeight: '500', color: COLORS.text },
 
-  // ─── AI Section ────────────────────────────────────────────────────────────
+  // ─── AI Section Styling ────────────────────────────────────────────────────
   sectionAi: {
     backgroundColor: COLORS.primaryContainer,
     borderRadius: 24,

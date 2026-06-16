@@ -1,3 +1,9 @@
+/**
+ * @file DailyTasksWidget.js
+ * @description Widget component displayed on the dashboard or screens to track user's daily progress,
+ * streak flame information, and weekly completion dots. Integrates with the daily tasks API.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +20,15 @@ const STREAK_DATA = {
 
 const DAILY_TASKS_PREVIEW = [];
 
+/**
+ * DailyTasksWidget component displaying streak and task progression.
+ *
+ * @param {Object} props
+ * @param {Object} props.navigation - React Navigation object to handle screen transitions.
+ * @param {boolean} [props.isClosable=false] - Flag indicating if a close button should be shown.
+ * @param {Function} [props.onClose] - Callback when the close button is pressed.
+ * @returns {React.ReactElement} DailyTasksWidget component.
+ */
 export default function DailyTasksWidget({ navigation, isClosable = false, onClose }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
@@ -24,8 +39,13 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
 
   useEffect(() => {
     let mounted = true;
+    
+    /**
+     * Fetches both the list of daily tasks and the overall streak/week summary.
+     */
     const fetchAll = async () => {
       try {
+        // Fetch specific task items
         const res = await dailyTasksAPI.list();
         if (!mounted) return;
         if (res?.data) {
@@ -40,6 +60,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
           setTasks(data);
         }
 
+        // Fetch task summary metrics (streak count, weekly status)
         const summaryRes = await dailyTasksAPI.getSummary();
         if (!mounted) return;
         if (summaryRes?.data) {
@@ -54,18 +75,24 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
           }));
         }
       } catch (e) {
-        // ignore
+        // Fail silently to keep user experience uninterrupted
       }
     };
 
     fetchAll();
 
+    // Subscribe to task updates triggered elsewhere in the application
     const listener = () => fetchAll();
     dailyTasksListeners.add(listener);
 
-    return () => { mounted = false; dailyTasksListeners.delete(listener); };
+    // Clean up subscription and prevent memory leaks
+    return () => { 
+      mounted = false; 
+      dailyTasksListeners.delete(listener); 
+    };
   }, []);
 
+  // Compute tasks progress and total XP accumulated today
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length || 1;
   const progressPercent = (completedCount / totalCount) * 100;
@@ -81,6 +108,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
       onPress={() => navigation.navigate('DailyTasks')}
     >
       <View style={styles.dailyWidgetTop}>
+        {/* Streak indicator showing current consecutive days */}
         <View style={styles.dailyStreakRow}>
           <View style={styles.dailyStreakFlame}>
             <Ionicons name="flame" size={24} color="#E74C3C" />
@@ -95,6 +123,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
           </View>
         </View>
 
+        {/* Weekly progress dots and interaction button (Close or Details chevron) */}
         <View style={styles.rightInfoContainer}>
           <View style={styles.dailyWeekRow}>
             {streak.week.map((done, i) => (
@@ -111,6 +140,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
           {isClosable ? (
             <TouchableOpacity
               onPress={(e) => {
+                // Prevent event bubbling up to the widget's container click handler
                 e.stopPropagation();
                 if(onClose) onClose();
               }}
@@ -128,6 +158,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
 
       <View style={styles.dailyDivider} />
 
+      {/* Numerical summary of daily task completion status */}
       <View style={styles.dailyTasksRow}>
         <Text style={styles.dailyTasksLabel}>{t('dailyTasks.tasksToday', 'Завдання сьогодні')}</Text>
         <Text style={styles.dailyTasksCount}>
@@ -135,6 +166,7 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
         </Text>
       </View>
 
+      {/* Visual progress bar representing task completion percentage */}
       <View style={styles.dailyProgressTrack}>
         <View
           style={[
@@ -147,6 +179,13 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
   );
 }
 
+/**
+ * Creates StyleSheet based on current theme configuration.
+ * 
+ * @param {Object} COLORS - Theme palette colors.
+ * @param {boolean} isDark - Flag representing if dark theme is active.
+ * @returns {Object} React Native StyleSheet styles object.
+ */
 const getStyles = (COLORS, isDark) => StyleSheet.create({
   dailyWidget: {
     backgroundColor: COLORS.surface,

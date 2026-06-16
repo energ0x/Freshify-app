@@ -1,3 +1,11 @@
+/**
+ * @file AppNavigator.js
+ * @description Central navigation controller of the Freshify application.
+ * Manages the transition flow between Authentication screens, Onboarding screens,
+ * and the Main tab-based application screens. Configures theme-aware styling, custom tab bar layouts,
+ * and entry points for modal and stacked screens.
+ */
+
 import React, { useEffect, useRef, useCallback } from "react";
 import {
   View,
@@ -25,7 +33,7 @@ import useAuthStore from "../store/authStore";
 import useThemeStore from "../store/themeStore";
 import { useTranslation } from "react-i18next";
 
-// Імпорти екранів
+// Screen components imports
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import HomeScreen from "../screens/HomeScreen";
@@ -52,15 +60,24 @@ import ProductFiltersScreen from "../screens/ProductFiltersScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import EditProductScreen from "../screens/EditProductScreen";
 
+// Create Stack and Bottom Tab Navigators
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Duration for transition animations on bottom tabs, customized by operating system.
 const TAB_FADE_DURATION = Platform.select({
   ios: 160,
   android: 100,
   default: 130,
 });
 
+/**
+ * Higher-Order Component (HOC) that wraps screens in bottom navigation with a smooth fade-in animation
+ * triggered whenever the tab screen comes into focus.
+ * 
+ * @param {React.ComponentType} WrappedComponent - The screen component to animate.
+ * @returns {React.ComponentType} The wrapped component with animated opacity.
+ */
 const withTabAnimation = (WrappedComponent) => {
   const AnimatedScreen = React.memo((props) => {
     const opacity = useRef(new Animated.Value(0)).current;
@@ -68,13 +85,16 @@ const withTabAnimation = (WrappedComponent) => {
 
     useFocusEffect(
       useCallback(() => {
+        // Stop any currently running animation instance
         if (animRef.current) {
           animRef.current.stop();
           animRef.current = null;
         }
 
+        // Reset opacity value
         opacity.setValue(0);
 
+        // Run fade-in animation
         animRef.current = Animated.timing(opacity, {
           toValue: 1,
           duration: TAB_FADE_DURATION,
@@ -86,6 +106,7 @@ const withTabAnimation = (WrappedComponent) => {
           if (finished) animRef.current = null;
         });
 
+        // Clean up animation on blur/unmount
         return () => {
           if (animRef.current) {
             animRef.current.stop();
@@ -109,14 +130,23 @@ const withTabAnimation = (WrappedComponent) => {
   return AnimatedScreen;
 };
 
+// Animated versions of primary bottom tab screens to prevent screen flicker and smooth navigation.
 const AnimatedHomeScreen = withTabAnimation(HomeScreen);
 const AnimatedGroceryListScreen = withTabAnimation(GroceryListScreen);
 const AnimatedAnalyticsScreen = withTabAnimation(AnalyticsScreen);
 const AnimatedSettingsScreen = withTabAnimation(SettingsScreen);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Custom Tab Bar Background з тінями та заокругленням
+// Custom Tab Bar Background component with shadows and rounded borders
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * Custom background component for the bottom tab bar.
+ * Uses a BlurView on iOS for transparency/glassmorphism, and a semi-opaque solid color on Android.
+ * 
+ * @param {object} props - Component properties.
+ * @param {string} props.theme - The current system theme ('dark' | 'light').
+ * @param {object} props.colors - Current color scheme configuration.
+ */
 const TabBarBackground = ({ theme, colors }) => {
   const isDark = theme === "dark";
   const androidColor = isDark ? "rgba(30, 30, 34, 0.98)" : "rgba(252, 252, 252, 0.98)";
@@ -138,6 +168,12 @@ const TabBarBackground = ({ theme, colors }) => {
   );
 };
 
+/**
+ * Bottom Tab Navigation flow container.
+ * Houses the primary screens: Products List, Grocery Shopping List, quick Add FAB, Analytics, and Settings Profile.
+ * 
+ * @returns {React.JSX.Element} Bottom Tab Navigator configuration.
+ */
 const MainTabs = () => {
   const { colors: COLORS, theme } = useThemeStore();
   const { t } = useTranslation();
@@ -152,10 +188,11 @@ const MainTabs = () => {
           height: Platform.OS === 'ios' ? 90 : 80,
           borderTopWidth: 0,
           backgroundColor: "transparent",
-          elevation: 0, // Тіні перенесені у TabBarBackground
+          elevation: 0, // Shadow handling is offloaded to the TabBarBackground wrapper
         },
         tabBarBackground: () => <TabBarBackground theme={theme} colors={COLORS} />,
         tabBarIcon: ({ size, focused }) => {
+          // Unique rendering for the center FAB (Floating Action Button) action.
           if (route.name === "AddButton") {
             return (
               <View style={styles.fabWrapper}>
@@ -173,6 +210,7 @@ const MainTabs = () => {
           let iconName;
           let labelText = "";
 
+          // Assign corresponding icons and localized labels to standard tabs.
           if (route.name === "Products") {
             iconName = focused ? "fast-food" : "fast-food-outline";
             labelText = t("tabs.products");
@@ -220,12 +258,13 @@ const MainTabs = () => {
       <Tab.Screen name="Products" component={AnimatedHomeScreen} />
       <Tab.Screen name="Grocery" component={AnimatedGroceryListScreen} />
 
+      {/* Center FAB Tab - Intercepted to trigger stack navigation instead of mounting a tab screen */}
       <Tab.Screen
         name="AddButton"
         component={AddProductScreen}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Prevents loading the default empty screen
             navigation.navigate("AddProduct");
           },
         })}
@@ -237,15 +276,23 @@ const MainTabs = () => {
   );
 };
 
+/**
+ * Main Application Navigator.
+ * Orchestrates authorization gates, onboarding status, and app navigation structures.
+ * 
+ * @returns {React.JSX.Element} Navigation container populated with dynamic screen stacks.
+ */
 export default function AppNavigator() {
   const { t } = useTranslation();
   const { isAuthenticated, isInitializing, needsOnboarding, initialize } = useAuthStore();
   const { theme, colors: COLORS } = useThemeStore();
 
+  // Initialize authorization details on startup.
   useEffect(() => {
     initialize();
   }, [initialize]);
 
+  // Establish standard styles and colors based on Light/Dark themes for React Navigation.
   const navigationTheme = {
     ...(theme === "dark" ? DarkTheme : DefaultTheme),
     colors: {
@@ -258,6 +305,7 @@ export default function AppNavigator() {
     },
   };
 
+  // Display a loading indicator while parsing user login status.
   if (isInitializing) {
     return (
       <View
@@ -287,15 +335,17 @@ export default function AppNavigator() {
 
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
-          headerTitleStyle: { fontWeight: "700" }, // Трохи жирніший текст хедерів для Stack-екранів
+          headerTitleStyle: { fontWeight: "700" }, // Slightly bolder headers for stack views
         }}
       >
         {!isAuthenticated ? (
+          // Authorization Gateway: Loaded if user is not authenticated.
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
           </>
         ) : needsOnboarding ? (
+          // Onboarding Flow Stack: Displayed immediately after registration.
           <Stack.Group
             screenOptions={{
               headerShown: false,
@@ -308,8 +358,12 @@ export default function AppNavigator() {
             <Stack.Screen name="Guide" component={GuideScreen} />
           </Stack.Group>
         ) : (
+          // Core Application Flow: Accessed after successful authentication & onboarding.
           <>
+            {/* Contains the Bottom Tab Bar screens */}
             <Stack.Screen name="Main" component={MainTabs} />
+            
+            {/* Separate Stack-Based Screens for detail actions, settings, camera, and options */}
             <Stack.Screen
               name="AddProduct"
               component={AddProductScreen}
@@ -413,6 +467,7 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  // Shadow and container configurations for custom glassmorphism style on tab bar
   tabBackgroundContainer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',
@@ -428,14 +483,16 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    overflow: "hidden", // Гарантує, що BlurView не вилізе за межі заокруглених кутів
+    overflow: "hidden", // Keeps BlurView within rounded container limits
   },
+  // Container wrapper styling for specific navigation tabs
   tabItemContainer: {
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
     marginTop: Platform.OS === 'android' ? 4 : 8,
   },
+  // Background pill overlay visible when the tab is actively focused
   iconPill: {
     paddingHorizontal: 16,
     paddingVertical: 4,
@@ -448,14 +505,16 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     fontWeight: "700",
   },
+  // Wrapper for the action Floating Action Button
   fabWrapper: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     marginTop: Platform.OS === 'android' ? -4 : 0,
   },
+  // Custom button styling for the center quick-add action
   fabButton: {
-    width: 64, // Підігнано під загальний стиль інпутів/кнопок
+    width: 64, 
     height: 52,
     borderRadius: 16,
     justifyContent: "center",

@@ -1,3 +1,10 @@
+/**
+ * @file EditProductScreen.js
+ * @description Screen for editing details of an existing food product.
+ * Supports image uploads via expo-image-picker, expiration date configuration,
+ * category pickers, and automatic calorie calculations based on nutritional inputs (macros).
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   ScrollView, View, Text, TextInput, StyleSheet, Alert,
@@ -18,19 +25,35 @@ import { useCategories } from '../hooks/useCategories';
 import { productsAPI } from '../services/api';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
+/**
+ * EditProductScreen Component.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation router.
+ * @param {Object} props.route - Route holding productId param.
+ */
 export default function EditProductScreen({ navigation, route }) {
   const { t } = useTranslation();
   const { productId } = route.params;
+
+  // Retrieve products list and update actions from product store
   const { products, updateProduct } = useProductStore();
+
+  // Theme store hooks for managing colors and modes
   const { colors: COLORS, theme } = useThemeStore();
+
+  // Load configured categories from database
   const { categories } = useCategories();
   const insets = useSafeAreaInsets();
 
+  // Component loading states
   const [loading, setLoading] = useState(false);
   const isDark = theme === 'dark';
 
+  // Find targeted product details from active store lists
   const product = products.find(p => p.id === productId);
 
+  // Form states mapping product options
   const [form, setForm] = useState({
     name: '',
     category_id: null,
@@ -46,6 +69,7 @@ export default function EditProductScreen({ navigation, route }) {
     carbohydrates: '',
   });
 
+  // Hydrate local form state with existing product values once they are loaded
   useEffect(() => {
     if (product) {
       setForm({
@@ -65,6 +89,15 @@ export default function EditProductScreen({ navigation, route }) {
     }
   }, [product, categories]);
 
+  /**
+   * Helper utility calculating calories estimate.
+   * Standard formula: (Proteins * 4) + (Fats * 9) + (Carbohydrates * 4)
+   * 
+   * @param {string} proteins - protein grams
+   * @param {string} fats - fat grams
+   * @param {string} carbohydrates - carbs grams
+   * @returns {string} Estimated calories string, or empty string.
+   */
   const calculateCalories = (proteins, fats, carbohydrates) => {
     const p = parseFloat(proteins) || 0;
     const f = parseFloat(fats) || 0;
@@ -73,6 +106,10 @@ export default function EditProductScreen({ navigation, route }) {
     return totalCalories > 0 ? Math.round(totalCalories).toString() : '';
   };
 
+  /**
+   * Safe form updater wrapping changes.
+   * Auto-recalculates calories in-place if proteins, fats, or carbohydrates undergo updates.
+   */
   const updateForm = (field, value) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
@@ -83,6 +120,10 @@ export default function EditProductScreen({ navigation, route }) {
     });
   };
 
+  /**
+   * Triggers native photo picker selection library.
+   * Restricts files to image formats and compresses file scale properties.
+   */
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -96,6 +137,13 @@ export default function EditProductScreen({ navigation, route }) {
     }
   };
 
+  /**
+   * Handles saving profile updates to backend APIs.
+   * 1. Check if name is entered.
+   * 2. Check if a new local image was selected and upload it to get a remote URL.
+   * 3. Construct update body package payload.
+   * 4. Call productStore updates actions to sync back states.
+   */
   const handleSave = async () => {
     if (!form.name) return Alert.alert(t('common.error'), t('productDetail.nameRequired'));
 
@@ -104,6 +152,7 @@ export default function EditProductScreen({ navigation, route }) {
     try {
       let finalImageUrl = form.image_url;
 
+      // Detect if image is local filepath and trigger upload API before saving
       if (form.localImageUri && !form.localImageUri.startsWith('http') && form.localImageUri !== `${API_URL}${form.image_url}`) {
         const uploadRes = await productsAPI.uploadImage(form.localImageUri);
         finalImageUrl = uploadRes.data.image_url;
@@ -137,9 +186,11 @@ export default function EditProductScreen({ navigation, route }) {
     }
   };
 
+  // Convert array lists to dropdown components values
   const unitItems = UNITS.map(u => ({ label: t(`units.${u}`, { defaultValue: u }), value: u }));
   const categoryItems = categories.map(c => ({ label: getTranslatedCategoryName(c.name, t), value: c.id }));
 
+  // Limit expiration dates settings inputs
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 10);
 
@@ -151,6 +202,7 @@ export default function EditProductScreen({ navigation, route }) {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
       
+      {/* Screen Title Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="close-outline" size={32} color={COLORS.text} />
@@ -169,6 +221,8 @@ export default function EditProductScreen({ navigation, route }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.formCard}>
+            
+            {/* Image display section */}
             <View style={styles.imageSection}>
               <TouchableOpacity style={styles.imagePlaceholder} onPress={pickImage} activeOpacity={0.8}>
                 {form.localImageUri ? (
@@ -182,6 +236,7 @@ export default function EditProductScreen({ navigation, route }) {
               </TouchableOpacity>
             </View>
 
+            {/* Product Title */}
             <View style={styles.section}>
               <Text style={styles.label}>{t('productDetail.nameLabel')}</Text>
               <TextInput
@@ -193,6 +248,7 @@ export default function EditProductScreen({ navigation, route }) {
               />
             </View>
 
+            {/* Quantity and Custom Unit parameters */}
             <View style={styles.row}>
               <View style={[styles.section, { flex: 1 }]}>
                 <Text style={styles.label}>{t('productDetail.qtyLabel')}</Text>
@@ -214,6 +270,7 @@ export default function EditProductScreen({ navigation, route }) {
               </View>
             </View>
 
+            {/* Custom Category selection */}
             <View style={styles.section}>
               <CustomPicker
                 label={t('productDetail.categoryLabel')}
@@ -223,6 +280,7 @@ export default function EditProductScreen({ navigation, route }) {
               />
             </View>
 
+            {/* Expiration date calendar modal picker */}
             <View style={styles.section}>
               <DatePicker
                 label={t('addProduct.expiryLabel', 'Термін придатності')}
@@ -232,6 +290,7 @@ export default function EditProductScreen({ navigation, route }) {
               />
             </View>
 
+            {/* Macronutrients parameters input fields */}
             <View style={styles.section}>
               <Text style={styles.label}>{t('addProduct.macrosLabel')}</Text>
               <View style={styles.macroRow}>
@@ -265,6 +324,7 @@ export default function EditProductScreen({ navigation, route }) {
                     placeholderTextColor={COLORS.onSurfaceVariant}
                   />
                 </View>
+                {/* Calories display field (auto-calculated, non-editable) */}
                 <View style={styles.macroInputContainer}>
                   <TextInput
                     style={[styles.input, styles.macroInput, { backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7', opacity: 0.8 }]}
@@ -278,6 +338,7 @@ export default function EditProductScreen({ navigation, route }) {
               </View>
             </View>
 
+            {/* Optional notes area */}
             <View style={styles.section}>
               <Text style={styles.label}>{t('addProduct.notesOptional')}</Text>
               <TextInput
@@ -294,6 +355,7 @@ export default function EditProductScreen({ navigation, route }) {
           </View>
         </ScrollView>
 
+        {/* Footer save operations action button */}
         <View style={styles.footer}>
           <CustomButton
             title={t('common.save')}
@@ -307,17 +369,20 @@ export default function EditProductScreen({ navigation, route }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background
   },
 
-  // ─── Header ────────────────────────────────────────────────────────────────
+  // ─── Header Styling ────────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Center title
+    justifyContent: 'center',
     paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 20,
@@ -343,13 +408,13 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     padding: 8,
   },
 
-  // ─── Content ───────────────────────────────────────────────────────────────
+  // ─── Content Styling ───────────────────────────────────────────────────────
   content: {
     padding: 20,
     paddingBottom: 20,
   },
 
-  // ─── Form Card ─────────────────────────────────────────────────────────────
+  // ─── Form Card Styling ─────────────────────────────────────────────────────
   formCard: {
     backgroundColor: COLORS.surface,
     padding: 24,
@@ -361,7 +426,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     shadowRadius: 6
   },
 
-  // ─── Image Picker ──────────────────────────────────────────────────────────
+  // ─── Image Picker Styling ──────────────────────────────────────────────────
   imageSection: {
     marginBottom: 24,
     alignItems: 'center'
@@ -394,7 +459,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     color: COLORS.primary
   },
 
-  // ─── Inputs & Sections ─────────────────────────────────────────────────────
+  // ─── Inputs & Sections Styling ─────────────────────────────────────────────
   section: { marginBottom: 20 },
   row: {
     flexDirection: 'row',
@@ -425,7 +490,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     textAlignVertical: 'top'
   },
 
-  // ─── Macros Row ────────────────────────────────────────────────────────────
+  // ─── Macros Row Styling ────────────────────────────────────────────────────
   macroRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -441,7 +506,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     fontWeight: '500'
   },
 
-  // ─── Footer & Button ───────────────────────────────────────────────────────
+  // ─── Footer & Button Styling ───────────────────────────────────────────────
   footer: {
     padding: 20,
     paddingTop: 10,

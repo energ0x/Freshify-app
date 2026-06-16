@@ -1,3 +1,10 @@
+/**
+ * @file AchievementsScreen.js
+ * @description Screen displaying the user's achievements, level progression, and current league.
+ * Fetches user profile data and achievement progress from the server on screen focus.
+ * Falls back to locally cached database data (using local db service) if offline or upon fetch failure.
+ */
+
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
@@ -14,35 +21,56 @@ import * as db from '../services/db';
 
 const { width } = Dimensions.get('window');
 
+/**
+ * Roadmap array representing levels at which users graduate to new leagues.
+ */
 const ROADMAP_DATA = [
   { id: '1', level: 1, titleKey: 'achievements.roadmap1', icon: 'leaf', color: '#2ECC71' },
   { id: '4', level: 101, titleKey: 'achievements.roadmap2', icon: 'ribbon', color: '#3498DB' },
   { id: '6', level: 201, titleKey: 'achievements.roadmap3', icon: 'planet', color: '#F1C40F' },
 ];
 
+/**
+ * AchievementsScreen component.
+ * Displays level badges, current XP progress, and lists unlocked/locked achievements.
+ * 
+ * @param {object} props.navigation - React Navigation handle.
+ */
 export default function AchievementsScreen({ navigation }) {
+  // Localization Hook.
   const { t } = useTranslation();
+  // Store hook for application color palette and theme.
   const { colors: COLORS, theme } = useThemeStore();
+  // Store hook for user profile data and refreshing action.
   const { user, refreshUser } = useAuthStore();
   const insets = useSafeAreaInsets();
 
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  // States for holding achievements data and tracking network request loading.
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Screen focus effect to fetch fresh achievement list and user info.
+   * Caches response data locally; falls back to cached data in case of offline exceptions.
+   */
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
         setLoading(true);
         try {
+          // Sync fresh user details (including XP)
           await refreshUser();
+          // Request achievement milestones
           const response = await achievementsAPI.get();
           setAchievements(response.data);
+          // Cache successful response in local database
           await db.write(db.KEYS.ACHIEVEMENTS, response.data);
         } catch (error) {
           console.error("Failed to fetch data", error);
+          // Read cached records if the backend request fails
           const cached = await db.read(db.KEYS.ACHIEVEMENTS);
           if (cached) {
             setAchievements(cached);
@@ -55,26 +83,38 @@ export default function AchievementsScreen({ navigation }) {
     }, [refreshUser])
   );
 
+  // Level calculations: 100 XP per level.
   const currentXP = user?.xp_points || 0;
   const currentLevel = Math.floor(currentXP / 100) + 1;
   const nextLevelXP = (Math.floor(currentXP / 100) + 1) * 100;
   const progressPercent = (currentXP % 100);
 
+  // Determine user's active league by reviewing level milestones in reverse order
   const currentLeague = ROADMAP_DATA.slice().reverse().find(l => currentLevel >= l.level) || ROADMAP_DATA[0];
 
+  /**
+   * Renders individual achievement card item.
+   * Handles visual locking opacity and fills mini-progress bar.
+   * 
+   * @param {object} item - Achievement item properties (id, completed, progress, total, icon, color, title, desc).
+   */
   const renderAchievement = (item) => {
     const isCompleted = item.completed;
     const itemProgressPercent = item.total > 0 ? (item.progress / item.total) * 100 : 0;
 
     return (
       <View key={item.id} style={[styles.achievementCard, !isCompleted && styles.achievementLocked]}>
+        {/* Completed status color container */}
         <View style={[styles.iconContainer, { backgroundColor: isCompleted ? `${item.color}20` : COLORS.surfaceVariant }]}>
           <Ionicons name={item.icon} size={26} color={isCompleted ? item.color : COLORS.onSurfaceVariant} />
         </View>
+        
+        {/* Achievement information and progress bar */}
         <View style={styles.achievementInfo}>
           <Text style={styles.achievementTitle} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.achievementDesc} numberOfLines={2}>{item.desc}</Text>
 
+          {/* Mini progress tracker */}
           <View style={styles.miniProgressContainer}>
             <View style={styles.miniProgressTrack}>
               <View
@@ -95,6 +135,7 @@ export default function AchievementsScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
+      {/* Screen Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -103,6 +144,8 @@ export default function AchievementsScreen({ navigation }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        
+        {/* Top Header Card detailing current League status and XP progression */}
         <TouchableOpacity style={styles.headerCard} activeOpacity={0.8} onPress={() => navigation.navigate('Leagues')}>
           <View style={styles.leagueRow}>
             <View style={[styles.leagueIconBg, { backgroundColor: `${currentLeague.color}15` }]}>
@@ -115,6 +158,7 @@ export default function AchievementsScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={24} color={COLORS.outline} />
           </View>
 
+          {/* Experience point progress bar details */}
           <View style={styles.xpContainer}>
             <View style={styles.xpTextRow}>
               <Text style={styles.xpText}>{t('achievements.experience')}</Text>
@@ -122,6 +166,7 @@ export default function AchievementsScreen({ navigation }) {
                 {currentXP} <Text style={{ color: COLORS.text }}>/ {nextLevelXP}</Text>
               </Text>
             </View>
+            {/* Visual Progress Bar Track */}
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: currentLeague.color }]} />
             </View>
@@ -129,6 +174,7 @@ export default function AchievementsScreen({ navigation }) {
           </View>
         </TouchableOpacity>
 
+        {/* Section listing all individual achievements */}
         <View style={styles.achievementsSection}>
           <Text style={styles.sectionLabel}>{t('achievements.yourAchievements')}</Text>
           {loading ? (
@@ -144,6 +190,14 @@ export default function AchievementsScreen({ navigation }) {
   );
 }
 
+/**
+ * Computes stylesheet layout based on active theme configuration.
+ * 
+ * @param {object} COLORS - Theme colors palette.
+ * @param {boolean} isDark - Flag representing dark theme status.
+ * @param {object} insets - Screen insets details.
+ * @returns {object} StyleSheet object.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
@@ -283,7 +337,6 @@ const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
     gap: 16
   },
   achievementCard: {
-    // 16 is the gap size, 40 is the horizontal padding (20 + 20)
     width: (width - 40 - 16) / 2,
     backgroundColor: COLORS.surface,
     borderRadius: 20,

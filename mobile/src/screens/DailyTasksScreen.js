@@ -1,3 +1,11 @@
+/**
+ * @file DailyTasksScreen.js
+ * @description Screen displaying daily tasks and user streaks.
+ * Pulls daily mission status (completed/incomplete) and rewards (XP) from the API.
+ * Keeps track of current consecutive streaks and renders progress indicators.
+ * Implements a listener pattern to dynamically refresh tasks data.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import { dailyTasksAPI, dailyTasksListeners } from '../services/api';
 
+// Initial state template for user streak data
 const STREAK_DATA = {
   current: 0,
   best: 0,
@@ -20,8 +29,15 @@ const STREAK_DATA = {
   weekLabels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'],
 };
 
+// Initial state placeholder for daily tasks
 const DAILY_TASKS = [];
 
+/**
+ * DailyTasksScreen component.
+ * Lists daily objectives, streak flame indicators, and XP trackers.
+ * 
+ * @param {object} props.navigation - React Navigation handle.
+ */
 export default function DailyTasksScreen({ navigation }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
@@ -30,13 +46,21 @@ export default function DailyTasksScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
+  // States holding current tasks list and streak statistics
   const [tasks, setTasks] = useState(DAILY_TASKS);
   const [streak, setStreak] = useState(STREAK_DATA);
 
+  // Synchronize daily tasks and streak details on mount.
   useEffect(() => {
     let mounted = true;
+    
+    /**
+     * Pulls task records and summary statistics from the server.
+     * Updates states if the component is still mounted.
+     */
     const fetchAll = async () => {
       try {
+        // Fetch tasks list
         const res = await dailyTasksAPI.list();
         if (!mounted) return;
         if (res?.data) {
@@ -51,6 +75,7 @@ export default function DailyTasksScreen({ navigation }) {
           })));
         }
 
+        // Fetch streak and weekly completions summary
         const summaryRes = await dailyTasksAPI.getSummary();
         if (!mounted) return;
         if (summaryRes?.data) {
@@ -71,12 +96,15 @@ export default function DailyTasksScreen({ navigation }) {
 
     fetchAll();
 
+    // Register listener for real-time task update callbacks (e.g. from scanning products)
     const listener = () => fetchAll();
     dailyTasksListeners.add(listener);
 
+    // Clean up mounts and unsubscribe from events
     return () => { mounted = false; dailyTasksListeners.delete(listener); };
   }, []);
 
+  // Aggregate completion status calculations
   const completedCount = tasks.filter((t) => t.completed).length;
   const totalCount = tasks.length || 1;
   const todayXP = tasks.filter((t) => t.completed).reduce((s, t) => s + t.xp, 0);
@@ -87,7 +115,7 @@ export default function DailyTasksScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
-      {/* ── Консистентний Header з кнопкою "Назад" ── */}
+      {/* Header section with back navigation */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
           <Ionicons name="arrow-back" size={28} color={COLORS.text} />
@@ -100,7 +128,7 @@ export default function DailyTasksScreen({ navigation }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Стрік (Streak card) ── */}
+        {/* Streak card (Flame progress) */}
         <View style={styles.card}>
           <View style={styles.streakHeader}>
             <View style={styles.streakFlame}>
@@ -110,13 +138,14 @@ export default function DailyTasksScreen({ navigation }) {
               <Text style={styles.streakNumber}>{streak.current}</Text>
               <Text style={styles.streakLabel}>{t('dailyTasks.daysInRow', 'днів поспіль')}</Text>
             </View>
+            {/* Record / Best streak badge */}
             <View style={styles.bestStreakBadge}>
               <Ionicons name="trophy" size={16} color="#F1C40F" />
               <Text style={styles.bestStreakText}>{t('dailyTasks.record', 'Рекорд:')} {streak.best}</Text>
             </View>
           </View>
 
-          {/* Дні тижня */}
+          {/* Weekdays dots indicator row */}
           <View style={styles.weekRow}>
             {streak.week.map((done, i) => (
               <View key={i} style={styles.dayCol}>
@@ -137,7 +166,7 @@ export default function DailyTasksScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── Щоденний прогрес ── */}
+        {/* Daily progress overview */}
         <View style={styles.card}>
           <View style={styles.progressHeader}>
             <Text style={styles.sectionTitle}>{t('dailyTasks.progressToday', 'Прогрес сьогодні')}</Text>
@@ -146,6 +175,7 @@ export default function DailyTasksScreen({ navigation }) {
             </Text>
           </View>
 
+          {/* Progress bar track */}
           <View style={styles.progressTrack}>
             <View
               style={[
@@ -155,6 +185,7 @@ export default function DailyTasksScreen({ navigation }) {
             />
           </View>
 
+          {/* Localized feedback hints */}
           <Text style={styles.progressHint}>
             {completedCount === totalCount
               ? t('dailyTasks.allCompleted', '🎉 Всі завдання виконано! +{{xp}} XP зараховано', { xp: maxXP })
@@ -162,7 +193,7 @@ export default function DailyTasksScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* ── Завдання на сьогодні ── */}
+        {/* Daily mission cards listing */}
         <Text style={styles.sectionLabel}>{t('dailyTasks.tasksForToday', 'Завдання на сьогодні')}</Text>
 
         {tasks.map((task) => (
@@ -173,6 +204,7 @@ export default function DailyTasksScreen({ navigation }) {
               task.completed && styles.taskCardDone,
             ]}
           >
+            {/* Mission Completion Icon */}
             <View
               style={[
                 styles.taskIcon,
@@ -186,6 +218,7 @@ export default function DailyTasksScreen({ navigation }) {
               />
             </View>
 
+            {/* Mission Text details */}
             <View style={styles.taskInfo}>
               <Text
                 style={[
@@ -200,6 +233,7 @@ export default function DailyTasksScreen({ navigation }) {
               </Text>
             </View>
 
+            {/* XP Reward Badge */}
             <View style={[styles.xpBadge, { backgroundColor: task.completed ? `${task.color}15` : COLORS.surfaceVariant }]}>
               <Text style={[styles.xpBadgeText, { color: task.completed ? task.color : COLORS.onSurfaceVariant }]}>
                 +{task.xp} XP
@@ -213,6 +247,14 @@ export default function DailyTasksScreen({ navigation }) {
   );
 }
 
+/**
+ * Calculates component layout styles dynamically depending on dark mode theme colors.
+ * 
+ * @param {object} COLORS - App colors palette.
+ * @param {boolean} isDark - Dark theme status.
+ * @param {object} insets - Safe margins container.
+ * @returns {object} StyleSheet layout.
+ */
 const getStyles = (COLORS, isDark, insets) =>
   StyleSheet.create({
     container: {
@@ -221,13 +263,12 @@ const getStyles = (COLORS, isDark, insets) =>
     },
 
     // ─── Header ────────────────────────────────────────────────────────────────
-      header: {
-        flexDirection: 'row',       // Розташовує елементи в один рядок
-alignItems: 'center',       // Центрує їх по вертикалі
-    gap: 12,
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
       paddingTop: insets.top || 20,
       paddingHorizontal: 20,
-      // paddingBottom: 20,
       backgroundColor: COLORS.surface,
       borderBottomLeftRadius: 24,
       borderBottomRightRadius: 24,
@@ -246,9 +287,8 @@ alignItems: 'center',       // Центрує їх по вертикалі
       marginBottom: 20,
       letterSpacing: 0.5,
     },
-
     backButton: {
-              marginTop: 16,
+      marginTop: 16,
       marginBottom: 12,
       alignSelf: 'flex-start',
     },

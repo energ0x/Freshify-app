@@ -1,3 +1,10 @@
+/**
+ * @file HistoryScreen.js
+ * @description Screen displaying the log history of consumed food products.
+ * Includes search filtering, pull-to-refresh to fetch updated data from the store,
+ * and detailed listings showing consumption quantity, units, category, and date.
+ */
+
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl,
@@ -10,18 +17,33 @@ import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
 import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
+/**
+ * HistoryScreen Component.
+ * Visualizes previously consumed items.
+ * 
+ * @param {Object} props - React Navigation props.
+ * @param {Object} props.navigation - Navigation router.
+ */
 export default function HistoryScreen({ navigation }) {
   const { t } = useTranslation();
+
+  // Load consumed list and fetch actions from product inventory store
   const { consumedProducts, fetchConsumedProducts } = useProductStore();
+
+  // Local state for search queries and loading flags
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
+  // Theme configuration details
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
 
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, insets, isDark);
 
+  /**
+   * Refreshes history entries list from backend database.
+   */
   const loadData = useCallback(async () => {
     setRefreshing(true);
     if (fetchConsumedProducts) {
@@ -30,20 +52,29 @@ export default function HistoryScreen({ navigation }) {
     setRefreshing(false);
   }, [fetchConsumedProducts]);
 
+  // Initial load on component focus
   useEffect(() => {
     loadData();
   }, [loadData]);
 
+  // Filter consumed history entries dynamically by name matching
   const filteredConsumed = (consumedProducts || []).filter(p => {
     const nameToSearch = p.product_name || p.name || '';
     return nameToSearch.toLowerCase().includes(search.toLowerCase());
   });
 
+  /**
+   * Custom list cell renderer for a consumed product item.
+   * Format dates using local timezone/language parameters.
+   */
   const renderConsumedItem = ({ item }) => (
     <View style={styles.consumedItemContainer}>
+      {/* Visual left icon */}
       <View style={styles.consumedIconContainer}>
         <Ionicons name="restaurant" size={24} color={COLORS.primary} />
       </View>
+      
+      {/* Information details */}
       <View style={styles.consumedProductInfo}>
         <Text style={styles.consumedProductName}>{item.product_name || item.name}</Text>
         {item.category && (
@@ -63,6 +94,8 @@ export default function HistoryScreen({ navigation }) {
           </Text>
         )}
       </View>
+      
+      {/* Quantity badge */}
       <View style={styles.consumedQuantityContainer}>
         <Text style={styles.quantityValue}>{item.quantity}</Text>
         <Text style={styles.quantityUnit}>{item.unit || ''}</Text>
@@ -74,6 +107,7 @@ export default function HistoryScreen({ navigation }) {
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
 
+      {/* Screen Title Header containing Search panel */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
@@ -82,6 +116,7 @@ export default function HistoryScreen({ navigation }) {
           <Text style={styles.headerTitle}>{t('screens.history', 'Історія')}</Text>
         </View>
 
+        {/* Input search box */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.onSurfaceVariant} style={styles.searchIcon} />
           <TextInput
@@ -99,6 +134,7 @@ export default function HistoryScreen({ navigation }) {
         </View>
       </View>
 
+      {/* Primary History FlatList */}
       <FlatList
         data={filteredConsumed}
         keyExtractor={(item) => item.id.toString()}
@@ -122,6 +158,9 @@ export default function HistoryScreen({ navigation }) {
   );
 }
 
+/**
+ * Creates dynamic styles using active theme tokens, notch inserts, and navigation heights.
+ */
 const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   container: {
     flex: 1,
@@ -175,7 +214,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     height: '100%',
   },
 
-  // ─── List & Items ──────────────────────────────────────────────────────────
+  // ─── List & Items Styling ──────────────────────────────────────────────────
   list: {
     padding: 20,
     paddingBottom: insets.bottom + 40,
@@ -240,7 +279,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     color: COLORS.onSurfaceVariant,
   },
 
-  // ─── Empty State ───────────────────────────────────────────────────────────
+  // ─── Empty State Styling ───────────────────────────────────────────────────
   empty: {
     alignItems: 'center',
     justifyContent: 'center',

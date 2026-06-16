@@ -1,3 +1,9 @@
+/**
+ * @file Allergens Selection Screen
+ * @description Renders a tag/chip selector of food allergen options (milk, nuts, gluten, etc.)
+ * during the onboarding process. Allows adding custom inputs and handles DB sanitization.
+ */
+
 import React, { useState, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
@@ -10,6 +16,13 @@ import CustomButton from '../../components/CustomButton';
 import useAuthStore from '../../store/authStore';
 import useThemeStore from '../../store/themeStore';
 
+/**
+ * AllergensScreen component allowing users to choose or type custom allergies.
+ * 
+ * @param {Object} props
+ * @param {Object} props.navigation - React Navigation helper.
+ * @returns {React.ReactElement} AllergensScreen component.
+ */
 export default function AllergensScreen({ navigation }) {
   const { t } = useTranslation();
   const { updateProfile } = useAuthStore();
@@ -19,7 +32,7 @@ export default function AllergensScreen({ navigation }) {
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
-  // Мемоїзуємо перекладений список, щоб уникнути зайвих ререндерів
+  // Memoize translation list to avoid unnecessary component re-renders
   const initialTranslatedAllergens = useMemo(() => [
     t('allergens.milk', 'Молоко'), t('allergens.nuts', 'Горіхи'), t('allergens.eggs', 'Яйця'),
     t('allergens.gluten', 'Глютен'), t('allergens.fish', 'Риба'), t('allergens.seafood', 'Морепродукти'),
@@ -32,6 +45,11 @@ export default function AllergensScreen({ navigation }) {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  /**
+   * Toggles selection state of an allergen chip.
+   * 
+   * @param {string} item - The name of the allergen.
+   */
   const toggleAllergen = (item) => {
     if (selected.includes(item)) {
       setSelected(selected.filter(i => i !== item));
@@ -40,16 +58,19 @@ export default function AllergensScreen({ navigation }) {
     }
   };
 
+  /**
+   * Validates and registers a custom user-typed allergen tag.
+   */
   const addCustomAllergen = () => {
     const text = customInput.trim();
     if (!text) return;
 
-    // Перевірка на довжину
+    // Check maximum length constraint
     if (text.length > 100) {
       return Alert.alert(t('common.error'), t('onboarding.allergenTooLong'));
     }
 
-    // Перевірка на дублікати без урахування регістру
+    // Check case-insensitive duplicates
     if (allergens.map(a => a.toLowerCase()).includes(text.toLowerCase())) {
       return Alert.alert(t('common.attention'), t('onboarding.allergenExists'));
     }
@@ -60,9 +81,12 @@ export default function AllergensScreen({ navigation }) {
     setShowCustomInput(false);
   };
 
+  /**
+   * Sanitizes selections by removing UI emojis and commits selections to the database.
+   */
   const handleNext = async () => {
     setLoading(true);
-    // Видаляємо емодзі для збереження в БД
+    // Strip emojis to maintain database clean text records
     const cleanedAllergens = selected.map(item => item.replace(/[\u{1F300}-\u{1F9FF}]/gu, '').trim());
 
     const res = await updateProfile({ allergens: cleanedAllergens });
@@ -92,6 +116,7 @@ export default function AllergensScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Chip layout Grid */}
         <View style={styles.grid}>
           {allergens.map((item) => {
             const isSelected = selected.includes(item);
@@ -110,6 +135,7 @@ export default function AllergensScreen({ navigation }) {
             );
           })}
 
+          {/* Add custom tag button trigger */}
           <TouchableOpacity
             style={[styles.chip, styles.chipAdd]}
             onPress={() => setShowCustomInput(!showCustomInput)}
@@ -120,6 +146,7 @@ export default function AllergensScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
+        {/* Input box showing up conditionally */}
         {showCustomInput && (
           <View style={styles.inputBlock}>
             <TextInput
@@ -139,6 +166,7 @@ export default function AllergensScreen({ navigation }) {
         )}
       </ScrollView>
 
+      {/* Screen action footer button */}
       <View style={styles.footer}>
         <CustomButton
           title={selected.length > 0 ? t('common.next', 'Далі') : t('onboarding.noAllergies', 'Немає алергій')}
@@ -151,6 +179,14 @@ export default function AllergensScreen({ navigation }) {
   );
 }
 
+/**
+ * Generates Stylesheet objects according to parameters.
+ * 
+ * @param {Object} COLORS - Theme colors configuration.
+ * @param {boolean} isDark - Dark mode check.
+ * @param {Object} insets - Safe zone insets.
+ * @returns {Object} React Native StyleSheet styles object.
+ */
 const getStyles = (COLORS, isDark, insets) => StyleSheet.create({
   container: {
     flex: 1,
