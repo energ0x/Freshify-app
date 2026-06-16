@@ -130,6 +130,10 @@ class ConsumedProductResponse(BaseModel):
     category_obj: Optional[CategoryResponse] = None
     quantity: float
     unit: str
+    calories_consumed: Optional[float] = None
+    proteins_consumed: Optional[float] = None
+    fats_consumed: Optional[float] = None
+    carbohydrates_consumed: Optional[float] = None
     consumed_at: datetime
 
     class Config:

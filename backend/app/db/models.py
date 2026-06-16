@@ -303,7 +303,13 @@ class ConsumedProduct(Base):
     
     # Unit of measurement
     unit = Column(String(50))
-    
+
+    # Nutrition actually consumed in this event, frozen against later product edits/deletes.
+    calories_consumed = Column(Float, nullable=True)
+    proteins_consumed = Column(Float, nullable=True)
+    fats_consumed = Column(Float, nullable=True)
+    carbohydrates_consumed = Column(Float, nullable=True)
+
     # Timestamp indicating when the item was consumed
     consumed_at = Column(DateTime(timezone=True), server_default=func.now())
 

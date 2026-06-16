@@ -186,6 +186,19 @@ def consume_product(db: Session, product_id: uuid.UUID, quantity: float, user_id
     if quantity > product.quantity:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insufficient quantity")
 
+    # Snapshot the nutrition consumed using the same per-100g normalization the analytics
+    # query applies, so the stored value and the live-product fallback always agree.
+    unit_lower = (product.unit or "").lower()
+    if unit_lower in ("г", "g", "мл", "ml"):
+        factor = quantity / 100.0
+    elif unit_lower in ("кг", "kg", "л", "l"):
+        factor = quantity * 10.0
+    else:
+        factor = quantity
+
+    def _scaled(value):
+        return value * factor if value is not None else None
+
     # Create a history record for the consumed product.
     consumed = ConsumedProduct(
         user_id=user_id,
@@ -194,6 +207,10 @@ def consume_product(db: Session, product_id: uuid.UUID, quantity: float, user_id
         category_id=product.category_id,
         quantity=quantity,
         unit=product.unit,
+        calories_consumed=_scaled(product.calories),
+        proteins_consumed=_scaled(product.proteins),
+        fats_consumed=_scaled(product.fats),
+        carbohydrates_consumed=_scaled(product.carbohydrates),
     )
     db.add(consumed)
     # Decrement available quantity.
