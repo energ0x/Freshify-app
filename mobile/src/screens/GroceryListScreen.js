@@ -1,5 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, RefreshControl, Alert, StatusBar, Platform, LayoutAnimation, UIManager, Animated } from 'react-native';
+import {
+  View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity,
+  RefreshControl, Alert, StatusBar, Platform, LayoutAnimation,
+  UIManager, Animated
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +11,6 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useTranslation } from 'react-i18next';
 import useProductStore from '../store/productStore';
 import useThemeStore from '../store/themeStore';
-import CustomButton from '../components/CustomButton';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -124,7 +127,7 @@ export default function GroceryListScreen() {
     return (
       <Swipeable
         ref={swipeableRef}
-        containerStyle={{ marginBottom: 12, overflow: 'visible' }}
+        containerStyle={styles.swipeableContainer}
         renderLeftActions={renderLeftActions}
         renderRightActions={renderRightActions}
         overshootLeft={false}
@@ -141,7 +144,7 @@ export default function GroceryListScreen() {
           <TouchableOpacity
             style={styles.checkboxContainer}
             onPress={() => toggleGroceryItem(item.id, !item.is_purchased)}
-            activeOpacity={1}
+            activeOpacity={0.8}
           >
             <Ionicons
               name={item.is_purchased ? "checkmark-circle" : "ellipse-outline"}
@@ -164,38 +167,38 @@ export default function GroceryListScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('grocery.title')}</Text>
 
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="add-outline" size={20} color={COLORS.onSurfaceVariant} />
-              <TextInput
-                style={styles.input}
-                placeholder={t('grocery.inputPlaceholder')}
-                placeholderTextColor={COLORS.onSurfaceVariant}
-                value={newItemName}
-                onChangeText={setNewItemName}
-                onSubmitEditing={handleAddItem}
-              />
-              {newItemName !== '' && (
-                <TouchableOpacity onPress={() => setNewItemName('')} style={{ marginRight: 4 }}>
-                  <Ionicons name="close-circle" size={18} color={COLORS.onSurfaceVariant} />
-                </TouchableOpacity>
-              )}
-            </View>
-            <TouchableOpacity
-              style={[styles.addButton, !newItemName.trim() && styles.addButtonDisabled]}
-              onPress={handleAddItem}
-              disabled={!newItemName.trim()}
-            >
-              <Ionicons
-                name="add"
-                size={28}
-                color={!newItemName.trim() ? COLORS.onSurfaceVariant : COLORS.onPrimaryContainer}
-              />
-            </TouchableOpacity>
+        <View style={styles.inputContainer}>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="add-outline" size={20} color={COLORS.onSurfaceVariant} />
+            <TextInput
+              style={styles.input}
+              placeholder={t('grocery.inputPlaceholder')}
+              placeholderTextColor={COLORS.onSurfaceVariant}
+              value={newItemName}
+              onChangeText={setNewItemName}
+              onSubmitEditing={handleAddItem}
+            />
+            {newItemName !== '' && (
+              <TouchableOpacity onPress={() => setNewItemName('')}>
+                <Ionicons name="close-circle" size={18} color={COLORS.onSurfaceVariant} />
+              </TouchableOpacity>
+            )}
           </View>
+          <TouchableOpacity
+            style={[styles.addButton, !newItemName.trim() && styles.addButtonDisabled]}
+            onPress={handleAddItem}
+            disabled={!newItemName.trim()}
+          >
+            <Ionicons
+              name="add"
+              size={24}
+              color={!newItemName.trim() ? COLORS.onSurfaceVariant : COLORS.onPrimaryContainer}
+            />
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity style={styles.autoAddBtn} onPress={handleAddLowStock}>
-          <Ionicons name="sync-outline" size={18} color={COLORS.onPrimary} style={{ marginRight: 8 }} />
+        <TouchableOpacity style={styles.autoAddBtn} onPress={handleAddLowStock} activeOpacity={0.8}>
+          <Ionicons name="sync-outline" size={20} color={COLORS.onPrimaryContainer} />
           <Text style={styles.autoAddText}>{t('grocery.addLowStock')}</Text>
         </TouchableOpacity>
       </View>
@@ -205,6 +208,7 @@ export default function GroceryListScreen() {
         keyExtractor={item => item.id}
         renderItem={({ item }) => <SwipeableGroceryItem item={item} />}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} />}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -239,19 +243,24 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 20,
     backgroundColor: COLORS.surface,
-    elevation: 2,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '800',
     color: COLORS.text,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -263,20 +272,21 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceVariant,
-    borderRadius: 100,
+    borderRadius: 16,
     paddingHorizontal: 16,
+    height: 52,
   },
   input: {
     flex: 1,
-    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
-    marginLeft: 8,
+    paddingHorizontal: 10,
     fontSize: 16,
     color: COLORS.text,
+    height: '100%',
   },
   addButton: {
     backgroundColor: COLORS.primaryContainer,
-    width: 48,
-    height: 48,
+    width: 52,
+    height: 52,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -286,23 +296,34 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   },
   autoAddBtn: {
     flexDirection: 'row',
-    backgroundColor: COLORS.primary,
-    marginTop: 12,
-    paddingVertical: 12,
-    borderRadius: 100,
+    backgroundColor: COLORS.primaryContainer,
+    marginTop: 16,
+    height: 52,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   autoAddText: {
-    color: COLORS.onPrimary,
-    fontSize: 14,
-    fontWeight: '600',
+    color: COLORS.onPrimaryContainer,
+    fontSize: 16,
+    fontWeight: '700',
   },
 
   // ─── List ──────────────────────────────────────────────────────────────────
   list: {
     padding: 20,
     paddingBottom: tabBarHeight + 40,
+  },
+  swipeableContainer: {
+    marginBottom: 16,
+    borderRadius: 16,
+    backgroundColor: COLORS.surface,
   },
   itemContainer: {
     flexDirection: 'row',
@@ -313,7 +334,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 16,
     elevation: 3,
-    shadowColor: '#000000',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 5,
@@ -325,7 +346,7 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   },
   itemName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     marginLeft: 12,
     color: COLORS.text,
     flex: 1,
@@ -333,29 +354,31 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   itemPurchased: {
     textDecorationLine: 'line-through',
     color: COLORS.onSurfaceVariant,
+    fontWeight: '500',
   },
 
   // ─── Empty state ───────────────────────────────────────────────────────────
   empty: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 60,
+    marginTop: '20%',
     paddingHorizontal: 32,
   },
   emptyIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 100,
+    height: 100,
+    borderRadius: 32,
     backgroundColor: COLORS.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     color: COLORS.text,
-    marginBottom: 8,
+    marginBottom: 10,
+    textAlign: 'center',
   },
   emptyText: {
     fontSize: 16,
@@ -368,52 +391,49 @@ const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
   swipeAction: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 90,
+    width: 80,
     borderRadius: 16,
   },
   buyAction: {
     backgroundColor: COLORS.primaryContainer,
-    marginRight: -20,
-    paddingRight: 20,
   },
   deleteAction: {
     backgroundColor: COLORS.errorContainer,
-    marginLeft: -20,
-    paddingLeft: 20,
   },
   swipeText: {
     fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
+    fontWeight: '700',
+    marginTop: 6,
   },
 
   // ─── Snackbar ──────────────────────────────────────────────────────────────
   snackbar: {
     position: 'absolute',
-    bottom: tabBarHeight + 80,
-    left: 20,
-    right: 20,
+    bottom: tabBarHeight + 20,
+    alignSelf: 'center',
+    width: '90%',
     backgroundColor: COLORS.text,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    elevation: 5,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   snackbarText: {
     color: COLORS.background,
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
   },
   snackbarAction: {
     color: COLORS.primary,
-    fontWeight: 'bold',
-    fontSize: 14,
-    textTransform: 'uppercase', // Зроблено через стилі, щоб текст завжди був великими літерами
+    fontWeight: '700',
+    fontSize: 15,
+    textTransform: 'uppercase',
   },
 });

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
@@ -7,8 +9,10 @@ import { groceryAPI } from '../services/api';
 
 const RecipeCard = ({ content }) => {
   const { t } = useTranslation();
-  const { colors: COLORS } = useThemeStore();
-  const styles = getStyles(COLORS);
+  const { colors: COLORS, theme } = useThemeStore();
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, isDark);
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [addingToGrocery, setAddingToGrocery] = useState(false);
   const [addedToGrocery, setAddedToGrocery] = useState(false);
@@ -23,14 +27,14 @@ const RecipeCard = ({ content }) => {
 
     // Знаходимо рядок з метаданими (Час та Складність)
     const metaIndex = lines.findIndex(line => line.includes('**') && line.includes('|'));
-    
+
     // Опис – це все, що між назвою та мета-рядком (або 2-й рядок, якщо мета немає)
     const descriptionEnd = metaIndex !== -1 ? metaIndex : 2;
     const description = lines.slice(1, descriptionEnd).join(' ').trim();
 
     let time = '';
     let difficulty = '';
-    
+
     // Розумний парсинг часу та складності (вирізає жирний шрифт, залишає лише значення)
     if (metaIndex !== -1) {
       const parts = lines[metaIndex].split('|');
@@ -40,17 +44,17 @@ const RecipeCard = ({ content }) => {
       }
     }
 
-    // Шукаємо індекси заголовків незалежно від мови (розумний regex)
+    // Шукаємо індекси заголовків незалежно від мови
     const ingredientsIndex = lines.findIndex(line => line.startsWith('###') && /(Інгредієнти|Ingredients)/i.test(line));
     const missingIngredientsIndex = lines.findIndex(line => line.startsWith('###') && /(Треба докупити|To buy)/i.test(line));
     const instructionsIndex = lines.findIndex(line => line.startsWith('###') && /(Приготування|Instructions)/i.test(line));
 
     // Визначаємо межі блоків
     const ingredientsEnd = missingIngredientsIndex !== -1 ? missingIngredientsIndex : instructionsIndex;
-    
+
     // Витягуємо списки
-    const ingredients = ingredientsIndex !== -1 && ingredientsEnd !== -1 
-      ? lines.slice(ingredientsIndex + 1, ingredientsEnd).filter(l => l.trim() !== '').map(line => line.replace(/^-\s*/, '').trim()) 
+    const ingredients = ingredientsIndex !== -1 && ingredientsEnd !== -1
+      ? lines.slice(ingredientsIndex + 1, ingredientsEnd).filter(l => l.trim() !== '').map(line => line.replace(/^-\s*/, '').trim())
       : [];
 
     const missingIngredients = missingIngredientsIndex !== -1 && instructionsIndex !== -1
@@ -100,34 +104,52 @@ const RecipeCard = ({ content }) => {
   return (
     <View style={styles.recipeCard}>
       <TouchableOpacity style={styles.recipeHeader} onPress={() => setIsExpanded(!isExpanded)} activeOpacity={0.7}>
-        <View style={{ flex: 1 }}>
+        <View style={styles.headerInfo}>
           <Text style={styles.recipeName}>{recipe.name}</Text>
+
           <View style={styles.recipeMeta}>
-            <Ionicons name="time-outline" size={16} color={COLORS.textLight} />
-            <Text style={styles.metaText}>{recipe.time}</Text>
-            <Ionicons name="bar-chart-outline" size={16} color={COLORS.textLight} style={{ marginLeft: 12 }} />
-            <Text style={styles.metaText}>{recipe.difficulty}</Text>
+            {!!recipe.time && (
+              <View style={styles.metaPill}>
+                <Ionicons name="time" size={16} color={COLORS.primary} />
+                <Text style={styles.metaText}>{recipe.time}</Text>
+              </View>
+            )}
+            {!!recipe.difficulty && (
+              <View style={styles.metaPill}>
+                <Ionicons name="bar-chart" size={16} color={COLORS.primary} />
+                <Text style={styles.metaText}>{recipe.difficulty}</Text>
+              </View>
+            )}
           </View>
         </View>
-        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={24} color={COLORS.primary} />
+
+        <View style={[styles.expandIconContainer, isExpanded && styles.expandIconContainerActive]}>
+          <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={isExpanded ? COLORS.onPrimaryContainer : COLORS.primary} />
+        </View>
       </TouchableOpacity>
 
       {isExpanded && (
         <View style={styles.recipeDetails}>
           {recipe.description ? <Text style={styles.description}>{recipe.description}</Text> : null}
 
-          <Text style={styles.sectionTitle}>{t('recipeCard.ingredients')}</Text>
-          {recipe.ingredients.map((ing, idx) => (
-            <View key={idx} style={styles.listItem}>
-              <Ionicons name="checkmark-circle-outline" size={18} color={COLORS.success} style={styles.listIcon} />
-              <Text style={styles.listText}>{ing}</Text>
-            </View>
-          ))}
+          {recipe.ingredients.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>{t('recipeCard.ingredients', 'Інгредієнти')}</Text>
+              {recipe.ingredients.map((ing, idx) => (
+                <View key={idx} style={styles.listItem}>
+                  <View style={styles.listIconWrapValid}>
+                    <Ionicons name="checkmark" size={14} color={COLORS.primary} />
+                  </View>
+                  <Text style={styles.listText}>{ing}</Text>
+                </View>
+              ))}
+            </>
+          )}
 
           {recipe.missingIngredients.length > 0 && (
-            <>
+            <View style={styles.missingSection}>
               <View style={styles.missingHeaderContainer}>
-                <Text style={[styles.sectionTitle, { color: COLORS.warning, marginBottom: 0 }]}>{t('recipeCard.missing')}</Text>
+                <Text style={styles.sectionTitleMissing}>{t('recipeCard.missing', 'Треба докупити')}</Text>
                 <TouchableOpacity
                   style={[
                     styles.addToGroceryButton,
@@ -135,144 +157,244 @@ const RecipeCard = ({ content }) => {
                   ]}
                   onPress={handleAddMissingToGrocery}
                   disabled={addingToGrocery || addedToGrocery}
+                  activeOpacity={0.8}
                 >
                   {addingToGrocery ? (
-                    <ActivityIndicator size="small" color={COLORS.onPrimary} />
+                    <ActivityIndicator size="small" color={COLORS.onPrimaryContainer} />
                   ) : addedToGrocery ? (
                     <>
-                      <Ionicons name="checkmark-outline" size={16} color={COLORS.onPrimary} />
-                      <Text style={styles.addToGroceryText}>{t('recipeCard.added')}</Text>
+                      <Ionicons name="checkmark-done" size={18} color={COLORS.primary} />
+                      <Text style={[styles.addToGroceryText, { color: COLORS.primary }]}>{t('recipeCard.added', 'Додано')}</Text>
                     </>
                   ) : (
                     <>
-                      <Ionicons name="cart-outline" size={16} color={COLORS.onPrimary} />
-                      <Text style={styles.addToGroceryText}>{t('recipeCard.addAll')}</Text>
+                      <Ionicons name="cart" size={18} color={COLORS.onPrimaryContainer} />
+                      <Text style={styles.addToGroceryText}>{t('recipeCard.addAll', 'В список')}</Text>
                     </>
                   )}
                 </TouchableOpacity>
               </View>
 
-              <View style={{ marginTop: 8 }}>
+              <View style={styles.missingList}>
                 {recipe.missingIngredients.map((ing, idx) => (
                   <View key={idx} style={styles.listItem}>
-                    <Ionicons name="close-circle-outline" size={18} color={COLORS.danger} style={styles.listIcon} />
+                    <View style={styles.listIconWrapMissing}>
+                      <Ionicons name="close" size={14} color={COLORS.danger ?? '#FF3B30'} />
+                    </View>
                     <Text style={styles.listText}>{ing}</Text>
                   </View>
                 ))}
               </View>
-            </>
+            </View>
           )}
 
-          <Text style={[styles.sectionTitle, { marginTop: 12 }]}>{t('recipeCard.instructions')}</Text>
-          {recipe.instructions.map((step, idx) => (
-            <Text key={idx} style={styles.stepItem}><Text style={styles.stepNumber}>{idx + 1}.</Text> {step}</Text>
-          ))}
+          {recipe.instructions.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: 12 }]}>{t('recipeCard.instructions', 'Приготування')}</Text>
+              {recipe.instructions.map((step, idx) => (
+                <View key={idx} style={styles.stepItem}>
+                  <View style={styles.stepBadge}>
+                    <Text style={styles.stepBadgeText}>{idx + 1}</Text>
+                  </View>
+                  <Text style={styles.stepText}>{step}</Text>
+                </View>
+              ))}
+            </>
+          )}
         </View>
       )}
     </View>
   );
 };
 
-const getStyles = (COLORS) => StyleSheet.create({
+const getStyles = (COLORS, isDark) => StyleSheet.create({
   recipeCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    marginBottom: 16,
-    elevation: 1,
+    marginBottom: 20,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.08,
+    shadowRadius: 8,
     overflow: 'hidden'
   },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
   recipeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20
+    padding: 20,
+    gap: 16,
+  },
+  headerInfo: {
+    flex: 1,
   },
   recipeName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '800',
     color: COLORS.text,
-    marginBottom: 8
+    marginBottom: 12,
   },
   recipeMeta: {
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  metaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceVariant,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
   },
   metaText: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginLeft: 6
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.onSurfaceVariant,
   },
+  expandIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surfaceVariant,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  expandIconContainerActive: {
+    backgroundColor: COLORS.primaryContainer,
+  },
+
+  // ─── Content Details ───────────────────────────────────────────────────────
   recipeDetails: {
-    padding: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    paddingTop: 8,
   },
   description: {
     fontSize: 15,
     fontStyle: 'italic',
-    color: COLORS.text,
-    marginBottom: 16,
-    lineHeight: 22
+    fontWeight: '500',
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 24,
+    lineHeight: 22,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 8
-  },
-  missingHeaderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
     marginTop: 8,
   },
-  addToGroceryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  addToGroceryButtonDisabled: {
-    backgroundColor: COLORS.surfaceVariant,
-  },
-  addToGroceryText: {
-    color: COLORS.onPrimary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
+
+  // ─── Lists ─────────────────────────────────────────────────────────────────
   listItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 10,
-    paddingLeft: 4,
+    marginBottom: 12,
+    gap: 12,
   },
-  listIcon: {
-    marginRight: 8,
+  listIconWrapValid: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: `${COLORS.primary}20`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  listIconWrapMissing: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.errorContainer || '#FF3B3020',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 2,
   },
   listText: {
     flex: 1,
     fontSize: 15,
+    fontWeight: '500',
     color: COLORS.text,
     lineHeight: 22,
   },
-  stepItem: { 
-    fontSize: 15, 
-    color: COLORS.text, 
-    marginBottom: 10, 
-    lineHeight: 22 
+
+  // ─── Missing Ingredients Section ───────────────────────────────────────────
+  missingSection: {
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 16,
+    marginBottom: 16,
   },
-  stepNumber: { 
-    fontWeight: 'bold', 
-    color: COLORS.primary 
+  missingHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitleMissing: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.danger ?? '#FF3B30',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  addToGroceryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primaryContainer,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 6,
+  },
+  addToGroceryButtonDisabled: {
+    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+  },
+  addToGroceryText: {
+    color: COLORS.onPrimaryContainer,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  missingList: {
+    marginTop: 4,
+  },
+
+  // ─── Instructions ──────────────────────────────────────────────────────────
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    gap: 12,
+  },
+  stepBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  stepBadgeText: {
+    fontWeight: '800',
+    color: COLORS.onPrimary,
+    fontSize: 13,
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.text,
+    lineHeight: 24,
+    fontWeight: '500',
   },
 });
 

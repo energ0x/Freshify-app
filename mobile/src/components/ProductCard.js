@@ -9,56 +9,61 @@ import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 export default function ProductCard({ item, onPress, style }) {
   const { t } = useTranslation();
-  const { colors: COLORS } = useThemeStore();
+  const { colors: COLORS, theme } = useThemeStore();
+
+  const isDark = theme === 'dark';
   const expiryColor = getExpiryColor(item.expiry_date, COLORS);
-  const styles = getStyles(COLORS, expiryColor);
-  
+  const styles = getStyles(COLORS, expiryColor, isDark);
+
   const originalCategoryName = item.category_obj?.name;
   const displayCategoryName = getTranslatedCategoryName(originalCategoryName, t);
 
   const getCategoryIcon = (categoryName) => {
     switch (categoryName) {
-      case 'Молочні продукти': return 'water-outline';
-      case "М'ясо та риба": return 'fish-outline';
-      case 'Овочі': return 'leaf-outline';
-      case 'Фрукти': return 'nutrition-outline';
-      case 'Напої': return 'cafe-outline';
-      case 'Хліб та випічка': return 'pizza-outline';
-      default: return 'fast-food-outline';
+      case 'Молочні продукти': return 'water';
+      case "М'ясо та риба": return 'fish';
+      case 'Овочі': return 'leaf';
+      case 'Фрукти': return 'nutrition';
+      case 'Напої': return 'cafe';
+      case 'Хліб та випічка': return 'pizza';
+      default: return 'fast-food';
     }
   };
 
   const renderIconOrImage = () => {
     if (item.image_url) {
-      const imageUrl = item.image_url.startsWith('http') 
-        ? item.image_url 
+      const imageUrl = item.image_url.startsWith('http')
+        ? item.image_url
         : `${API_URL}${item.image_url}`;
-        
+
       return (
         <Image source={{ uri: imageUrl }} style={styles.image} />
       );
     }
-    
+
     return (
       <View style={styles.iconContainer}>
-         <Ionicons name={getCategoryIcon(originalCategoryName)} size={24} color={COLORS.primary} />
+         <Ionicons name={getCategoryIcon(originalCategoryName)} size={26} color={COLORS.primary} />
       </View>
     );
   };
 
   return (
-    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.9}>
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.8}>
       {renderIconOrImage()}
+
       <View style={styles.mainInfo}>
         <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
         <Text style={styles.subtext} numberOfLines={1}>
           {displayCategoryName || t('productCard.other')}
         </Text>
       </View>
+
       <View style={styles.rightSection}>
         <View style={styles.quantityBadge}>
            <Text style={styles.quantityText}>{item.quantity} {item.unit}</Text>
         </View>
+
         <View style={styles.expiryBadge}>
           <Ionicons name="time" size={14} color={expiryColor} />
           <Text style={styles.expiryText} numberOfLines={1}>
@@ -70,48 +75,49 @@ export default function ProductCard({ item, onPress, style }) {
   );
 }
 
-const getStyles = (COLORS, expiryColor) => StyleSheet.create({
+const getStyles = (COLORS, expiryColor, isDark) => StyleSheet.create({
   card: {
     backgroundColor: COLORS.surface,
     padding: 16,
-    borderRadius: 20,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000000',
+    elevation: 2,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 6,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     backgroundColor: COLORS.primaryContainer,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
   image: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     marginRight: 16,
   },
   mainInfo: {
     flex: 1,
-    marginRight: 8,
+    marginRight: 12,
     justifyContent: 'center',
   },
   name: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: COLORS.text,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   subtext: {
     fontSize: 13,
-    color: COLORS.textLight,
+    fontWeight: '500',
+    color: COLORS.onSurfaceVariant,
   },
   rightSection: {
     alignItems: 'flex-end',
@@ -119,14 +125,14 @@ const getStyles = (COLORS, expiryColor) => StyleSheet.create({
     gap: 8,
   },
   quantityBadge: {
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    backgroundColor: COLORS.surfaceVariant,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
   },
   quantityText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '800',
     color: COLORS.text,
   },
   expiryBadge: {
@@ -141,7 +147,7 @@ const getStyles = (COLORS, expiryColor) => StyleSheet.create({
   },
   expiryText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: expiryColor,
     flexShrink: 1,
   },

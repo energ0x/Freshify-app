@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, StatusBar
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +13,7 @@ export default function ProductFiltersScreen({ navigation, route }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
-  
+
   const isDark = theme === 'dark';
 
   const { currentFilters, presentCategories = [] } = route.params || {};
@@ -29,14 +31,21 @@ export default function ProductFiltersScreen({ navigation, route }) {
     }
   };
 
-  const renderSortArrow = (type) => {
+  const renderSortIcon = (type) => {
     if (sortBy !== type) return null;
-    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+    return (
+      <Ionicons
+        name={sortDirection === 'asc' ? 'arrow-up' : 'arrow-down'}
+        size={16}
+        color={COLORS.primary}
+        style={{ marginLeft: 6 }}
+      />
+    );
   };
 
   const handleApply = () => {
     navigation.navigate({
-      name: 'Products', 
+      name: 'Products',
       params: { appliedFilters: { selectedCategoryId, sortBy, sortDirection } },
       merge: true,
     });
@@ -52,122 +61,124 @@ export default function ProductFiltersScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+
+      {/* ─── Header ─────────────────────────────────────────────────────────── */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Ionicons name="close" size={28} color={COLORS.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('home.filtersTitle')}</Text>
+        <Text style={styles.headerTitle}>{t('home.filtersTitle', 'Фільтри')}</Text>
         <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView 
-        style={styles.scrollContainer} 
-        contentContainerStyle={styles.scrollContent} 
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.subtitle}>
-          {t('home.filtersSubtitle')}
+          {t('home.filtersSubtitle', 'Налаштуйте відображення ваших продуктів')}
         </Text>
-        <View style={styles.columnsContainer}>
-          <View style={styles.column}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="folder-outline" size={20} color={COLORS.text} />
-              <Text style={styles.sectionTitle}>{t('home.filterCategory')}</Text>
+
+        {/* ─── Категорії ────────────────────────────────────────────────────── */}
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.iconWrap}>
+              <Ionicons name="folder" size={20} color={COLORS.primary} />
             </View>
-            
-            <View style={styles.chipContainer}>
-              <TouchableOpacity 
-                style={[
-                  styles.chip, 
-                  selectedCategoryId === null ? styles.chipSelected : styles.chipUnselected
-                ]} 
-                onPress={() => setSelectedCategoryId(null)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.chipText, selectedCategoryId === null ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                  {t('home.all')}
-                </Text>
-              </TouchableOpacity>
-              
-              {presentCategories.map(category => (
-                <TouchableOpacity 
-                  key={category.id} 
-                  style={[
-                    styles.chip, 
-                    selectedCategoryId === category.id ? styles.chipSelected : styles.chipUnselected
-                  ]} 
+            <Text style={styles.sectionTitle}>{t('home.filterCategory', 'Категорія')}</Text>
+          </View>
+
+          <View style={styles.chipContainer}>
+            <TouchableOpacity
+              style={[styles.chip, selectedCategoryId === null ? styles.chipSelected : styles.chipUnselected]}
+              onPress={() => setSelectedCategoryId(null)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.chipText, selectedCategoryId === null ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                {t('home.all', 'Всі')}
+              </Text>
+              {selectedCategoryId === null && <Ionicons name="checkmark" size={16} color={COLORS.primary} style={{ marginLeft: 6 }} />}
+            </TouchableOpacity>
+
+            {presentCategories.map(category => {
+              const isSelected = selectedCategoryId === category.id;
+              return (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[styles.chip, isSelected ? styles.chipSelected : styles.chipUnselected]}
                   onPress={() => setSelectedCategoryId(category.id)}
-                  activeOpacity={0.7}
+                  activeOpacity={0.8}
                 >
-                  <Text style={[styles.chipText, selectedCategoryId === category.id ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                  <Text style={[styles.chipText, isSelected ? styles.chipTextSelected : styles.chipTextUnselected]}>
                     {getTranslatedCategoryName(category.name, t)}
                   </Text>
+                  {isSelected && <Ionicons name="checkmark" size={16} color={COLORS.primary} style={{ marginLeft: 6 }} />}
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.column}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="swap-vertical-outline" size={20} color={COLORS.text} />
-              <Text style={styles.sectionTitle}>{t('home.sortBy')}</Text>
-            </View>
-
-            <View style={styles.chipContainer}>
-              <TouchableOpacity 
-                style={[
-                  styles.chip, 
-                  sortBy === 'expiry' ? styles.chipSelected : styles.chipUnselected
-                ]} 
-                onPress={() => handleSortPress('expiry')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.chipText, sortBy === 'expiry' ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                  {t('home.sortExpiry')}{renderSortArrow('expiry')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[
-                  styles.chip, 
-                  sortBy === 'alphabet' ? styles.chipSelected : styles.chipUnselected
-                ]} 
-                onPress={() => handleSortPress('alphabet')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.chipText, sortBy === 'alphabet' ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                  {t('home.sortAlphabet')}{renderSortArrow('alphabet')}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[
-                  styles.chip, 
-                  sortBy === 'quantity' ? styles.chipSelected : styles.chipUnselected
-                ]} 
-                onPress={() => handleSortPress('quantity')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.chipText, sortBy === 'quantity' ? styles.chipTextSelected : styles.chipTextUnselected]}>
-                  {t('home.sortQuantity')}{renderSortArrow('quantity')}
-                </Text>
-              </TouchableOpacity>
-            </View>
+              );
+            })}
           </View>
         </View>
+
+        {/* ─── Сортування ───────────────────────────────────────────────────── */}
+        <View style={styles.card}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.iconWrap}>
+              <Ionicons name="swap-vertical" size={20} color={COLORS.primary} />
+            </View>
+            <Text style={styles.sectionTitle}>{t('home.sortBy', 'Сортування')}</Text>
+          </View>
+
+          <View style={styles.chipContainer}>
+            <TouchableOpacity
+              style={[styles.chip, sortBy === 'expiry' ? styles.chipSelected : styles.chipUnselected]}
+              onPress={() => handleSortPress('expiry')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.chipText, sortBy === 'expiry' ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                {t('home.sortExpiry', 'За терміном')}
+              </Text>
+              {renderSortIcon('expiry')}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.chip, sortBy === 'alphabet' ? styles.chipSelected : styles.chipUnselected]}
+              onPress={() => handleSortPress('alphabet')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.chipText, sortBy === 'alphabet' ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                {t('home.sortAlphabet', 'За алфавітом')}
+              </Text>
+              {renderSortIcon('alphabet')}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.chip, sortBy === 'quantity' ? styles.chipSelected : styles.chipUnselected]}
+              onPress={() => handleSortPress('quantity')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.chipText, sortBy === 'quantity' ? styles.chipTextSelected : styles.chipTextUnselected]}>
+                {t('home.sortQuantity', 'За кількістю')}
+              </Text>
+              {renderSortIcon('quantity')}
+            </TouchableOpacity>
+          </View>
+        </View>
+
       </ScrollView>
 
+      {/* ─── Footer ───────────────────────────────────────────────────────── */}
       <View style={styles.footer}>
         <CustomButton
-          title={t('common.resetAll')}
+          title={t('common.resetAll', 'Скинути')}
           variant="outline"
           onPress={resetFilters}
           style={styles.resetButton}
-          textStyle={{ color: COLORS.danger }}
+          textStyle={{ color: COLORS.danger ?? '#FF3B30' }}
         />
-        
         <CustomButton
-          title={t('common.apply')}
+          title={t('common.apply', 'Застосувати')}
           onPress={handleApply}
           style={styles.applyButton}
         />
@@ -181,27 +192,38 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: Platform.OS === 'ios' ? 20 : insets.top || 20,
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 20,
     backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
   },
-  backButton: {
+  closeButton: {
     padding: 8,
     width: 44,
     alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '800',
     color: COLORS.text,
+    letterSpacing: 0.5,
   },
+
+  // ─── Content ───────────────────────────────────────────────────────────────
   scrollContainer: {
     flex: 1,
   },
@@ -211,88 +233,114 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     paddingBottom: 40,
   },
   subtitle: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    marginBottom: 28,
-    lineHeight: 20,
+    fontSize: 15,
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 24,
+    lineHeight: 22,
     textAlign: 'center',
     paddingHorizontal: 10,
+    fontWeight: '500',
   },
-  columnsContainer: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  column: {
-    flex: 1,
+
+  // ─── Cards ─────────────────────────────────────────────────────────────────
+  card: {
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 1,
+    padding: 24,
+    marginBottom: 24,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
+    marginBottom: 20,
+    gap: 12,
+  },
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: `${COLORS.primary}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
-    color: COLORS.text,
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
+
+  // ─── Chips ─────────────────────────────────────────────────────────────────
   chipContainer: {
-    flexDirection: 'column',
-    gap: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   chip: {
-    width: '100%',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   chipUnselected: {
     backgroundColor: COLORS.surfaceVariant,
   },
   chipSelected: {
-    backgroundColor: `${COLORS.primary}15`,
+    backgroundColor: COLORS.primaryContainer,
     borderColor: COLORS.primary,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    textAlign: 'center',
   },
   chipTextUnselected: {
     color: COLORS.text,
   },
   chipTextSelected: {
     color: COLORS.primary,
+    fontWeight: '700',
   },
+
+  // ─── Footer ────────────────────────────────────────────────────────────────
   footer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingBottom: (insets.bottom || 20) + 10,
+    paddingVertical: 16,
+    paddingBottom: (insets.bottom || 20) + 16,
     backgroundColor: COLORS.surface,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    gap: 12,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    gap: 16,
   },
   resetButton: {
     flex: 1,
-    borderColor: COLORS.danger,
+    height: 52,
+    borderRadius: 16,
+    borderColor: COLORS.danger ?? '#FF3B30',
+    borderWidth: 1.5,
   },
   applyButton: {
     flex: 2,
+    height: 52,
+    borderRadius: 16,
   },
 });

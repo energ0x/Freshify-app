@@ -6,14 +6,13 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
 import { dailyTasksAPI, dailyTasksListeners } from '../services/api';
 
-// ─── Mock data ──────────────────────────────────────────────────────────────
 const STREAK_DATA = {
   current: 0,
   best: 0,
@@ -24,8 +23,10 @@ const STREAK_DATA = {
 const DAILY_TASKS = [];
 
 export default function DailyTasksScreen({ navigation }) {
+  const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
+
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark, insets);
 
@@ -49,16 +50,22 @@ export default function DailyTasksScreen({ navigation }) {
             completed: t.completed,
           })));
         }
-        // Fetch summary after tasks to ensure today's entries were created server-side
+
         const summaryRes = await dailyTasksAPI.getSummary();
         if (!mounted) return;
         if (summaryRes?.data) {
           const s = summaryRes.data;
           const week = (s.week || []).map(item => !!item.done);
-          setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: week.length === 7 ? week : prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
+          setStreak(prev => ({
+            ...prev,
+            current: s.current || 0,
+            best: s.best || 0,
+            week: week.length === 7 ? week : prev.week,
+            weekLabels: s.weekLabels || prev.weekLabels
+          }));
         }
       } catch (e) {
-        // ignore
+        console.log('Error fetching daily tasks', e);
       }
     };
 
@@ -78,57 +85,38 @@ export default function DailyTasksScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
 
-      {/* ── Header ── */}
-      {/* <View style={styles.header}> */}
-        {/* <View style={styles.headerTop}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: COLORS.text }]}>Щоденні завдання</Text>
-          <View style={{ width: 24 }} />
-        </View> */}
-
-        {/* Streak pills */}
-        {/* <View style={styles.statsRow}>
-          <View style={styles.statPill}>
-            <Ionicons name="flame" size={16} color="#E74C3C" />
-            <Text style={[styles.statPillText, { color: COLORS.text }]}>
-              Стрік: {STREAK_DATA.current} днів
-            </Text>
-          </View>
-          <View style={styles.statPill}>
-            <Ionicons name="star" size={16} color="#F1C40F" />
-            <Text style={[styles.statPillText, { color: COLORS.text }]}>
-              +{todayXP} / {maxXP} XP
-            </Text>
-          </View>
-        </View> */}
-      {/* </View> */}
+      {/* ── Консистентний Header з кнопкою "Назад" ── */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('dailyTasks.title', 'Щоденні місії')}</Text>
+      </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Streak card ── */}
+        {/* ── Стрік (Streak card) ── */}
         <View style={styles.card}>
           <View style={styles.streakHeader}>
             <View style={styles.streakFlame}>
-              <Ionicons name="flame" size={36} color="#E74C3C" />
+              <Ionicons name="flame" size={32} color="#E74C3C" />
             </View>
             <View style={styles.streakInfo}>
               <Text style={styles.streakNumber}>{streak.current}</Text>
-              <Text style={styles.streakLabel}>днів поспіль</Text>
+              <Text style={styles.streakLabel}>{t('dailyTasks.daysInRow', 'днів поспіль')}</Text>
             </View>
             <View style={styles.bestStreakBadge}>
-              <Ionicons name="trophy" size={14} color="#F1C40F" />
-              <Text style={styles.bestStreakText}>Рекорд: {streak.best} дн.</Text>
+              <Ionicons name="trophy" size={16} color="#F1C40F" />
+              <Text style={styles.bestStreakText}>{t('dailyTasks.record', 'Рекорд:')} {streak.best}</Text>
             </View>
           </View>
 
-          {/* Week dots */}
+          {/* Дні тижня */}
           <View style={styles.weekRow}>
             {streak.week.map((done, i) => (
               <View key={i} style={styles.dayCol}>
@@ -140,8 +128,8 @@ export default function DailyTasksScreen({ navigation }) {
                     done === null && { backgroundColor: COLORS.surfaceVariant },
                   ]}
                 >
-                  {done === true && <Ionicons name="checkmark" size={14} color="#fff" />}
-                  {done === false && <Ionicons name="close" size={12} color={COLORS.textLight} />}
+                  {done === true && <Ionicons name="checkmark" size={18} color="#fff" />}
+                  {done === false && <Ionicons name="close" size={16} color={COLORS.onSurfaceVariant} />}
                 </View>
                 <Text style={styles.dayLabel}>{streak.weekLabels[i]}</Text>
               </View>
@@ -149,14 +137,15 @@ export default function DailyTasksScreen({ navigation }) {
           </View>
         </View>
 
-        {/* ── Daily progress ── */}
+        {/* ── Щоденний прогрес ── */}
         <View style={styles.card}>
           <View style={styles.progressHeader}>
-            <Text style={styles.sectionTitle}>Прогрес сьогодні</Text>
+            <Text style={styles.sectionTitle}>{t('dailyTasks.progressToday', 'Прогрес сьогодні')}</Text>
             <Text style={styles.progressCount}>
-              {completedCount}/{totalCount}
+              {completedCount} / {totalCount}
             </Text>
           </View>
+
           <View style={styles.progressTrack}>
             <View
               style={[
@@ -165,15 +154,16 @@ export default function DailyTasksScreen({ navigation }) {
               ]}
             />
           </View>
+
           <Text style={styles.progressHint}>
             {completedCount === totalCount
-              ? '🎉 Всі завдання виконано! +' + maxXP + ' XP зараховано'
-              : `Залишилось ${totalCount - completedCount} завдань — зберіть ще +${maxXP - todayXP} XP`}
+              ? t('dailyTasks.allCompleted', '🎉 Всі завдання виконано! +{{xp}} XP зараховано', { xp: maxXP })
+              : t('dailyTasks.tasksLeft', 'Залишилось {{count}} завдань — зберіть ще +{{xp}} XP', { count: totalCount - completedCount, xp: maxXP - todayXP })}
           </Text>
         </View>
 
-        {/* ── Daily tasks ── */}
-        <Text style={styles.sectionLabel}>Завдання на сьогодні</Text>
+        {/* ── Завдання на сьогодні ── */}
+        <Text style={styles.sectionLabel}>{t('dailyTasks.tasksForToday', 'Завдання на сьогодні')}</Text>
 
         {tasks.map((task) => (
           <View
@@ -192,7 +182,7 @@ export default function DailyTasksScreen({ navigation }) {
               <Ionicons
                 name={task.completed ? 'checkmark-circle' : task.icon}
                 size={26}
-                color={task.completed ? task.color : COLORS.textLight}
+                color={task.completed ? task.color : COLORS.onSurfaceVariant}
               />
             </View>
 
@@ -200,7 +190,7 @@ export default function DailyTasksScreen({ navigation }) {
               <Text
                 style={[
                   styles.taskTitle,
-                  task.completed && { textDecorationLine: 'line-through', color: COLORS.textLight },
+                  task.completed && { textDecorationLine: 'line-through', color: COLORS.onSurfaceVariant },
                 ]}
               >
                 {task.title}
@@ -211,14 +201,13 @@ export default function DailyTasksScreen({ navigation }) {
             </View>
 
             <View style={[styles.xpBadge, { backgroundColor: task.completed ? `${task.color}15` : COLORS.surfaceVariant }]}>
-              <Text style={[styles.xpBadgeText, { color: task.completed ? task.color : COLORS.textLight }]}>
+              <Text style={[styles.xpBadgeText, { color: task.completed ? task.color : COLORS.onSurfaceVariant }]}>
                 +{task.xp} XP
               </Text>
             </View>
           </View>
         ))}
 
-        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
@@ -226,140 +215,185 @@ export default function DailyTasksScreen({ navigation }) {
 
 const getStyles = (COLORS, isDark, insets) =>
   StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.background },
+    container: {
+      flex: 1,
+      backgroundColor: COLORS.background
+    },
 
-    // ── Header ──
-    header: {
+    // ─── Header ────────────────────────────────────────────────────────────────
+      header: {
+        flexDirection: 'row',       // Розташовує елементи в один рядок
+alignItems: 'center',       // Центрує їх по вертикалі
+    gap: 12,
+      paddingTop: insets.top || 20,
+      paddingHorizontal: 20,
+      // paddingBottom: 20,
       backgroundColor: COLORS.surface,
-      paddingTop: insets.top + 10,
-      paddingHorizontal: 16,
-      paddingBottom: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: 'rgba(0,0,0,0.05)',
-      elevation: 3,
+      borderBottomLeftRadius: 24,
+      borderBottomRightRadius: 24,
+      elevation: 4,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 4,
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      zIndex: 10,
     },
-    headerTop: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 16,
+    headerTitle: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: COLORS.text,
+      marginTop: 12,
+      marginBottom: 20,
+      letterSpacing: 0.5,
     },
-    backBtn: { padding: 4 },
-    headerTitle: { fontSize: 20, fontWeight: '700' },
-    statsRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
-    statPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      backgroundColor: 'rgba(0,0,0,0.04)',
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 100,
-    },
-    statPillText: { fontSize: 14, fontWeight: '600' },
 
-    // ── Scroll / content ──
+    backButton: {
+              marginTop: 16,
+      marginBottom: 12,
+      alignSelf: 'flex-start',
+    },
+
+    // ─── Content ───────────────────────────────────────────────────────────────
     scroll: { flex: 1 },
-    content: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 40 },
+    content: {
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: (insets.bottom || 20) + 40
+    },
 
-    // ── Generic card ──
+    // ─── Cards ─────────────────────────────────────────────────────────────────
     card: {
       backgroundColor: COLORS.surface,
       borderRadius: 24,
-      padding: 20,
-      marginBottom: 16,
+      padding: 24,
+      marginBottom: 24,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0.2 : 0.05,
+      shadowOpacity: isDark ? 0.2 : 0.08,
       shadowRadius: 8,
-      elevation: 2,
+      elevation: 3,
     },
 
-    // ── Streak ──
+    // ─── Streak Card ───────────────────────────────────────────────────────────
     streakHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: 24,
+      gap: 16,
     },
     streakFlame: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: '#E74C3C18',
+      width: 64,
+      height: 64,
+      borderRadius: 24,
+      backgroundColor: '#E74C3C15',
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 14,
     },
-    streakInfo: { flex: 1 },
-    streakNumber: { fontSize: 32, fontWeight: '800', color: COLORS.text, lineHeight: 36 },
-    streakLabel: { fontSize: 13, color: COLORS.textLight, fontWeight: '500' },
+    streakInfo: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    streakNumber: {
+      fontSize: 36,
+      fontWeight: '800',
+      color: COLORS.text,
+    },
+    streakLabel: {
+      fontSize: 14,
+      color: COLORS.onSurfaceVariant,
+      fontWeight: '600',
+      marginTop: 2,
+    },
     bestStreakBadge: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
-      backgroundColor: '#F1C40F18',
-      paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 100,
+      gap: 6,
+      backgroundColor: '#F1C40F15',
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 16,
     },
-    bestStreakText: { fontSize: 12, fontWeight: '700', color: '#F1C40F' },
+    bestStreakText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#F39C12'
+    },
     weekRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
     },
-    dayCol: { alignItems: 'center', gap: 6 },
+    dayCol: {
+      alignItems: 'center',
+      gap: 8
+    },
     dayDot: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       backgroundColor: COLORS.surfaceVariant,
       justifyContent: 'center',
       alignItems: 'center',
     },
     dayDotDone: { backgroundColor: '#2ECC71' },
     dayDotMissed: { backgroundColor: COLORS.surfaceVariant },
-    dayLabel: { fontSize: 11, fontWeight: '600', color: COLORS.textLight },
+    dayLabel: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: COLORS.onSurfaceVariant
+    },
 
-    // ── Progress ──
+    // ─── Progress Card ─────────────────────────────────────────────────────────
     progressHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 10,
+      marginBottom: 16,
     },
-    sectionTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text },
-    progressCount: { fontSize: 16, fontWeight: '800', color: COLORS.text },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: COLORS.text
+    },
+    progressCount: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: COLORS.text
+    },
     progressTrack: {
       height: 12,
       backgroundColor: COLORS.surfaceVariant,
       borderRadius: 6,
       overflow: 'hidden',
-      marginBottom: 10,
+      marginBottom: 16,
     },
-    progressFill: { height: '100%', borderRadius: 6 },
-    progressHint: { fontSize: 13, color: COLORS.textLight, textAlign: 'center' },
+    progressFill: {
+      height: '100%',
+      borderRadius: 6
+    },
+    progressHint: {
+      fontSize: 14,
+      color: COLORS.onSurfaceVariant,
+      textAlign: 'center',
+      fontWeight: '500'
+    },
 
-    // ── Section label ──
+    // ─── Section Labels ────────────────────────────────────────────────────────
     sectionLabel: {
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: '700',
-      color: COLORS.textLight,
+      color: COLORS.onSurfaceVariant,
       textTransform: 'uppercase',
       letterSpacing: 1,
-      marginBottom: 12,
+      marginBottom: 16,
       marginLeft: 4,
     },
 
-    // ── Task cards ──
+    // ─── Task Cards ────────────────────────────────────────────────────────────
     taskCard: {
       backgroundColor: COLORS.surface,
       borderRadius: 20,
       padding: 16,
-      marginBottom: 10,
+      marginBottom: 12,
       flexDirection: 'row',
       alignItems: 'center',
       shadowColor: '#000',
@@ -367,64 +401,40 @@ const getStyles = (COLORS, isDark, insets) =>
       shadowOpacity: isDark ? 0.2 : 0.05,
       shadowRadius: 6,
       elevation: 2,
+      gap: 14,
     },
-    taskCardDone: { opacity: 0.65 },
+    taskCardDone: {
+      opacity: 0.7
+    },
     taskIcon: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
+      width: 52,
+      height: 52,
+      borderRadius: 16,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 14,
     },
-    taskInfo: { flex: 1, marginRight: 8 },
-    taskTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 3 },
-    taskDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 16 },
-
+    taskInfo: {
+      flex: 1,
+    },
+    taskTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: COLORS.text,
+      marginBottom: 4
+    },
+    taskDesc: {
+      fontSize: 13,
+      color: COLORS.onSurfaceVariant,
+      lineHeight: 18
+    },
     xpBadge: {
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderRadius: 100,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 12,
       alignSelf: 'center',
     },
-    xpBadgeText: { fontSize: 12, fontWeight: '800' },
-
-    // ── Weekly challenge cards ──
-    challengeCard: {
-      backgroundColor: COLORS.surface,
-      borderRadius: 20,
-      padding: 16,
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: isDark ? 0.2 : 0.05,
-      shadowRadius: 6,
-      elevation: 2,
+    xpBadgeText: {
+      fontSize: 13,
+      fontWeight: '800'
     },
-    challengeTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
-    challengeIcon: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginRight: 12,
-    },
-    challengeInfo: { flex: 1, marginRight: 8 },
-    challengeTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
-    challengeDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 16 },
-    challengeProgressRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    challengeTrack: {
-      flex: 1,
-      height: 8,
-      backgroundColor: COLORS.surfaceVariant,
-      borderRadius: 4,
-      overflow: 'hidden',
-    },
-    challengeFill: { height: '100%', borderRadius: 4 },
-    challengeCount: { fontSize: 12, fontWeight: '700', color: COLORS.textLight, minWidth: 30 },
   });

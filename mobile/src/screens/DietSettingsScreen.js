@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform
+} from 'react-native';
 import CustomButton from '../components/CustomButton';
-import { COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
+import useThemeStore from '../store/themeStore';
 import { useTranslation } from 'react-i18next';
 
 const DIET_KEYS = [
@@ -16,8 +18,13 @@ const DIET_KEYS = [
 export default function DietSettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
+  const { colors: COLORS, theme } = useThemeStore();
+
   const [selectedDiet, setSelectedDiet] = useState('none');
   const [loading, setLoading] = useState(false);
+
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, isDark);
 
   useEffect(() => {
     if (user?.dietary_preference) {
@@ -46,31 +53,35 @@ export default function DietSettingsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.subtitle}>
-        {t('settings.dietSubtitle', 'Це допоможе нам точніше аналізувати продукти та пропонувати релевантні рецепти.')}
-      </Text>
+      <View style={styles.content}>
+        <Text style={styles.subtitle}>
+          {t('settings.dietSubtitle', 'Це допоможе нам точніше аналізувати продукти та пропонувати релевантні рецепти.')}
+        </Text>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {DIET_KEYS.map((diet) => {
-          const isSelected = selectedDiet === diet.id;
-          return (
-            <TouchableOpacity
-              key={diet.id}
-              style={[styles.card, isSelected && styles.selectedCard]}
-              onPress={() => setSelectedDiet(diet.id)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.radioCircle}>
-                {isSelected && <View style={styles.radioDot} />}
-              </View>
-              <View style={styles.textContainer}>
-                <Text style={[styles.dietTitle, isSelected && styles.selectedDietTitle]}>{t(diet.titleKey)}</Text>
-                <Text style={styles.dietDesc}>{t(diet.descKey)}</Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          {DIET_KEYS.map((diet) => {
+            const isSelected = selectedDiet === diet.id;
+            return (
+              <TouchableOpacity
+                key={diet.id}
+                style={[styles.card, isSelected && styles.selectedCard]}
+                onPress={() => setSelectedDiet(diet.id)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]}>
+                  {isSelected && <View style={styles.radioDot} />}
+                </View>
+                <View style={styles.textContainer}>
+                  <Text style={[styles.dietTitle, isSelected && styles.selectedDietTitle]}>
+                    {t(diet.titleKey)}
+                  </Text>
+                  <Text style={styles.dietDesc}>{t(diet.descKey)}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <View style={styles.footer}>
         <CustomButton title={t('common.save', 'Зберегти')} onPress={handleSave} loading={loading} />
@@ -79,35 +90,86 @@ export default function DietSettingsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: 20, paddingTop: 20 },
-  subtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 20, lineHeight: 20, textAlign: 'center' },
-  scrollContainer: { paddingBottom: 20 },
+const getStyles = (COLORS, isDark) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 24,
+    lineHeight: 22,
+    textAlign: 'center',
+    fontWeight: '500'
+  },
+  scrollContainer: {
+    paddingBottom: 20
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface || '#fff',
+    backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border || '#e0e0e0',
+    borderColor: 'transparent',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 6,
   },
-  selectedCard: { borderColor: COLORS.primary, backgroundColor: (COLORS.primary + '08') || '#edf7ed' },
+  selectedCard: {
+    backgroundColor: COLORS.primaryContainer,
+    borderColor: COLORS.primary,
+    elevation: 4,
+  },
   radioCircle: {
-    height: 20,
-    width: 20,
-    borderRadius: 10,
+    height: 24,
+    width: 24,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: COLORS.border || '#cbd5e1',
+    borderColor: COLORS.outline,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 16,
   },
-  radioDot: { height: 10, width: 10, borderRadius: 5, backgroundColor: COLORS.primary },
-  textContainer: { flex: 1 },
-  dietTitle: { fontSize: 16, fontWeight: '700', color: COLORS.text, marginBottom: 2 },
-  selectedDietTitle: { color: COLORS.primary },
-  dietDesc: { fontSize: 13, color: COLORS.textLight },
-  footer: { paddingVertical: 20, paddingBottom: 40 },
+  radioCircleSelected: {
+    borderColor: COLORS.primary,
+  },
+  radioDot: {
+    height: 12,
+    width: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.primary
+  },
+  textContainer: {
+    flex: 1,
+    gap: 4
+  },
+  dietTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  selectedDietTitle: {
+    color: COLORS.primary
+  },
+  dietDesc: {
+    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
+    lineHeight: 20
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 24,
+  },
 });

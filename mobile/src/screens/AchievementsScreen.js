@@ -1,5 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  Dimensions, ActivityIndicator, StatusBar
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +23,7 @@ export default function AchievementsScreen({ navigation }) {
   const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const { user, refreshUser } = useAuthStore();
+
   const isDark = theme === 'dark';
   const styles = getStyles(COLORS, isDark);
 
@@ -31,7 +35,6 @@ export default function AchievementsScreen({ navigation }) {
       const fetchData = async () => {
         setLoading(true);
         try {
-          // Оновлюємо і користувача (для XP) і ачівки
           await refreshUser();
           const response = await achievementsAPI.get();
           setAchievements(response.data);
@@ -64,22 +67,22 @@ export default function AchievementsScreen({ navigation }) {
     return (
       <View key={item.id} style={[styles.achievementCard, !isCompleted && styles.achievementLocked]}>
         <View style={[styles.iconContainer, { backgroundColor: isCompleted ? `${item.color}20` : COLORS.surfaceVariant }]}>
-          <Ionicons name={item.icon} size={28} color={isCompleted ? item.color : COLORS.textLight} />
+          <Ionicons name={item.icon} size={26} color={isCompleted ? item.color : COLORS.onSurfaceVariant} />
         </View>
         <View style={styles.achievementInfo}>
           <Text style={styles.achievementTitle} numberOfLines={1}>{item.title}</Text>
           <Text style={styles.achievementDesc} numberOfLines={2}>{item.desc}</Text>
-          
+
           <View style={styles.miniProgressContainer}>
             <View style={styles.miniProgressTrack}>
-              <View 
+              <View
                 style={[
-                  styles.miniProgressFill, 
-                  { width: `${itemProgressPercent}%`, backgroundColor: isCompleted ? item.color : COLORS.textLight }
-                ]} 
+                  styles.miniProgressFill,
+                  { width: `${itemProgressPercent}%`, backgroundColor: isCompleted ? item.color : COLORS.onSurfaceVariant }
+                ]}
               />
             </View>
-            <Text style={styles.miniProgressText}>{item.progress}/{item.total}</Text>
+            <Text style={styles.miniProgressText}>{item.progress} / {item.total}</Text>
           </View>
         </View>
       </View>
@@ -88,11 +91,12 @@ export default function AchievementsScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
+
       <TouchableOpacity style={styles.headerCard} activeOpacity={0.8} onPress={() => navigation.navigate('Leagues')}>
         <View style={styles.leagueRow}>
-          <View style={[styles.leagueIconBg, { backgroundColor: `${currentLeague.color}20` }]}>
-            <Ionicons name={currentLeague.icon} size={40} color={currentLeague.color} />
+          <View style={[styles.leagueIconBg, { backgroundColor: `${currentLeague.color}15` }]}>
+            <Ionicons name={currentLeague.icon} size={36} color={currentLeague.color} />
           </View>
           <View style={styles.leagueInfo}>
             <Text style={styles.levelText}>{t('achievements.level')} {currentLevel}</Text>
@@ -104,7 +108,9 @@ export default function AchievementsScreen({ navigation }) {
         <View style={styles.xpContainer}>
           <View style={styles.xpTextRow}>
             <Text style={styles.xpText}>{t('achievements.experience')}</Text>
-            <Text style={styles.xpValues}>{currentXP} / {nextLevelXP}</Text>
+            <Text style={[styles.xpValues, { color: currentLeague.color }]}>
+              {currentXP} <Text style={{ color: COLORS.text }}>/ {nextLevelXP}</Text>
+            </Text>
           </View>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${progressPercent}%`, backgroundColor: currentLeague.color }]} />
@@ -116,69 +122,130 @@ export default function AchievementsScreen({ navigation }) {
       <View style={styles.achievementsSection}>
         <Text style={styles.sectionLabel}>{t('achievements.yourAchievements')}</Text>
         {loading ? (
-          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 20 }} />
+          <ActivityIndicator size="large" color={COLORS.primary} style={{ marginTop: 40 }} />
         ) : (
           <View style={styles.gridContainer}>
             {achievements.map(renderAchievement)}
           </View>
         )}
       </View>
-      
+
     </ScrollView>
   );
 }
 
 const getStyles = (COLORS, isDark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 40 },
-  
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 40
+  },
+
+  // ─── Header Card (League & XP) ─────────────────────────────────────────────
   headerCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    padding: 20,
-    marginBottom: 24,
+    padding: 24,
+    marginBottom: 32,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowOpacity: isDark ? 0.2 : 0.08,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
-  leagueRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-  leagueIconBg: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-  leagueInfo: { flex: 1 },
-  levelText: { fontSize: 14, color: COLORS.textLight, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
-  leagueName: { fontSize: 22, fontWeight: 'bold', color: COLORS.text },
-  
-  xpContainer: { width: '100%' },
-  xpTextRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  xpText: { fontSize: 14, fontWeight: '600', color: COLORS.text },
-  xpValues: { fontSize: 14, fontWeight: 'bold', color: COLORS.text },
-  progressTrack: { height: 12, backgroundColor: COLORS.surfaceVariant, borderRadius: 6, overflow: 'hidden', marginBottom: 8 },
-  progressFill: { height: '100%', borderRadius: 6 },
-  xpHint: { fontSize: 12, color: COLORS.textLight, textAlign: 'center' },
-  
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 32 },
-  statBox: {
-    flex: 1,
-    backgroundColor: COLORS.surface,
-    padding: 16,
-    borderRadius: 24,
+  leagueRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0.2 : 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: 24,
+    gap: 16
   },
-  statValue: { fontSize: 22, fontWeight: 'bold', color: COLORS.text, marginTop: 8 },
-  statLabel: { fontSize: 13, color: COLORS.textLight, textAlign: 'center', marginTop: 4 },
-  
-  achievementsSection: { width: '100%' },
-  sectionLabel: { fontSize: 12, fontWeight: '700', color: COLORS.textLight, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16, marginLeft: 4 },
-  
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  leagueIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  leagueInfo: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  levelText: {
+    fontSize: 13,
+    color: COLORS.onSurfaceVariant,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4
+  },
+  leagueName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: COLORS.text
+  },
+
+  xpContainer: {
+    width: '100%'
+  },
+  xpTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12
+  },
+  xpText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.text
+  },
+  xpValues: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  progressTrack: {
+    height: 14,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 7,
+    overflow: 'hidden',
+    marginBottom: 12
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 7
+  },
+  xpHint: {
+    fontSize: 13,
+    color: COLORS.onSurfaceVariant,
+    textAlign: 'center',
+    fontWeight: '500'
+  },
+
+  // ─── Achievements Section ──────────────────────────────────────────────────
+  achievementsSection: {
+    width: '100%'
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 16,
+    marginLeft: 4
+  },
+
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16
+  },
   achievementCard: {
-    width: (width - 40 - 12) / 2,
+    // 16 is the gap size, 40 is the horizontal padding (20 + 20)
+    width: (width - 40 - 16) / 2,
     backgroundColor: COLORS.surface,
     borderRadius: 20,
     padding: 16,
@@ -188,13 +255,54 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  achievementLocked: { opacity: 0.5 },
-  iconContainer: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  achievementTitle: { fontSize: 15, fontWeight: '700', color: COLORS.text, marginBottom: 4 },
-  achievementDesc: { fontSize: 12, color: COLORS.textLight, lineHeight: 16, height: 32, marginBottom: 12 },
-  
-  miniProgressContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  miniProgressTrack: { flex: 1, height: 6, backgroundColor: COLORS.surfaceVariant, borderRadius: 3, marginRight: 8, overflow: 'hidden' },
-  miniProgressFill: { height: '100%', borderRadius: 3 },
-  miniProgressText: { fontSize: 11, fontWeight: '600', color: COLORS.textLight },
+  achievementLocked: {
+    opacity: 0.6
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16
+  },
+  achievementInfo: {
+    flex: 1,
+  },
+  achievementTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 6
+  },
+  achievementDesc: {
+    fontSize: 13,
+    color: COLORS.onSurfaceVariant,
+    lineHeight: 18,
+    height: 36,
+    marginBottom: 16
+  },
+
+  miniProgressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  miniProgressTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 4,
+    marginRight: 10,
+    overflow: 'hidden'
+  },
+  miniProgressFill: {
+    height: '100%',
+    borderRadius: 4
+  },
+  miniProgressText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant
+  },
 });

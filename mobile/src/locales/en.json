@@ -24,7 +24,12 @@
     "choose": "Choose",
     "from": "From",
     "to": "To",
-    "all": "All"
+    "all": "All",
+    "offline": "Offline",
+    "offline_pending_one": "Offline · {{count}} item pending",
+    "offline_pending_other": "Offline · {{count}} items pending",
+    "syncing_one": "Syncing: {{count}} change...",
+    "syncing_other": "Syncing: {{count}} changes..."
   },
   "tabs": {
     "products": "Products",
@@ -406,14 +411,14 @@
     "flexitarianDesc": "Mostly plant-based, occasionally meat/fish"
   },
   "guide": {
-    "slide1Title": "Scan receipts or products",
-    "slide1Desc": "Just take a photo with the built-in camera. Our AI will recognize the name and automatically set the expiration date",
-    "slide2Title": "Monitor freshness",
-    "slide2Desc": "Freshify will send you push notifications in advance about products that are about to expire, so you have time to eat them",
-    "slide3Title": "Smart recipes and lists",
-    "slide3Desc": "Generate meal ideas using only what's already in your fridge, and automatically create shopping lists",
-    "start": "Get Started ✨"
-  },
+  "slide1Title": "Forget manual entry",
+  "slide1Desc": "Take photos of products, scan barcodes, or receipts. Our AI instantly recognizes them and sets expiration dates.",
+  "slide2Title": "Save food and money",
+  "slide2Desc": "Freshify will friendly remind you about products to eat soon. Less food waste means more saved money and a happier planet.",
+  "slide3Title": "Cook with AI & Play",
+  "slide3Desc": "AI will generate recipes from your leftovers. Complete daily tasks, earn points, and support charity!",
+  "start": "Get Started ✨"
+},
   "auth": {
     "emptyFields": "Please enter your email and password",
     "emailPlaceholder": "Email",

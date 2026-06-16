@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Switch, StatusBar, Animated, Platform, TouchableOpacity } from 'react-native';
+import {
+  View, Text, StyleSheet, ScrollView, ActivityIndicator,
+  Switch, StatusBar, Animated, Platform
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
 import CustomButton from '../components/CustomButton';
@@ -15,15 +18,15 @@ const RECIPES_STORAGE_KEY = 'generated_recipes';
 
 export default function RecipesScreen() {
   const { t, i18n } = useTranslation();
-  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
   const [recipes, setRecipes] = useState([]);
 
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
-  
-  const styles = getStyles(COLORS, insets);
+
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, insets, isDark);
 
   const animation = useRef(new Animated.Value(0)).current;
   const wsRef = useRef(null);
@@ -70,15 +73,17 @@ export default function RecipesScreen() {
     try {
       await AsyncStorage.removeItem(RECIPES_STORAGE_KEY);
       const token = await SecureStore.getItemAsync('auth_token');
+      // Отримуємо мову
       const lang = i18n.language?.startsWith('uk') ? 'uk' : 'en';
-      
+
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) {
          wsUrl = wsUrl.replace('localhost', '10.0.2.2');
       } else if (Platform.OS === 'android' && wsUrl.includes('127.0.0.1')) {
          wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
       }
-      
+
+      // Додаємо параметр lang до запиту
       const ws = new WebSocket(`${wsUrl}/recipes/ws/generate?include_grocery=${includeGrocery}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
@@ -130,12 +135,9 @@ export default function RecipesScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-        </TouchableOpacity>
 
-        {/* Заголовок під стрілкою */}
+      {/* ── Консистентний Header ── */}
+      <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('recipes.title')}</Text>
 
         <View style={styles.controls}>
@@ -145,10 +147,11 @@ export default function RecipesScreen() {
               value={includeGrocery}
               onValueChange={setIncludeGrocery}
               trackColor={{ false: COLORS.surfaceVariant, true: COLORS.primary }}
-              thumbColor={COLORS.onPrimary}
+              thumbColor={COLORS.onPrimary ?? '#fff'}
               disabled={loading}
             />
           </View>
+
           <CustomButton
             title={loading ? t('recipes.cancelBtn') : t('recipes.generateBtn')}
             onPress={handleGenerateRecipes}
@@ -157,14 +160,14 @@ export default function RecipesScreen() {
             disabled={loading}
             icon={
               <Animated.View style={animatedStyle}>
-                <Ionicons name={loading ? "close" : "sparkles-outline"} size={20} color={COLORS.onPrimary} />
+                <Ionicons name={loading ? "close" : "sparkles-outline"} size={22} color={COLORS.onPrimary} />
               </Animated.View>
             }
           />
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading && recipes.length === 0 ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={COLORS.primary} />
@@ -188,21 +191,111 @@ export default function RecipesScreen() {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: { paddingTop: insets.top || 20, paddingBottom: 16, backgroundColor: COLORS.surface, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, marginBottom: 8 },
-  backButton: { padding: 10, marginRight: 8 },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text, paddingHorizontal: 20, flex: 1, marginBottom: 8},
-  controls: { paddingHorizontal: 20 },
-  switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, backgroundColor: COLORS.surfaceVariant, padding: 16, borderRadius: 16 },
-  switchLabel: { fontSize: 16, color: COLORS.text, fontWeight: '500' },
-  generateBtn: { borderRadius: 100 },
-  scrollContent: { flexGrow: 1, padding: 16, paddingBottom: (insets.bottom || 20) + 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 16, color: COLORS.textLight, fontSize: 16 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  emptyIconContainer: { width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.primaryContainer, alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-  emptyTitle: { fontSize: 20, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-  emptyText: { fontSize: 16, color: COLORS.textLight, textAlign: 'center', lineHeight: 24 },
+const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
+  },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
+  header: {
+    paddingTop: insets.top || 20,
+    paddingBottom: 24,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    paddingHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5
+  },
+
+  // ─── Controls ──────────────────────────────────────────────────────────────
+  controls: {
+    paddingHorizontal: 20,
+    gap: 16
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceVariant,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16
+  },
+  switchLabel: {
+    fontSize: 16,
+    color: COLORS.text,
+    fontWeight: '600'
+  },
+  generateBtn: {
+    height: 52,
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.2 : 0.15,
+    shadowRadius: 8
+  },
+
+  // ─── List & States ─────────────────────────────────────────────────────────
+  scrollContent: {
+    flexGrow: 1,
+    padding: 20,
+    paddingBottom: (insets.bottom || 20) + 40
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  loadingText: {
+    marginTop: 16,
+    color: COLORS.onSurfaceVariant,
+    fontSize: 16,
+    fontWeight: '500'
+  },
+
+  // ─── Empty state ───────────────────────────────────────────────────────────
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    marginTop: '10%'
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 32,
+    backgroundColor: COLORS.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 10,
+    textAlign: 'center'
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 24
+  },
 });

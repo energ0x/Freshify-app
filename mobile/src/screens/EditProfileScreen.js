@@ -22,14 +22,15 @@ export default function EditProfileScreen({ navigation }) {
   const { user, updateProfile } = useAuthStore();
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
+
   const isDark = theme === 'dark';
-  
+
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: '', 
-    email: '', 
-    current_password: '', 
-    new_password: '', 
+    name: '',
+    email: '',
+    current_password: '',
+    new_password: '',
     confirmPassword: '',
   });
   const [editErrors, setEditErrors] = useState({});
@@ -55,14 +56,14 @@ export default function EditProfileScreen({ navigation }) {
       errors.current_password = t('validation.currentPassReq');
     if (editForm.new_password !== editForm.confirmPassword)
       errors.confirmPassword = t('validation.passMismatch');
-    
+
     setEditErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSaveProfile = async () => {
     if (!validateEditForm()) return;
-    
+
     setSaving(true);
     const updateData = {
       name: editForm.name.trim(),
@@ -72,52 +73,54 @@ export default function EditProfileScreen({ navigation }) {
         new_password: editForm.new_password,
       }),
     };
-    
+
     const res = await updateProfile(updateData);
     setSaving(false);
-    
+
     if (res.success) {
       Alert.alert(t('common.success'), t('settings.profileUpdated'));
-      navigation.goBack(); 
+      navigation.goBack();
     } else {
       Alert.alert(t('common.error'), res.error || t('settings.profileUpdateError'));
     }
   };
 
   const heroBg = isDark ? COLORS.primaryContainer : COLORS.primary;
-  const styles = getStyles(COLORS, insets, isDark, heroBg);
+  const heroContentColor = isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary;
+
+  const styles = getStyles(COLORS, insets, isDark, heroBg, heroContentColor);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={heroBg} />
 
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Hero Section */}
+          {/* ─── Hero Section ────────────────────────────────────────────── */}
           <View style={styles.heroSection}>
             <View style={styles.bCircle1} />
             <View style={styles.bCircle2} />
-            
-            <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
-              <Ionicons name="close" size={24} color="#FFF" />
+
+            <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+              <Ionicons name="close" size={26} color={heroContentColor} />
             </TouchableOpacity>
-            
+
             <View style={styles.avatarContainer}>
-              <Ionicons name="person" size={44} color={isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary} />
+              <Ionicons name="person" size={40} color={heroContentColor} />
             </View>
-            
+
             <Text style={styles.heroTitle}>{t('settings.editProfileTitle')}</Text>
           </View>
 
+          {/* ─── Form Container ──────────────────────────────────────────── */}
           <View style={styles.formContainer}>
-            {/* Поля форми */}
             {[
               { key: 'name', label: t('settings.nameLabel'), placeholder: t('settings.namePlaceholder'), secure: false },
               { key: 'email', label: t('settings.emailLabel'), placeholder: t('settings.emailPlaceholder'), secure: false, keyboard: 'email-address' },
@@ -134,7 +137,7 @@ export default function EditProfileScreen({ navigation }) {
                   secureTextEntry={secure}
                   keyboardType={keyboard ?? 'default'}
                   autoCapitalize="none"
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={COLORS.onSurfaceVariant}
                 />
                 {editErrors[key] ? <Text style={styles.errorText}>{editErrors[key]}</Text> : null}
               </View>
@@ -149,7 +152,7 @@ export default function EditProfileScreen({ navigation }) {
                   value={editForm.confirmPassword}
                   onChangeText={(text) => setEditForm(prev => ({ ...prev, confirmPassword: text }))}
                   secureTextEntry
-                  placeholderTextColor={COLORS.textLight}
+                  placeholderTextColor={COLORS.onSurfaceVariant}
                 />
                 {editErrors.confirmPassword ? (
                   <Text style={styles.errorText}>{editErrors.confirmPassword}</Text>
@@ -158,16 +161,16 @@ export default function EditProfileScreen({ navigation }) {
             ) : null}
           </View>
         </ScrollView>
-        
-        {/* Кнопки дій */}
+
+        {/* ─── Actions ─────────────────────────────────────────────────── */}
         <View style={styles.actionSection}>
-          <TouchableOpacity 
-             style={styles.subscribeBtn} 
-             onPress={handleSaveProfile} 
-             activeOpacity={0.85}
+          <TouchableOpacity
+             style={styles.saveBtn}
+             onPress={handleSaveProfile}
+             activeOpacity={0.8}
              disabled={saving}
           >
-            <Text style={styles.subscribeBtnText}>
+            <Text style={styles.saveBtnText}>
               {saving ? t('common.save') + "..." : t('common.save')}
             </Text>
           </TouchableOpacity>
@@ -177,90 +180,130 @@ export default function EditProfileScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets, isDark, heroBg) => StyleSheet.create({
+const getStyles = (COLORS, insets, isDark, heroBg, heroContentColor) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  scrollContent: { 
-    paddingBottom: 40, 
-    flexGrow: 1 
+  scrollContent: {
+    paddingBottom: 40,
+    flexGrow: 1
   },
-  
+
+  // ─── Hero Section ──────────────────────────────────────────────────────────
   heroSection: {
     backgroundColor: heroBg,
-    paddingTop: Platform.OS === 'ios' ? 40 : insets.top + 20,
+    paddingTop: insets.top + 20,
     paddingHorizontal: 20,
     paddingBottom: 40,
     borderBottomLeftRadius: 32,
     borderBottomRightRadius: 32,
     alignItems: 'center',
     overflow: 'hidden',
-    shadowColor: isDark ? '#000' : COLORS.primary,
+    shadowColor: isDark ? '#000' : heroBg,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: isDark ? 0.3 : 0.2,
-    shadowRadius: 15,
-    elevation: 4,
-    marginBottom: 24,
+    shadowRadius: 16,
+    elevation: 6,
+    marginBottom: 32,
   },
-  bCircle1: { position: 'absolute', width: 220, height: 220, borderRadius: 110, backgroundColor: 'rgba(255,255,255,0.06)', top: -60, right: -60 },
+  bCircle1: { position: 'absolute', width: 240, height: 240, borderRadius: 120, backgroundColor: 'rgba(255,255,255,0.06)', top: -60, right: -60 },
   bCircle2: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(255,255,255,0.04)', bottom: -40, left: -20 },
-  
-  closeButton: { position: 'absolute', top: Platform.OS === 'ios' ? 20 : insets.top + 10, right: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', zIndex: 10 },
-  
-  avatarContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255, 255, 255, 0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 16, marginTop: 10, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)' },
-  heroTitle: { fontSize: 24, fontWeight: '800', color: isDark ? COLORS.onPrimaryContainer : COLORS.onPrimary, textAlign: 'center' },
 
+  closeButton: {
+    position: 'absolute',
+    top: insets.top + 10,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10
+  },
+
+  avatarContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)'
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: heroContentColor,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+
+  // ─── Form Elements ─────────────────────────────────────────────────────────
   formContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    gap: 20,
   },
   formGroup: {
-    marginBottom: 20,
+    gap: 8,
   },
   formLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginLeft: 4,
   },
   input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
+    height: 52,
+    backgroundColor: COLORS.surfaceVariant,
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 16 : 14,
     fontSize: 16,
     color: COLORS.text,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   inputError: {
-    borderColor: COLORS.danger ?? '#FF3B30',
-    backgroundColor: `${COLORS.danger ?? '#FF3B30'}08`,
+    borderColor: COLORS.error || '#FF3B30',
+    backgroundColor: isDark ? 'rgba(255, 59, 48, 0.1)' : '#FFECEB',
   },
   errorText: {
-    color: COLORS.danger ?? '#FF3B30',
+    color: COLORS.error || '#FF3B30',
     fontSize: 12,
-    marginTop: 6,
+    fontWeight: '500',
+    marginTop: 4,
     marginLeft: 4,
   },
-  
-  actionSection: { 
-    paddingHorizontal: 20,
-    paddingBottom: (insets.bottom || 20) + 10,
-    paddingTop: 10,
+
+  // ─── Actions ───────────────────────────────────────────────────────────────
+  actionSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 24,
   },
-  subscribeBtn: { 
-    backgroundColor: COLORS.primary, 
-    borderRadius: 16, 
-    height: 56, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    shadowColor: COLORS.primary, 
-    shadowOffset: { width: 0, height: 4 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 8, 
-    elevation: 4 
+  saveBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 16,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.3 : 0.2,
+    shadowRadius: 8,
+    elevation: 4
   },
-  subscribeBtnText: { color: COLORS.onPrimary, fontSize: 16, fontWeight: 'bold' },
+  saveBtnText: {
+    color: COLORS.onPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 });

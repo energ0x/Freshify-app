@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { dailyTasksAPI, dailyTasksListeners } from '../services/api';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import useThemeStore from '../store/themeStore';
+import { dailyTasksAPI, dailyTasksListeners } from '../services/api';
 
 // Local defaults (fallback while loading)
 const STREAK_DATA = {
@@ -14,6 +15,7 @@ const STREAK_DATA = {
 const DAILY_TASKS_PREVIEW = [];
 
 export default function DailyTasksWidget({ navigation, isClosable = false, onClose }) {
+  const { t } = useTranslation();
   const { colors: COLORS, theme } = useThemeStore();
   const isDark = theme === 'dark';
 
@@ -37,14 +39,19 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
           }));
           setTasks(data);
         }
-        // Fetch summary after tasks to ensure today's entries were created server-side
+
         const summaryRes = await dailyTasksAPI.getSummary();
         if (!mounted) return;
         if (summaryRes?.data) {
           const s = summaryRes.data;
-          // summary.week now contains [{date: 'YYYY-MM-DD', done: bool}, ...] ordered Mon..Sun
           const week = (s.week || []).map(item => !!item.done);
-          setStreak(prev => ({ ...prev, current: s.current || 0, best: s.best || 0, week: week.length === 7 ? week : prev.week, weekLabels: s.weekLabels || prev.weekLabels }));
+          setStreak(prev => ({
+            ...prev,
+            current: s.current || 0,
+            best: s.best || 0,
+            week: week.length === 7 ? week : prev.week,
+            weekLabels: s.weekLabels || prev.weekLabels
+          }));
         }
       } catch (e) {
         // ignore
@@ -70,17 +77,21 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
   return (
     <TouchableOpacity
       style={styles.dailyWidget}
-      activeOpacity={0.88}
+      activeOpacity={0.8}
       onPress={() => navigation.navigate('DailyTasks')}
     >
       <View style={styles.dailyWidgetTop}>
         <View style={styles.dailyStreakRow}>
           <View style={styles.dailyStreakFlame}>
-            <Ionicons name="flame" size={20} color="#E74C3C" />
+            <Ionicons name="flame" size={24} color="#E74C3C" />
           </View>
-          <View>
-            <Text style={styles.dailyStreakNumber}>{streak.current} днів</Text>
-            <Text style={styles.dailyStreakSub}>поточний стрік</Text>
+          <View style={styles.streakTextWrap}>
+            <Text style={styles.dailyStreakNumber}>
+              {streak.current} {t('dailyTasks.days', 'днів')}
+            </Text>
+            <Text style={styles.dailyStreakSub}>
+              {t('dailyTasks.currentStreak', 'поточний стрік')}
+            </Text>
           </View>
         </View>
 
@@ -96,21 +107,21 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
               />
             ))}
           </View>
-          
-          {/* Якщо компонент можна закрити, показуємо хрестик. Інакше — стрілочку */}
+
           {isClosable ? (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={(e) => {
-                e.stopPropagation(); // Зупиняємо перехід по кліку
+                e.stopPropagation();
                 if(onClose) onClose();
-              }} 
+              }}
               style={styles.closeBtn}
+              activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="close" size={20} color={COLORS.textLight} />
+              <Ionicons name="close" size={20} color={COLORS.onSurfaceVariant} />
             </TouchableOpacity>
           ) : (
-            <Ionicons name="chevron-forward" size={20} color={COLORS.textLight} style={{ marginLeft: 6 }} />
+            <Ionicons name="chevron-forward" size={22} color={COLORS.outline} style={{ marginLeft: 6 }} />
           )}
         </View>
       </View>
@@ -118,9 +129,9 @@ export default function DailyTasksWidget({ navigation, isClosable = false, onClo
       <View style={styles.dailyDivider} />
 
       <View style={styles.dailyTasksRow}>
-        <Text style={styles.dailyTasksLabel}>Завдання сьогодні</Text>
+        <Text style={styles.dailyTasksLabel}>{t('dailyTasks.tasksToday', 'Завдання сьогодні')}</Text>
         <Text style={styles.dailyTasksCount}>
-          {completedCount}/{totalCount} · +{todayXP}/{maxXP} XP
+          {completedCount} / {totalCount}  ·  +{todayXP} / {maxXP} XP
         </Text>
       </View>
 
@@ -140,48 +151,105 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
   dailyWidget: {
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    padding: 18,
-    marginBottom: 20,
+    padding: 20,
+    marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0.2 : 0.06,
+    shadowOpacity: isDark ? 0.2 : 0.08,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
   dailyWidgetTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 16,
   },
-  dailyStreakRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  dailyStreakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
   dailyStreakFlame: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#E74C3C18',
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: '#E74C3C15',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  dailyStreakNumber: { fontSize: 16, fontWeight: '800', color: COLORS.text, lineHeight: 18 },
-  dailyStreakSub: { fontSize: 11, color: COLORS.textLight, fontWeight: '500' },
-  
-  rightInfoContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dailyWeekRow: { flexDirection: 'row', gap: 5, alignItems: 'center' },
-  dailyDot: { width: 10, height: 10, borderRadius: 5 },
-  dailyDotDone: { backgroundColor: '#2ECC71' },
-  
+  streakTextWrap: {
+    justifyContent: 'center',
+  },
+  dailyStreakNumber: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginBottom: 2
+  },
+  dailyStreakSub: {
+    fontSize: 13,
+    color: COLORS.onSurfaceVariant,
+    fontWeight: '600'
+  },
+
+  rightInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  dailyWeekRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center'
+  },
+  dailyDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5
+  },
+  dailyDotDone: {
+    backgroundColor: '#2ECC71'
+  },
+
   closeBtn: {
     backgroundColor: COLORS.surfaceVariant,
     borderRadius: 12,
-    padding: 4,
-    marginLeft: 6,
+    padding: 6,
+    marginLeft: 4,
   },
 
-  dailyDivider: { height: 1, backgroundColor: COLORS.surfaceVariant, marginBottom: 14 },
-  dailyTasksRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  dailyTasksLabel: { fontSize: 13, fontWeight: '700', color: COLORS.text },
-  dailyTasksCount: { fontSize: 12, fontWeight: '600', color: COLORS.textLight },
-  dailyProgressTrack: { height: 8, backgroundColor: COLORS.surfaceVariant, borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
-  dailyProgressFill: { height: '100%', borderRadius: 4 },
+  dailyDivider: {
+    height: 1,
+    backgroundColor: COLORS.outline,
+    opacity: 0.2,
+    marginBottom: 16
+  },
+
+  dailyTasksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10
+  },
+  dailyTasksLabel: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.text
+  },
+  dailyTasksCount: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant
+  },
+  dailyProgressTrack: {
+    height: 10,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 5,
+    overflow: 'hidden'
+  },
+  dailyProgressFill: {
+    height: '100%',
+    borderRadius: 5
+  },
 });

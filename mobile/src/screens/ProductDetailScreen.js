@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, Modal, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import {
+  View, Text, StyleSheet, Alert, ScrollView, Modal,
+  TextInput, TouchableOpacity, KeyboardAvoidingView, Platform,
+  Image, StatusBar
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -14,27 +18,28 @@ export default function ProductDetailScreen({ route, navigation }) {
   const { t } = useTranslation();
   const { productId } = route.params;
   const { products, deleteProduct, consumeProduct } = useProductStore();
-  const { colors: COLORS } = useThemeStore();
+  const { colors: COLORS, theme } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const insets = useSafeAreaInsets();
 
+  const isDark = theme === 'dark';
   const product = products.find(p => p.id === productId);
 
-  // State for Consume Modal
   const [consumeModalVisible, setConsumeModalVisible] = useState(false);
   const [consumeAmount, setConsumeAmount] = useState('');
 
   if (!product) {
-    const styles = getStyles(COLORS, insets);
+    const styles = getStyles(COLORS, insets, null, isDark);
     return (
       <View style={styles.center}>
-        <Text style={{ color: COLORS.text }}>{t('productDetail.notFound')}</Text>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
+        <Text style={styles.notFoundText}>{t('productDetail.notFound')}</Text>
       </View>
     );
   }
 
   const expiryColor = getExpiryColor(product.expiry_date, COLORS);
-  const styles = getStyles(COLORS, insets, expiryColor);
+  const styles = getStyles(COLORS, insets, expiryColor, isDark);
 
   const handleDelete = () => {
     Alert.alert(t('productDetail.deleteConfirmTitle'), t('productDetail.deleteConfirmMsg'), [
@@ -84,37 +89,39 @@ export default function ProductDetailScreen({ route, navigation }) {
   const categoryName = getTranslatedCategoryName(product.category_obj?.name, t);
 
   return (
-    <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.container}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           {product.image_url && (
-            <Image 
-               source={{ uri: product.image_url.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}` }} 
-               style={styles.detailImage} 
+            <Image
+               source={{ uri: product.image_url.startsWith('http') ? product.image_url : `${API_URL}${product.image_url}` }}
+               style={styles.detailImage}
             />
           )}
+
           <View style={styles.headerRow}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.titleContainer}>
               <Text style={styles.name}>{product.name}</Text>
               <View style={styles.categoryBadge}>
                 <Text style={styles.category}>{categoryName || t('productDetail.noCategory')}</Text>
               </View>
             </View>
-            {/* Перехід до екрану EditProductScreen */}
-            <TouchableOpacity onPress={() => navigation.navigate('EditProduct', { productId: product.id })} style={styles.editIconBtn}>
+            <TouchableOpacity onPress={() => navigation.navigate('EditProduct', { productId: product.id })} style={styles.editIconBtn} activeOpacity={0.8}>
               <Ionicons name="pencil" size={24} color={COLORS.primary} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.infoGrid}>
              <View style={styles.infoCard}>
-                <Ionicons name="scale-outline" size={28} color={COLORS.primary} />
+                <Ionicons name="scale" size={32} color={COLORS.primary} />
                 <Text style={styles.infoCardLabel}>{t('productDetail.quantity')}</Text>
-                <Text style={styles.infoCardValue}>{product.quantity} {product.unit}</Text>
+                <Text style={styles.infoCardValue}>{product.quantity} <Text style={styles.infoCardUnit}>{product.unit}</Text></Text>
              </View>
-             
+
              <View style={[styles.infoCard, { backgroundColor: `${expiryColor}15` }]}>
-                <Ionicons name="calendar-outline" size={28} color={expiryColor} />
+                <Ionicons name="calendar" size={32} color={expiryColor} />
                 <Text style={styles.infoCardLabel}>{t('productDetail.expires')}</Text>
                 <Text style={[styles.infoCardValue, { color: expiryColor }]}>{formatDate(product.expiry_date)}</Text>
                 <Text style={[styles.expiryLabel, { color: expiryColor }]}>{getExpiryLabel(product.expiry_date)}</Text>
@@ -124,7 +131,7 @@ export default function ProductDetailScreen({ route, navigation }) {
           {product.notes ? (
             <View style={styles.notesContainer}>
               <View style={styles.notesHeader}>
-                 <Ionicons name="document-text" size={20} color={COLORS.primary} />
+                 <Ionicons name="document-text" size={20} color={COLORS.onSurfaceVariant} />
                  <Text style={styles.notesTitle}>{t('productDetail.notes')}</Text>
               </View>
               <Text style={styles.notesText}>{product.notes}</Text>
@@ -137,8 +144,8 @@ export default function ProductDetailScreen({ route, navigation }) {
             title={t('productDetail.consumeBtn')}
             onPress={openConsumeModal}
             loading={loading}
-            style={styles.consumeButton}
-            icon={<Ionicons name="restaurant-outline" size={20} color={COLORS.onPrimary} />}
+            style={styles.actionBtn}
+            icon={<Ionicons name="restaurant" size={22} color={COLORS.onPrimary} />}
           />
           <CustomButton
             title={t('productDetail.deleteBtn')}
@@ -146,8 +153,8 @@ export default function ProductDetailScreen({ route, navigation }) {
             onPress={handleDelete}
             disabled={loading}
             style={styles.deleteButton}
-            textStyle={{ color: COLORS.danger }}
-            icon={<Ionicons name="trash-outline" size={20} color={COLORS.danger} />}
+            textStyle={{ color: COLORS.danger ?? '#FF3B30' }}
+            icon={<Ionicons name="trash" size={22} color={COLORS.danger ?? '#FF3B30'} />}
           />
         </View>
       </ScrollView>
@@ -157,8 +164,10 @@ export default function ProductDetailScreen({ route, navigation }) {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.consumeModalOverlay}>
           <View style={styles.consumeModalContent}>
             <Text style={styles.consumeModalTitle}>{t('home.consumeTitle')}</Text>
-            <Text style={styles.consumeSubtitle}>{product.name} ({t('home.consumeAvailable', { quantity: product.quantity, unit: product.unit })})</Text>
-            
+            <Text style={styles.consumeSubtitle}>
+              {product.name} ({t('home.consumeAvailable', { quantity: product.quantity, unit: product.unit })})
+            </Text>
+
             <TextInput
               style={styles.consumeInput}
               keyboardType="numeric"
@@ -167,7 +176,7 @@ export default function ProductDetailScreen({ route, navigation }) {
               autoFocus
               placeholderTextColor={COLORS.onSurfaceVariant}
             />
-            
+
             <View style={styles.consumeModalActionsRow}>
               <CustomButton title={t('common.cancel')} variant="outline" onPress={() => setConsumeModalVisible(false)} style={styles.modalButton} disabled={loading} />
               <CustomButton title={t('common.confirm', 'Підтвердити')} onPress={submitConsume} style={styles.modalButton} loading={loading} />
@@ -175,77 +184,224 @@ export default function ProductDetailScreen({ route, navigation }) {
           </View>
         </KeyboardAvoidingView>
       </Modal>
-    </>
+    </View>
   );
 }
 
-const getStyles = (COLORS, insets, expiryColor) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
-  content: { padding: 20, paddingBottom: insets?.bottom + 40 || 40 },
-  card: { backgroundColor: COLORS.surface, borderRadius: 24, padding: 24, marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, overflow: 'hidden' },
-  detailImage: { width: '100%', height: 200, borderRadius: 16, marginBottom: 20, resizeMode: 'cover' },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  name: { fontSize: 28, fontWeight: '700', color: COLORS.text, marginBottom: 8 },
-  categoryBadge: { backgroundColor: COLORS.primaryContainer, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, alignSelf: 'flex-start' },
-  category: { fontSize: 14, color: COLORS.onPrimaryContainer, fontWeight: '600' },
-  editIconBtn: { padding: 12, backgroundColor: COLORS.surfaceVariant, borderRadius: 16 },
-  infoGrid: { flexDirection: 'row', gap: 16, marginBottom: 24 },
-  infoCard: { flex: 1, backgroundColor: COLORS.surfaceVariant, padding: 16, borderRadius: 16, alignItems: 'flex-start' },
-  infoCardLabel: { fontSize: 12, color: COLORS.textLight, marginTop: 8, marginBottom: 4 },
-  infoCardValue: { fontSize: 18, fontWeight: '700', color: COLORS.text },
-  expiryLabel: { fontSize: 12, fontWeight: '600', marginTop: 4 },
-  notesContainer: { backgroundColor: COLORS.background, padding: 16, borderRadius: 16 },
-  notesHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  notesTitle: { fontSize: 16, fontWeight: '600', color: COLORS.primary, marginLeft: 8 },
-  notesText: { fontSize: 15, color: COLORS.text, lineHeight: 22 },
-  actions: { gap: 16 },
-  consumeButton: { backgroundColor: COLORS.primary },
-  deleteButton: { borderColor: COLORS.danger, borderWidth: 1 },
-
-  // Consume Modal Styles
-  consumeModalOverlay: {
+const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: COLORS.background
+  },
+  center: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background
+  },
+  notFoundText: {
+    color: COLORS.textLight,
+    fontSize: 16,
+    fontWeight: '500'
+  },
+  content: {
+    padding: 20,
+    paddingBottom: (insets?.bottom || 20) + 40
+  },
+
+  // ─── Main Card ─────────────────────────────────────────────────────────────
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 24,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.08,
+    shadowRadius: 8,
+  },
+  detailImage: {
+    width: '100%',
+    height: 240,
+    borderRadius: 20,
+    marginBottom: 20,
+    resizeMode: 'cover'
+  },
+
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+    gap: 16
+  },
+  titleContainer: {
+    flex: 1,
+    gap: 8,
+  },
+  name: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: COLORS.text,
+    letterSpacing: -0.5
+  },
+  categoryBadge: {
+    backgroundColor: COLORS.primaryContainer,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start'
+  },
+  category: {
+    fontSize: 13,
+    color: COLORS.onPrimaryContainer,
+    fontWeight: '700'
+  },
+  editIconBtn: {
+    width: 52,
+    height: 52,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ─── Info Grid ─────────────────────────────────────────────────────────────
+  infoGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: COLORS.surfaceVariant,
+    padding: 20,
+    borderRadius: 20,
+    alignItems: 'flex-start'
+  },
+  infoCardLabel: {
+    fontSize: 13,
+    color: COLORS.onSurfaceVariant,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 4
+  },
+  infoCardValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.text
+  },
+  infoCardUnit: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.onSurfaceVariant
+  },
+  expiryLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 4
+  },
+
+  // ─── Notes ─────────────────────────────────────────────────────────────────
+  notesContainer: {
+    backgroundColor: COLORS.surfaceVariant,
+    padding: 20,
+    borderRadius: 20
+  },
+  notesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8
+  },
+  notesTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 1
+  },
+  notesText: {
+    fontSize: 15,
+    color: COLORS.text,
+    lineHeight: 22,
+    fontWeight: '500'
+  },
+
+  // ─── Actions ───────────────────────────────────────────────────────────────
+  actions: {
+    gap: 16
+  },
+  actionBtn: {
+    height: 52,
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.1,
+    shadowRadius: 4,
+  },
+  deleteButton: {
+    height: 52,
+    borderRadius: 16,
+    borderColor: COLORS.danger ?? '#FF3B30',
+    borderWidth: 1.5
+  },
+
+  // ─── Consume Modal ─────────────────────────────────────────────────────────
+  consumeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   consumeModalContent: {
     backgroundColor: COLORS.surface,
     borderRadius: 24,
-    padding: 24,
-    width: '92%',
-    maxWidth: 380,
+    padding: 28,
+    width: '100%',
+    maxWidth: 400,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
   },
   consumeModalTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: COLORS.text,
     marginBottom: 8,
     textAlign: 'center'
   },
   consumeSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.onSurfaceVariant,
-    marginBottom: 16,
+    marginBottom: 24,
     textAlign: 'center',
+    fontWeight: '500'
   },
   consumeInput: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: COLORS.outline,
     borderRadius: 16,
     padding: 16,
-    fontSize: 20,
+    fontSize: 24,
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 28,
     backgroundColor: COLORS.background,
     color: COLORS.text,
   },
   consumeModalActionsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    gap: 16,
   },
-  modalButton: { flex: 1 },
+  modalButton: {
+    flex: 1,
+    height: 52,
+    borderRadius: 16
+  },
 });

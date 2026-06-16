@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  TextInput, KeyboardAvoidingView, Platform, Alert
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import CustomButton from '../components/CustomButton';
-import { COLORS } from '../utils/constants';
 import useAuthStore from '../store/authStore';
+import useThemeStore from '../store/themeStore';
 
 export default function AllergensSettingsScreen({ navigation }) {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuthStore();
-  
+  const { colors: COLORS, theme } = useThemeStore();
+
   const initialTranslatedAllergens = useMemo(() => [
-    t('allergens.milk'), t('allergens.nuts'), t('allergens.eggs'), 
-    t('allergens.gluten'), t('allergens.fish'), t('allergens.seafood'), 
+    t('allergens.milk'), t('allergens.nuts'), t('allergens.eggs'),
+    t('allergens.gluten'), t('allergens.fish'), t('allergens.seafood'),
     t('allergens.soy'), t('allergens.citrus'), t('allergens.honey')
   ], [t]);
 
@@ -20,6 +24,9 @@ export default function AllergensSettingsScreen({ navigation }) {
   const [selected, setSelected] = useState([]);
   const [customInput, setCustomInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, isDark);
 
   useEffect(() => {
     if (user?.allergens) {
@@ -82,43 +89,45 @@ export default function AllergensSettingsScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-      <Text style={styles.subtitle}>
-        {t('allergens.description')}
-      </Text>
+      <View style={styles.content}>
+        <Text style={styles.subtitle}>
+          {t('allergens.description')}
+        </Text>
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder={t('allergens.addCustomPlaceholder')}
-          value={customInput}
-          onChangeText={setCustomInput}
-          onSubmitEditing={addCustomAllergen}
-          placeholderTextColor={COLORS.textLight}
-          maxLength={255}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen}>
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.grid}>
-          {allergens.map((item) => {
-            const isSelected = selected.includes(item);
-            return (
-              <TouchableOpacity
-                key={item}
-                style={[styles.chip, isSelected && styles.chipSelected]}
-                onPress={() => toggleAllergen(item)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{item}</Text>
-                {isSelected && <Ionicons name="close-circle" size={16} color="#fff" style={{marginLeft: 6}} />}
-              </TouchableOpacity>
-            );
-          })}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder={t('allergens.addCustomPlaceholder')}
+            value={customInput}
+            onChangeText={setCustomInput}
+            onSubmitEditing={addCustomAllergen}
+            placeholderTextColor={COLORS.onSurfaceVariant}
+            maxLength={255}
+          />
+          <TouchableOpacity style={styles.addButton} onPress={addCustomAllergen} activeOpacity={0.8}>
+            <Ionicons name="add" size={26} color={COLORS.onPrimaryContainer} />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.grid}>
+            {allergens.map((item) => {
+              const isSelected = selected.includes(item);
+              return (
+                <TouchableOpacity
+                  key={item}
+                  style={[styles.chip, isSelected && styles.chipSelected]}
+                  onPress={() => toggleAllergen(item)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{item}</Text>
+                  {isSelected && <Ionicons name="close-circle" size={18} color={COLORS.onPrimary} style={{ marginLeft: 6 }} />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+      </View>
 
       <View style={styles.footer}>
         <CustomButton title={t('common.save')} onPress={handleSave} loading={loading} />
@@ -127,30 +136,92 @@ export default function AllergensSettingsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingHorizontal: 20, paddingTop: 20 },
-  subtitle: { fontSize: 14, color: COLORS.textLight, marginBottom: 20, lineHeight: 20, textAlign: 'center' },
-  
-  inputContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  input: { flex: 1, backgroundColor: COLORS.surface || '#fff', borderWidth: 1, borderColor: COLORS.border || '#e0e0e0', borderRadius: 12, padding: 14, fontSize: 15, marginRight: 10, color: COLORS.text },
-  addButton: { backgroundColor: COLORS.primary, width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+const getStyles = (COLORS, isDark) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 24,
+    lineHeight: 22,
+    textAlign: 'center',
+    fontWeight: '500'
+  },
 
-  scrollContainer: { paddingBottom: 20 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 12
+  },
+  input: {
+    flex: 1,
+    height: 52,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: COLORS.text
+  },
+  addButton: {
+    backgroundColor: COLORS.primaryContainer,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.1,
+    shadowRadius: 4,
+  },
+
+  scrollContainer: {
+    paddingBottom: 20
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12
+  },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface || '#fff',
-    borderWidth: 1,
-    borderColor: COLORS.border || '#e2e8f0',
-    borderRadius: 20,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    margin: 6,
+    paddingVertical: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 4,
   },
-  chipSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  chipText: { fontSize: 15, fontWeight: '600', color: COLORS.text },
-  chipTextSelected: { color: '#fff' },
-  
-  footer: { paddingVertical: 20, paddingBottom: 40 },
+  chipSelected: {
+    backgroundColor: COLORS.primary,
+    shadowOpacity: isDark ? 0.3 : 0.15,
+  },
+  chipText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.text
+  },
+  chipTextSelected: {
+    color: COLORS.onPrimary
+  },
+
+  footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 24,
+  },
 });

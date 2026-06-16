@@ -13,7 +13,7 @@ import { analyticsAPI } from '../services/api';
 import { API_URL } from '../utils/constants';
 import useThemeStore from '../store/themeStore';
 import MarkdownRenderer from '../components/MarkdownRenderer';
-import { getTranslatedCategoryName } from '../utils/categoryHelper'; // <-- ДОДАНО
+import { getTranslatedCategoryName } from '../utils/categoryHelper';
 
 const screenWidth = Dimensions.get('window').width;
 const chartColors = ['#2ECC71', '#3498DB', '#9B59B6', '#E67E22', '#E74C3C', '#1ABC9C', '#F1C40F'];
@@ -25,7 +25,6 @@ const MACRO_COLORS = {
   carbs: '#2ECC71',
 };
 
-// Замість жорстких label використовуємо labelKey
 const PERIODS = [
   { id: '1m', labelKey: 'analytics.periods.1m', fallback: '1 місяць', days: 30 },
   { id: '3m', labelKey: 'analytics.periods.3m', fallback: '3 місяці', days: 90 },
@@ -41,10 +40,10 @@ export default function AnalyticsScreen({ navigation }) {
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingAi, setLoadingAi] = useState(false);
   const [streamedText, setStreamedText] = useState('');
-  
+
   const [activePeriod, setActivePeriod] = useState(PERIODS[0]);
   const [activeChartFilter, setActiveChartFilter] = useState('all');
-  
+
   const [customDateRange, setCustomDateRange] = useState({
     start: new Date(new Date().setDate(new Date().getDate() - 7)),
     end: new Date()
@@ -53,7 +52,7 @@ export default function AnalyticsScreen({ navigation }) {
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const styles = getStyles(COLORS, insets, tabBarHeight);
+  const styles = getStyles(COLORS, insets, tabBarHeight, theme);
 
   const animation = useRef(new Animated.Value(0)).current;
   const wsRef = useRef(null);
@@ -61,14 +60,14 @@ export default function AnalyticsScreen({ navigation }) {
   const loadStats = useCallback(async () => {
     setLoadingStats(true);
     try {
-      const params = activePeriod.id === 'custom' 
-        ? { 
-            start_date: customDateRange.start.toISOString().split('T')[0], 
-            end_date: customDateRange.end.toISOString().split('T')[0] 
+      const params = activePeriod.id === 'custom'
+        ? {
+            start_date: customDateRange.start.toISOString().split('T')[0],
+            end_date: customDateRange.end.toISOString().split('T')[0]
           }
         : { days: activePeriod.days };
 
-      const statsRes = await analyticsAPI.get(params); 
+      const statsRes = await analyticsAPI.get(params);
       setData(statsRes.data);
     } catch (error) {
       console.log('Помилка завантаження статистики', error);
@@ -110,7 +109,7 @@ export default function AnalyticsScreen({ navigation }) {
       let wsUrl = API_URL.replace('http://', 'ws://').replace('https://', 'wss://');
       if (Platform.OS === 'android' && wsUrl.includes('localhost')) wsUrl = wsUrl.replace('localhost', '10.0.2.2');
       else if (Platform.OS === 'android' && wsUrl.includes('127.0.0.1')) wsUrl = wsUrl.replace('127.0.0.1', '10.0.2.2');
-      
+
       const ws = new WebSocket(`${wsUrl}/analytics/ws/ai-recommendations?days=${activePeriod.days || 30}&token=${token}&lang=${lang}`);
       wsRef.current = ws;
 
@@ -143,9 +142,8 @@ export default function AnalyticsScreen({ navigation }) {
     );
   }
 
-  // Локалізуємо назви категорій у PieChart
   const pieChartData = data?.by_category?.map((item, index) => ({
-    name: getTranslatedCategoryName(item.category, t), // <-- ДОДАНО
+    name: getTranslatedCategoryName(item.category, t),
     population: item.total,
     color: chartColors[index % chartColors.length],
     legendFontColor: COLORS.text,
@@ -153,12 +151,12 @@ export default function AnalyticsScreen({ navigation }) {
   })) || [];
 
   const rawNutritionData = data?.nutrition_history || [];
-  
+
   let finalLabels = [];
   let finalData = { calories: [], proteins: [], fats: [], carbs: [] };
 
   if (rawNutritionData.length === 0) {
-    finalLabels = [t('analytics.noData', 'Немає даних'), ' ']; // <-- ЛОКАЛІЗОВАНО
+    finalLabels = [t('analytics.noData', 'Немає даних'), ' '];
     finalData = { calories: [0, 0], proteins: [0, 0], fats: [0, 0], carbs: [0, 0] };
   } else if (rawNutritionData.length === 1) {
     finalLabels = [rawNutritionData[0].date, ' '];
@@ -208,30 +206,28 @@ export default function AnalyticsScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.statsRow}>
-          <TouchableOpacity style={styles.statCard} activeOpacity={0.7} onPress={() => navigation.navigate('Products')}>
+          <TouchableOpacity style={styles.statCard} activeOpacity={0.8} onPress={() => navigation.navigate('Products')}>
             <Text style={styles.statValue}>{data?.total_products_in_fridge || 0}</Text>
             <Text style={styles.statLabel}>{t('analytics.productsAtHome')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.statCard} activeOpacity={0.7} onPress={() => navigation.navigate('History')}>
+          <TouchableOpacity style={styles.statCard} activeOpacity={0.8} onPress={() => navigation.navigate('History')}>
             <Text style={styles.statValue}>{data?.consumed_products?.length || 0}</Text>
             <Text style={styles.statLabel}>{t('analytics.consumedPerMonth')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          {/* ЛОКАЛІЗОВАНО */}
           <Text style={styles.sectionTitle}>{t('analytics.macrosDynamics', 'Динаміка КБЖВ')}</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.periodContainer} contentContainerStyle={{ gap: 8 }}>
             {PERIODS.map(period => (
               <TouchableOpacity
                 key={period.id}
-                style={[styles.periodPill, activePeriod.id === period.id && { backgroundColor: COLORS.primary }]}
+                style={[styles.periodPill, activePeriod.id === period.id && styles.periodPillActive]}
                 onPress={() => handlePeriodChange(period)}
               >
-                {/* ЛОКАЛІЗОВАНО */}
-                <Text style={[styles.periodText, activePeriod.id === period.id && { color: COLORS.onPrimary }]}>
+                <Text style={[styles.periodText, activePeriod.id === period.id && styles.periodTextActive]}>
                   {t(period.labelKey, period.fallback)}
                 </Text>
               </TouchableOpacity>
@@ -241,7 +237,6 @@ export default function AnalyticsScreen({ navigation }) {
           {activePeriod.id === 'custom' && (
             <View style={styles.customDateContainer}>
               <View style={styles.datePickerWrapper}>
-                {/* ЛОКАЛІЗОВАНО */}
                 <DatePicker
                   label={t('common.from', 'Від')}
                   date={customDateRange.start}
@@ -250,7 +245,6 @@ export default function AnalyticsScreen({ navigation }) {
                 />
               </View>
               <View style={styles.datePickerWrapper}>
-                {/* ЛОКАЛІЗОВАНО */}
                 <DatePicker
                   label={t('common.to', 'До')}
                   date={customDateRange.end}
@@ -262,27 +256,25 @@ export default function AnalyticsScreen({ navigation }) {
             </View>
           )}
 
+          {/* Segmented Control для фільтрів */}
           <View style={styles.chartFilterContainer}>
              <TouchableOpacity onPress={() => setActiveChartFilter('all')} style={[styles.filterBtn, activeChartFilter === 'all' && styles.filterBtnActive]}>
-                {/* ЛОКАЛІЗОВАНО */}
-                <Text style={[styles.filterBtnText, activeChartFilter === 'all' && {color: COLORS.primary}]}>{t('common.all', 'Всі')}</Text>
+                <Text style={[styles.filterBtnText, activeChartFilter === 'all' && styles.filterBtnTextActive]}>{t('common.all', 'Всі')}</Text>
              </TouchableOpacity>
              <TouchableOpacity onPress={() => setActiveChartFilter('calories')} style={[styles.filterBtn, activeChartFilter === 'calories' && styles.filterBtnActive]}>
-                {/* ЛОКАЛІЗОВАНО */}
-                <Text style={[styles.filterBtnText, activeChartFilter === 'calories' && {color: COLORS.primary}]}>{t('analytics.calories', 'Калорії')}</Text>
+                <Text style={[styles.filterBtnText, activeChartFilter === 'calories' && styles.filterBtnTextActive]}>{t('analytics.calories', 'Калорії')}</Text>
              </TouchableOpacity>
              <TouchableOpacity onPress={() => setActiveChartFilter('macros')} style={[styles.filterBtn, activeChartFilter === 'macros' && styles.filterBtnActive]}>
-                {/* ЛОКАЛІЗОВАНО */}
-                <Text style={[styles.filterBtnText, activeChartFilter === 'macros' && {color: COLORS.primary}]}>{t('analytics.macros', 'БЖВ')}</Text>
+                <Text style={[styles.filterBtnText, activeChartFilter === 'macros' && styles.filterBtnTextActive]}>{t('analytics.macros', 'БЖВ')}</Text>
              </TouchableOpacity>
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <LineChart
               data={lineChartData}
-              width={Math.max(screenWidth - 40, rawNutritionData.length * 40)} 
+              width={Math.max(screenWidth - 88, rawNutritionData.length * 40)}
               height={220}
-              withDots={rawNutritionData.length < 30} 
+              withDots={rawNutritionData.length < 30}
               chartConfig={{
                 backgroundColor: COLORS.surface,
                 backgroundGradientFrom: COLORS.surface,
@@ -298,7 +290,6 @@ export default function AnalyticsScreen({ navigation }) {
           </ScrollView>
 
           <View style={styles.legendContainer}>
-            {/* ЛОКАЛІЗОВАНО */}
             <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.calories}]}/><Text style={styles.legendText}>{t('analytics.kcal', 'Ккал')}</Text></View>
             <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.proteins}]}/><Text style={styles.legendText}>{t('addProduct.proteins', 'Білки')}</Text></View>
             <View style={styles.legendItem}><View style={[styles.legendDot, {backgroundColor: MACRO_COLORS.fats}]}/><Text style={styles.legendText}>{t('addProduct.fats', 'Жири')}</Text></View>
@@ -311,7 +302,7 @@ export default function AnalyticsScreen({ navigation }) {
           {pieChartData.length > 0 ? (
             <PieChart
               data={pieChartData}
-              width={screenWidth - 80}
+              width={screenWidth - 88}
               height={220}
               chartConfig={{ color: () => COLORS.text }}
               accessor={"population"}
@@ -326,13 +317,13 @@ export default function AnalyticsScreen({ navigation }) {
 
         <View style={styles.sectionAi}>
           <View style={styles.aiHeader}>
-            <Ionicons name="sparkles" size={24} color={COLORS.warning} />
+            <Ionicons name="sparkles" size={26} color={COLORS.primary} />
             <Text style={styles.sectionTitleAi}>{t('analytics.aiRecommendationsTitle')}</Text>
           </View>
 
-          <TouchableOpacity style={styles.generateButton} onPress={handleGenerateRecs}>
+          <TouchableOpacity style={styles.generateButton} onPress={handleGenerateRecs} activeOpacity={0.8}>
             <Animated.View style={animatedStyle}>
-              <Ionicons name={loadingAi ? "close" : "sparkles-outline"} size={24} color={COLORS.onPrimary} />
+              <Ionicons name={loadingAi ? "close" : "sparkles-outline"} size={22} color={COLORS.onPrimary} />
             </Animated.View>
             <Text style={styles.generateButtonText}>{loadingAi ? t('common.cancel') : t('analytics.getAdvice')}</Text>
           </TouchableOpacity>
@@ -348,74 +339,142 @@ export default function AnalyticsScreen({ navigation }) {
   );
 }
 
-const getStyles = (COLORS, insets, tabBarHeight) => StyleSheet.create({
+const getStyles = (COLORS, insets, tabBarHeight, theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
     paddingHorizontal: 20,
-    paddingBottom: 16,
     backgroundColor: COLORS.surface,
-    elevation: 2,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
   },
-  headerTitle: { fontSize: 28, fontWeight: '700', color: COLORS.text },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 12,
+    marginBottom: 20,
+    letterSpacing: 0.5,
+  },
+
   scrollContent: { padding: 20, paddingBottom: tabBarHeight + 40 },
-  loadingText: { marginTop: 16, fontSize: 14, color: COLORS.onSurfaceVariant },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, gap: 12 },
-  statCard: { flex: 1, backgroundColor: COLORS.surfaceVariant, padding: 20, borderRadius: 24, alignItems: 'center' },
-  statValue: { fontSize: 32, fontWeight: '800', color: COLORS.primary },
-  statLabel: { fontSize: 13, color: COLORS.text, marginTop: 8, textAlign: 'center', fontWeight: '500' },
+  loadingText: { marginTop: 16, fontSize: 15, fontWeight: '500', color: COLORS.onSurfaceVariant },
+
+  // ─── Stats Cards ───────────────────────────────────────────────────────────
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24, gap: 16 },
+  statCard: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    borderRadius: 24,
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+  },
+  statValue: { fontSize: 36, fontWeight: '800', color: COLORS.primary },
+  statLabel: { fontSize: 14, color: COLORS.onSurfaceVariant, marginTop: 8, textAlign: 'center', fontWeight: '600' },
+
+  // ─── Sections ──────────────────────────────────────────────────────────────
   section: {
     backgroundColor: COLORS.surface,
-    marginBottom: 20,
+    marginBottom: 24,
     borderRadius: 24,
-    padding: 20,
-    elevation: 1,
+    padding: 24,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text, marginBottom: 16 },
-  emptyText: { textAlign: 'center', color: COLORS.onSurfaceVariant, paddingVertical: 30 },
-  
-  periodContainer: { marginBottom: 16, paddingBottom: 4 },
+  sectionTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text, marginBottom: 20 },
+  emptyText: { textAlign: 'center', color: COLORS.onSurfaceVariant, paddingVertical: 30, fontSize: 15 },
+
+  // ─── Period Pills ──────────────────────────────────────────────────────────
+  periodContainer: { marginBottom: 20, paddingBottom: 4 },
   periodPill: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 16,
     backgroundColor: COLORS.surfaceVariant,
-    marginRight: 8,
   },
-  periodText: { fontSize: 14, fontWeight: '600', color: COLORS.text },
-  
+  periodPillActive: { backgroundColor: COLORS.primary },
+  periodText: { fontSize: 14, fontWeight: '600', color: COLORS.onSurfaceVariant },
+  periodTextActive: { color: COLORS.onPrimary, fontWeight: '700' },
+
   customDateContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  datePickerWrapper: {
+  datePickerWrapper: { flex: 1 },
+
+  // ─── Segmented Control (Chart Filters) ─────────────────────────────────────
+  chartFilterContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    padding: 4,
+    marginBottom: 20,
+  },
+  filterBtn: {
     flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: 'center'
   },
-  
-  chartFilterContainer: { flexDirection: 'row', gap: 12, marginBottom: 12, justifyContent: 'center' },
-  filterBtn: { paddingVertical: 4, paddingHorizontal: 12, borderRadius: 12 },
-  filterBtnActive: { backgroundColor: COLORS.primaryContainer },
-  filterBtnText: { fontSize: 12, fontWeight: '600', color: COLORS.onSurfaceVariant },
-  legendContainer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 12, marginTop: 12 },
+  filterBtnActive: {
+    backgroundColor: COLORS.surface,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  filterBtnText: { fontSize: 13, fontWeight: '600', color: COLORS.onSurfaceVariant },
+  filterBtnTextActive: { color: COLORS.primary, fontWeight: '700' },
+
+  legendContainer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 16, marginTop: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendText: { fontSize: 12, color: COLORS.text },
+  legendText: { fontSize: 13, fontWeight: '500', color: COLORS.text },
 
-  sectionAi: { backgroundColor: COLORS.primaryContainer, borderRadius: 24, padding: 20 },
-  aiHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
-  sectionTitleAi: { fontSize: 18, fontWeight: '700', color: COLORS.onPrimaryContainer },
-  generateButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: COLORS.primary, paddingVertical: 14, borderRadius: 100, gap: 10 },
-  generateButtonText: { color: COLORS.onPrimary, fontSize: 16, fontWeight: '600' },
-  aiTextContainer: { marginTop: 16 },
+  // ─── AI Section ────────────────────────────────────────────────────────────
+  sectionAi: {
+    backgroundColor: COLORS.primaryContainer,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+  },
+  aiHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 },
+  sectionTitleAi: { fontSize: 20, fontWeight: '800', color: COLORS.onPrimaryContainer },
+  generateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    height: 52,
+    borderRadius: 16,
+    gap: 10,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+  },
+  generateButtonText: { color: COLORS.onPrimary, fontSize: 16, fontWeight: '700' },
+  aiTextContainer: { marginTop: 20 },
 });

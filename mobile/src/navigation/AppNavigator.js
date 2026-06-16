@@ -55,18 +55,12 @@ import EditProductScreen from "../screens/EditProductScreen";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Тривалість анімації по платформах.
-// ─────────────────────────────────────────────────────────────────────────────
 const TAB_FADE_DURATION = Platform.select({
   ios: 160,
   android: 100,
   default: 130,
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// withTabAnimation — HOC для плавного fade-in при переключенні вкладок.
-// ─────────────────────────────────────────────────────────────────────────────
 const withTabAnimation = (WrappedComponent) => {
   const AnimatedScreen = React.memo((props) => {
     const opacity = useRef(new Animated.Value(0)).current;
@@ -98,7 +92,7 @@ const withTabAnimation = (WrappedComponent) => {
             animRef.current = null;
           }
         };
-      }, []),
+      }, [opacity]),
     );
 
     return (
@@ -121,35 +115,26 @@ const AnimatedAnalyticsScreen = withTabAnimation(AnalyticsScreen);
 const AnimatedSettingsScreen = withTabAnimation(SettingsScreen);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TabBarBackground
+// Custom Tab Bar Background з тінями та заокругленням
 // ─────────────────────────────────────────────────────────────────────────────
-const TabBarBackground = ({ theme }) => {
-  if (Platform.OS === "android") {
-    return (
-      <View
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            backgroundColor:
-              theme === "dark"
-                ? "rgba(20, 20, 22, 0.97)"
-                : "rgba(252, 252, 252, 0.97)",
-          },
-        ]}
-      />
-    );
-  }
+const TabBarBackground = ({ theme, colors }) => {
+  const isDark = theme === "dark";
+  const androidColor = isDark ? "rgba(30, 30, 34, 0.98)" : "rgba(252, 252, 252, 0.98)";
 
   return (
-    <BlurView
-      tint={
-        theme === "dark"
-          ? "systemThickMaterialDark"
-          : "systemThickMaterialLight"
-      }
-      intensity={60}
-      style={{ ...StyleSheet.absoluteFillObject, overflow: "hidden" }}
-    />
+    <View style={styles.tabBackgroundContainer}>
+      <View style={styles.tabBackgroundInner}>
+        {Platform.OS === "android" ? (
+          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: androidColor }]} />
+        ) : (
+          <BlurView
+            tint={isDark ? "systemThickMaterialDark" : "systemThickMaterialLight"}
+            intensity={80}
+            style={StyleSheet.absoluteFillObject}
+          />
+        )}
+      </View>
+    </View>
   );
 };
 
@@ -164,30 +149,21 @@ const MainTabs = () => {
         tabBarShowLabel: false,
         tabBarStyle: {
           position: "absolute",
-          height: 90,
+          height: Platform.OS === 'ios' ? 90 : 80,
           borderTopWidth: 0,
           backgroundColor: "transparent",
-          elevation: Platform.OS === "android" ? 0 : 0,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 6,
+          elevation: 0, // Тіні перенесені у TabBarBackground
         },
-        tabBarBackground: () => <TabBarBackground theme={theme} />,
+        tabBarBackground: () => <TabBarBackground theme={theme} colors={COLORS} />,
         tabBarIcon: ({ size, focused }) => {
           if (route.name === "AddButton") {
             return (
               <View style={styles.fabWrapper}>
-                <View
-                  style={[
-                    styles.fabButton,
-                    { backgroundColor: COLORS.primary },
-                  ]}
-                >
+                <View style={[styles.fabButton, { backgroundColor: COLORS.primary }]}>
                   <Ionicons
                     name="add"
-                    size={36}
-                    color={COLORS.surface || "#fff"}
+                    size={32}
+                    color={COLORS.onPrimary}
                   />
                 </View>
               </View>
@@ -216,19 +192,20 @@ const MainTabs = () => {
               <View
                 style={[
                   styles.iconPill,
-                  focused && { backgroundColor: COLORS.primary },
+                  focused && { backgroundColor: COLORS.primaryContainer },
                 ]}
               >
                 <Ionicons
                   name={iconName}
-                  size={size}
-                  color={focused ? COLORS.primaryContainer : COLORS.textLight}
+                  size={24}
+                  color={focused ? COLORS.onPrimaryContainer : COLORS.onSurfaceVariant}
                 />
               </View>
               <Text
                 style={[
                   styles.tabLabel,
-                  { color: focused ? COLORS.primary : COLORS.textLight },
+                  { color: focused ? COLORS.onPrimaryContainer : COLORS.onSurfaceVariant },
+                  focused && styles.tabLabelActive
                 ]}
               >
                 {labelText}
@@ -237,7 +214,7 @@ const MainTabs = () => {
           );
         },
         tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.textLight,
+        tabBarInactiveTintColor: COLORS.onSurfaceVariant,
       })}
     >
       <Tab.Screen name="Products" component={AnimatedHomeScreen} />
@@ -262,8 +239,7 @@ const MainTabs = () => {
 
 export default function AppNavigator() {
   const { t } = useTranslation();
-  const { isAuthenticated, isInitializing, needsOnboarding, initialize } =
-    useAuthStore();
+  const { isAuthenticated, isInitializing, needsOnboarding, initialize } = useAuthStore();
   const { theme, colors: COLORS } = useThemeStore();
 
   useEffect(() => {
@@ -311,7 +287,7 @@ export default function AppNavigator() {
 
           headerStyle: { backgroundColor: COLORS.surface },
           headerTintColor: COLORS.text,
-          headerTitleStyle: { fontWeight: "600" },
+          headerTitleStyle: { fontWeight: "700" }, // Трохи жирніший текст хедерів для Stack-екранів
         }}
       >
         {!isAuthenticated ? (
@@ -402,7 +378,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="DailyTasks"
               component={DailyTasksScreen}
-              options={{ headerShown: true, title: t("screens.dailyTasks") }}
+              options={{ headerShown: false, title: t("screens.dailyTasks") }}
             />
             <Stack.Screen
               name="ProductFilters"
@@ -437,40 +413,57 @@ export default function AppNavigator() {
 }
 
 const styles = StyleSheet.create({
+  tabBackgroundContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+  },
+  tabBackgroundInner: {
+    ...StyleSheet.absoluteFillObject,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: "hidden", // Гарантує, що BlurView не вилізе за межі заокруглених кутів
+  },
   tabItemContainer: {
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
+    marginTop: Platform.OS === 'android' ? 4 : 8,
   },
   iconPill: {
     paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 100,
+    paddingVertical: 4,
+    borderRadius: 16,
   },
   tabLabel: {
     fontSize: 11,
     fontWeight: "500",
   },
+  tabLabelActive: {
+    fontWeight: "700",
+  },
   fabWrapper: {
-    flex: 1, // Дозволяє кнопці гармонійно ділити простір з іншими іконками
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    // ❌ ВАЖЛИВО: Видаліть position: "absolute" та будь-які відступи типу top: -20
+    marginTop: Platform.OS === 'android' ? -4 : 0,
   },
   fabButton: {
-    width: 80,  // Трохи зменшуємо з 64, щоб кнопка влізла у стандартну висоту Tab Bar
-    height: 54,
-    borderRadius: 26,
+    width: 64, // Підігнано під загальний стиль інпутів/кнопок
+    height: 52,
+    borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    // Тіні можна залишити, щоб кнопка все ще виділялася
+    elevation: 6,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
 });

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, TextInput, StyleSheet, Alert, Platform, TouchableOpacity, Image, KeyboardAvoidingView, StatusBar } from 'react-native';
+import {
+  ScrollView, View, Text, TextInput, StyleSheet, Alert,
+  Platform, TouchableOpacity, Image, KeyboardAvoidingView, StatusBar
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +25,7 @@ export default function EditProductScreen({ navigation, route }) {
   const { colors: COLORS, theme } = useThemeStore();
   const { categories } = useCategories();
   const insets = useSafeAreaInsets();
-  
+
   const [loading, setLoading] = useState(false);
   const isDark = theme === 'dark';
 
@@ -97,7 +100,7 @@ export default function EditProductScreen({ navigation, route }) {
     if (!form.name) return Alert.alert(t('common.error'), t('productDetail.nameRequired'));
 
     setLoading(true);
-    
+
     try {
       let finalImageUrl = form.image_url;
 
@@ -140,28 +143,28 @@ export default function EditProductScreen({ navigation, route }) {
 
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 10);
-  
+
   const styles = getStyles(COLORS, insets, isDark);
 
   if (!product) return null;
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          
+
           <View style={styles.formCard}>
             <View style={styles.imageSection}>
-              <TouchableOpacity style={styles.imagePlaceholder} onPress={pickImage}>
+              <TouchableOpacity style={styles.imagePlaceholder} onPress={pickImage} activeOpacity={0.8}>
                 {form.localImageUri ? (
                   <Image source={{ uri: form.localImageUri }} style={styles.productImage} />
                 ) : (
-                  <>
-                    <Ionicons name="image-outline" size={40} color={COLORS.onSurfaceVariant} />
+                  <View style={styles.imagePlaceholderInner}>
+                    <Ionicons name="image-outline" size={32} color={COLORS.primary} />
                     <Text style={styles.imageText}>{t('addProduct.addPhoto')}</Text>
-                  </>
+                  </View>
                 )}
               </TouchableOpacity>
             </View>
@@ -178,7 +181,7 @@ export default function EditProductScreen({ navigation, route }) {
             </View>
 
             <View style={styles.row}>
-              <View style={[styles.section, { flex: 2, marginRight: 10 }]}>
+              <View style={[styles.section, { flex: 1 }]}>
                 <Text style={styles.label}>{t('productDetail.qtyLabel')}</Text>
                 <TextInput
                   style={styles.input}
@@ -188,7 +191,7 @@ export default function EditProductScreen({ navigation, route }) {
                   placeholderTextColor={COLORS.onSurfaceVariant}
                 />
               </View>
-              <View style={[styles.section, { flex: 3 }]}>
+              <View style={[styles.section, { flex: 1.5 }]}>
                 <CustomPicker
                   label={t('productDetail.unitLabel')}
                   items={unitItems}
@@ -209,12 +212,13 @@ export default function EditProductScreen({ navigation, route }) {
 
             <View style={styles.section}>
               <DatePicker
+                label={t('addProduct.expiryLabel', 'Термін придатності')}
                 date={form.expiry_date}
                 onDateChange={(date) => updateForm('expiry_date', date)}
                 maximumDate={maxDate}
               />
             </View>
-            
+
             <View style={styles.section}>
               <Text style={styles.label}>{t('addProduct.macrosLabel')}</Text>
               <View style={styles.macroRow}>
@@ -250,7 +254,7 @@ export default function EditProductScreen({ navigation, route }) {
                 </View>
                 <View style={styles.macroInputContainer}>
                   <TextInput
-                    style={[styles.input, styles.macroInput, { backgroundColor: COLORS.surface }]}
+                    style={[styles.input, styles.macroInput, { backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7', opacity: 0.8 }]}
                     value={form.calories}
                     placeholder={t('addProduct.calories')}
                     keyboardType="numeric"
@@ -289,38 +293,112 @@ export default function EditProductScreen({ navigation, route }) {
 }
 
 const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: Platform.OS === 'ios' ? 20 : insets.top || 20,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: `${COLORS.text}08`,
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
   },
-  backButton: { padding: 8, width: 44, alignItems: 'flex-start' },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: COLORS.text },
-  content: { padding: 20, paddingBottom: 60 },
+  content: {
+    padding: 20,
+    paddingBottom: (insets.bottom || 20) + 40
+  },
 
-  formCard: { backgroundColor: COLORS.surface, padding: 20, borderRadius: 24, marginBottom: 24, elevation: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4 },
+  // ─── Form Card ─────────────────────────────────────────────────────────────
+  formCard: {
+    backgroundColor: COLORS.surface,
+    padding: 24,
+    borderRadius: 24,
+    marginBottom: 24,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.08,
+    shadowRadius: 6
+  },
 
-  imageSection: { marginBottom: 24, alignItems: 'center' },
-  imagePlaceholder: { width: '100%', height: 180, backgroundColor: COLORS.surfaceVariant, borderRadius: 20, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: `${COLORS.primary}20`, borderStyle: 'dashed' },
-  productImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  imageText: { marginTop: 8, fontSize: 14, color: COLORS.onSurfaceVariant },
+  // ─── Image Picker ──────────────────────────────────────────────────────────
+  imageSection: {
+    marginBottom: 24,
+    alignItems: 'center'
+  },
+  imagePlaceholder: {
+    width: '100%',
+    height: 160,
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: `${COLORS.primary}40`,
+    borderStyle: 'dashed'
+  },
+  imagePlaceholderInner: {
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  productImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover'
+  },
+  imageText: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary
+  },
 
+  // ─── Inputs & Sections ─────────────────────────────────────────────────────
   section: { marginBottom: 20 },
-  row: { flexDirection: 'row' },
-  label: { fontSize: 14, fontWeight: '600', color: COLORS.text, marginBottom: 8, marginLeft: 4 },
-  input: { backgroundColor: COLORS.surfaceVariant, borderWidth: 1, borderColor: 'transparent', borderRadius: 12, paddingHorizontal: 16, paddingVertical: Platform.OS === 'ios' ? 14 : 12, fontSize: 16, color: COLORS.text },
-  textArea: { minHeight: 100, textAlignVertical: 'top' },
-  
-  macroRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  macroInputContainer: { flex: 1 },
-  macroInput: { paddingHorizontal: 8, textAlign: 'center', fontSize: 14 },
-  
-  saveButton: { marginTop: 10, shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  row: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginLeft: 4
+  },
+  input: {
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    fontSize: 16,
+    color: COLORS.text,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  textArea: {
+    height: 120,
+    paddingTop: 16,
+    textAlignVertical: 'top'
+  },
+
+  // ─── Macros Row ────────────────────────────────────────────────────────────
+  macroRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8
+  },
+  macroInputContainer: {
+    flex: 1
+  },
+  macroInput: {
+    paddingHorizontal: 4,
+    textAlign: 'center',
+    fontSize: 15,
+    fontWeight: '500'
+  },
+
+  // ─── Button ────────────────────────────────────────────────────────────────
+  saveButton: {
+    height: 52,
+    borderRadius: 16,
+    marginBottom: 20
+  },
 });

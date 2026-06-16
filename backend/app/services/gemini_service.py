@@ -52,17 +52,13 @@ async def clean_stream(response_stream):
             yield buffer
 
 
-# app/services/gemini_service.py
-
-# ... попередній код файлу ...
-
 async def analyze_product_image(
         image_bytes: bytes,
         mime_type: str = "image/jpeg",
         user_allergens: list[str] | None = None,
         available_categories: list[str] | None = None,
         lang: str = "uk",
-        mode: str = "product" # <-- ДОДАНО
+        mode: str = "product"
 ) -> dict:
     allergens_prompt = f"User is allergic to: {', '.join(user_allergens)}." if user_allergens else "User has no known allergies."
     categories_prompt = f"Available categories: {', '.join(available_categories)}." if available_categories else "No categories available."
@@ -135,10 +131,11 @@ async def generate_recipes(
         products: list[dict],
         user_diet: str | None = None,
         user_allergens: list[str] | None = None,
-        include_grocery: bool = False
+        include_grocery: bool = False,
+    lang: str = "uk"
 ):
     product_list = "\n".join(
-        f"- {p['name']} ({p.get('category', '')}, {p.get('quantity', 1)} {p.get('unit', 'шт')})"
+        f"- {p['name']} ({p.get('category', '')}, {p.get('quantity', 1)} {p.get('unit', 'pcs')})"
         for p in products
         if p.get('is_active', True)
     )
@@ -167,26 +164,25 @@ async def generate_recipes(
     STEP 4: CONCEPTUALIZATION. Using ONLY the valid ingredients, conceptualize dishes. Cooking a single versatile ingredient (e.g., frying an egg) IS a valid recipe. Simply mixing random items or heating water is NOT.
     STEP 5: FORCED GROUNDING. Use the Google Search tool to verify recipe existence. DO NOT include the discarded gibberish or malicious words in your search queries!
     STEP 6: GENERATION. Generate 3 to 5 diverse recipes based on STEP 4 and STEP 5.
-    STEP 7: FORMATTING. Apply rules: {grocery_rule}. Respond STRICTLY in Ukrainian. NO emojis. Separate recipes ONLY with `---`.
+    STEP 7: FORMATTING. Apply rules: {grocery_rule}. Respond STRICTLY in {"Ukrainian" if lang == "uk" else "English"}. NO emojis. Separate recipes ONLY with `---`.
 
     Follow the exact Markdown template:
     ## [Recipe Name]
     [Short description, 1-2 sentences]
 
-    **Час:** [Time] | **Складність:** [Difficulty]
-
-    ### Інгредієнти:
+{"**Час:**" if lang == "uk" else "**Time:**"} [Time] | {"**Складність:**" if lang == "uk" else "**Difficulty:**"} [Difficulty]
+{"### Інгредієнти:" if lang == "uk" else "### Ingredients:"}
     - [Ingredient 1]
 
-    ### Треба докупити:
+{"### Треба докупити:" if lang == "uk" else "### Needs to be purchased:"}
     - [Missing ingredient]
 
-    ### Приготування:
+{"### Приготування:" if lang == "uk" else "### Instructions:"}
     1. [Step 1]
     """
 
     if not client:
-        yield "\n\n**Помилка:** Gemini API ключ не налаштовано."
+        yield {"\n\n**Помилка:** Gemini API ключ не налаштовано." if lang == "uk" else "\n\n**Error:** Gemini API key is not configured."}
         return
 
     try:
@@ -205,16 +201,15 @@ async def generate_recipes(
 
     except Exception as e:
         print(f"Error streaming recipes with Gemini: {e}")
-        yield "\n\n**Помилка:** Не вдалося згенерувати рецепти."
+        yield {"\n\n**Помилка:** Не вдалося згенерувати рецепти." if lang == "uk" else "\n\n**Error:** Failed to generate recipes."}
 
-
-async def stream_diet_recommendations(consumed_data: list[dict]):
+async def stream_diet_recommendations(consumed_data: list[dict], lang: str = "uk"):
     if not consumed_data:
-        yield "Недостатньо даних для аналізу раціону. Починайте фіксувати споживання продуктів!"
+        yield {"Недостатньо даних для аналізу раціону. Починайте фіксувати споживання продуктів!" if lang == "uk" else "Insufficient data to analyze your diet. Start logging your food intake!"}
         return
 
     consumed_list = "\n".join(
-        f"- {item['product_name']} ({item.get('category', '')}): {item.get('total_quantity', 1)} {item.get('unit', 'шт')}"
+        f"- {item['product_name']} ({item.get('category', '')}): {item.get('total_quantity', 1)} {item.get('unit', 'pcs')}"
         for item in consumed_data
     )
 
@@ -224,22 +219,22 @@ async def stream_diet_recommendations(consumed_data: list[dict]):
 
         TASK: Analyze the diet and provide improvement tips.
 
-        CRITICAL CONSTRAINT 1: Respond strictly in Ukrainian.
+        CRITICAL CONSTRAINT 1: Respond strictly in {"Ukrainian" if lang == "uk" else "English"}.
         CRITICAL CONSTRAINT 2: The analysis must be ultra-concise (1-2 sentences max).
         CRITICAL CONSTRAINT 3: Do NOT use emojis.
         CRITICAL CONSTRAINT 4: Follow the exact Markdown template and headers below.
 
         Template:
-        **Загальний аналіз:** [Your 1-2 sentences analysis here]
+        **{"Загальний аналіз" if lang == "uk" else "General Analysis"}:** [Your 1-2 sentences analysis here]
         ---
-        **Поради:**
+        **{"Поради" if lang == "uk" else "Tips"}:**
         * [Tip 1]
         * [Tip 2]
         * [Tip 3]
         """
 
     if not client:
-        yield "\n\n**Помилка:** Gemini API ключ не налаштовано."
+        yield {"\n\n**Помилка:** Gemini API ключ не налаштовано." if lang == "uk" else "\n\n**Error:** Gemini API key is not configured."}
         return
 
     try:
@@ -257,4 +252,4 @@ async def stream_diet_recommendations(consumed_data: list[dict]):
 
     except Exception as e:
         print(f"Error streaming recommendations with Gemini: {e}")
-        yield "\n\n**Помилка:** Не вдалося завершити генерацію рекомендацій."
+        yield {"\n\n**Помилка:** Не вдалося завершити генерацію рекомендацій." if lang == "uk" else "\n\n**Error:** Failed to complete recommendation generation."}

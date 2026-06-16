@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity, StatusBar } from 'react-native';
+import {
+  View, Text, StyleSheet, FlatList, RefreshControl,
+  TextInput, TouchableOpacity, StatusBar
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -12,10 +15,12 @@ export default function HistoryScreen() {
   const { consumedProducts, fetchConsumedProducts } = useProductStore();
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const { colors: COLORS, theme } = useThemeStore();
   const insets = useSafeAreaInsets();
-  const styles = getStyles(COLORS, insets);
+
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, insets, isDark);
 
   const loadData = useCallback(async () => {
     setRefreshing(true);
@@ -37,14 +42,18 @@ export default function HistoryScreen() {
   const renderConsumedItem = ({ item }) => (
     <View style={styles.consumedItemContainer}>
       <View style={styles.consumedIconContainer}>
-        <Ionicons name="checkmark-circle" size={24} color={COLORS.primary} />
+        <Ionicons name="restaurant" size={24} color={COLORS.primary} />
       </View>
       <View style={styles.consumedProductInfo}>
         <Text style={styles.consumedProductName}>{item.product_name || item.name}</Text>
-        {item.category && <Text style={styles.consumedProductCategory}>{item.category}</Text>}
+        {item.category && (
+          <Text style={styles.consumedProductCategory}>
+            {getTranslatedCategoryName(item.category, t)}
+          </Text>
+        )}
         {item.consumed_at && (
           <Text style={styles.consumedProductDate}>
-            {new Date(item.consumed_at).toLocaleDateString('uk-UA', {
+            {new Date(item.consumed_at).toLocaleDateString(t('common.locale', 'uk-UA'), {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
@@ -64,19 +73,20 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle={theme === 'dark' ? "light-content" : "dark-content"} backgroundColor={COLORS.surface} />
-      
+
+      {/* ── Обгортка пошуку, що продовжує системний Header ── */}
       <View style={styles.header}>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color={COLORS.onSurfaceVariant} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Пошук у історії..."
+            placeholder={t('history.searchPlaceholder', 'Пошук у історії...')}
             placeholderTextColor={COLORS.onSurfaceVariant}
             value={search}
             onChangeText={setSearch}
           />
           {search !== '' && (
-            <TouchableOpacity onPress={() => setSearch('')}>
+            <TouchableOpacity onPress={() => setSearch('')} activeOpacity={0.7}>
               <Ionicons name="close-circle" size={20} color={COLORS.onSurfaceVariant} />
             </TouchableOpacity>
           )}
@@ -88,6 +98,7 @@ export default function HistoryScreen() {
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderConsumedItem}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={loadData} colors={[COLORS.primary]} />
         }
@@ -96,8 +107,8 @@ export default function HistoryScreen() {
             <View style={styles.emptyIconContainer}>
                <Ionicons name="time-outline" size={48} color={COLORS.primary} />
             </View>
-            <Text style={styles.emptyTitle}>Історія порожня</Text>
-            <Text style={styles.emptyText}>Тут з'являться продукти, які ви спожили</Text>
+            <Text style={styles.emptyTitle}>{t('history.emptyTitle', 'Історія порожня')}</Text>
+            <Text style={styles.emptyText}>{t('history.emptyText', "Тут з'являться продукти, які ви спожили")}</Text>
           </View>
         }
       />
@@ -105,67 +116,49 @@ export default function HistoryScreen() {
   );
 }
 
-const getStyles = (COLORS, insets) => StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: COLORS.background 
+const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background
   },
-  header: { 
+
+  // ─── Header Extension ──────────────────────────────────────────────────────
+  header: {
     paddingHorizontal: 20,
-    paddingVertical: 16, 
-    backgroundColor: COLORS.surface, 
-    elevation: 2,
+    paddingTop: 16,
+    paddingBottom: 24,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
   },
-  searchContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: COLORS.surfaceVariant, 
-    borderRadius: 100, 
-    paddingHorizontal: 16, 
-    height: 48,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceVariant,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
-  searchInput: { 
-    flex: 1, 
+  searchInput: {
+    flex: 1,
     fontSize: 16,
     color: COLORS.text,
+    height: '100%',
   },
-  list: { 
-    padding: 16, 
+
+  // ─── List & Items ──────────────────────────────────────────────────────────
+  list: {
+    padding: 20,
     paddingBottom: insets.bottom + 40,
-  },
-  empty: { 
-    alignItems: 'center', 
-    justifyContent: 'center',
-    marginTop: 60,
-    paddingHorizontal: 32,
-  },
-  emptyIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: COLORS.primaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  emptyText: { 
-    fontSize: 16, 
-    color: COLORS.textLight,
-    textAlign: 'center',
-    lineHeight: 24,
   },
   consumedItemContainer: {
     flexDirection: 'row',
@@ -173,52 +166,87 @@ const getStyles = (COLORS, insets) => StyleSheet.create({
     backgroundColor: COLORS.surface,
     padding: 16,
     borderRadius: 16,
-    marginBottom: 12,
-    elevation: 1,
+    marginBottom: 16,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: isDark ? 0.2 : 0.05,
+    shadowRadius: 6,
   },
   consumedIconContainer: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 16,
     backgroundColor: COLORS.primaryContainer,
-    padding: 8,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   consumedProductInfo: {
     flex: 1,
+    gap: 2,
   },
   consumedProductName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text,
-    marginBottom: 4,
-  },
-  consumedProductCategory: {
-    fontSize: 14,
-    color: COLORS.primary,
-    marginBottom: 4,
-  },
-  consumedProductDate: {
-    fontSize: 12,
-    color: COLORS.textLight,
-  },
-  consumedQuantityContainer: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  quantityValue: {
     fontSize: 16,
     fontWeight: '700',
     color: COLORS.text,
   },
+  consumedProductCategory: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  consumedProductDate: {
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    marginTop: 2,
+  },
+  consumedQuantityContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surfaceVariant,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  quantityValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
   quantityUnit: {
     fontSize: 12,
-    color: COLORS.textLight,
+    fontWeight: '500',
+    color: COLORS.onSurfaceVariant,
+  },
+
+  // ─── Empty State ───────────────────────────────────────────────────────────
+  empty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '20%',
+    paddingHorizontal: 32,
+  },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 32,
+    backgroundColor: COLORS.primaryContainer,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.text,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 24,
   },
 });
