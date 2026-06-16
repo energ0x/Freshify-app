@@ -436,47 +436,5 @@
   },
   "datePicker": {
     "expiryDate": "Expiry Date"
-  },
-  "dailyTasks": {
-    "title": "Daily Missions",
-    "days_one": "day",
-    "days_other": "days",
-    "daysInRow": "days in a row",
-    "record": "Record:",
-    "progressToday": "Today's Progress",
-    "allCompleted": "🎉 All tasks completed! +{{xp}} XP earned",
-    "tasksLeft": "{{count}} tasks left — earn another +{{xp}} XP",
-    "tasksForToday": "Tasks for today",
-    "weekLabels": {
-      "0": "Mon",
-      "1": "Tue",
-      "2": "Wed",
-      "3": "Thu",
-      "4": "Fri",
-      "5": "Sat",
-      "6": "Sun"
-    },
-    "currentStreak": "current streak",
-    "tasksToday": "Tasks today"
-  },
-  "leagues": {
-    "title": "Level Map",
-    "level": "Level",
-    "yourLevel": "Your level:",
-    "toMyLevel": "To my level",
-    "greenSprouts": "Green Sprouts",
-    "desc1": "Your journey begins!\n1 AI recipe, 3 photos, 5 barcodes, 10 manual entries per month.",
-    "advancedBeginner": "Advanced Beginner",
-    "desc2": "You're getting the hang of it:\n2 AI recipes, 5 photos, 10 barcodes, 20 manual entries.",
-    "experienced": "Experienced",
-    "desc3": "Your eco-footprint is getting smaller:\n5 AI recipes, 15 photos, 30 barcodes, 50 manual entries.",
-    "freshnessMasters": "Freshness Masters",
-    "desc4": "You're in a new league!\n10 AI recipes, 30 photos, 50 barcodes, 100 manual entries.",
-    "chef": "Chef",
-    "desc5": "Cooking smart:\n15 AI recipes, 40 photos, 80 barcodes, 150 manual entries.",
-    "ecoHeroes": "Eco-Heroes",
-    "desc6": "The Planet's elite league!\n20 AI recipes, 50 photos, 100 barcodes, unlimited manual entries.",
-    "absoluteGuru": "Absolute Guru",
-    "desc7": "Maximum level!\nYou have achieved perfection in the Zero Waste style."
   }
 }
