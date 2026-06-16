@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  Switch, StatusBar, Animated, Platform
+  Switch, StatusBar, Animated, Platform, TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +16,7 @@ import RecipeCard from '../components/RecipeCard';
 
 const RECIPES_STORAGE_KEY = 'generated_recipes';
 
-export default function RecipesScreen() {
+export default function RecipesScreen({ navigation }) {
   const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [includeGrocery, setIncludeGrocery] = useState(false);
@@ -138,7 +138,12 @@ export default function RecipesScreen() {
 
       {/* ── Консистентний Header ── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('recipes.title')}</Text>
+        <View style={styles.headerTop}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('recipes.title')}</Text>
+        </View>
 
         <View style={styles.controls}>
           <View style={styles.switchContainer}>
@@ -156,11 +161,12 @@ export default function RecipesScreen() {
             title={loading ? t('recipes.cancelBtn') : t('recipes.generateBtn')}
             onPress={handleGenerateRecipes}
             loading={loading && recipes.length === 0}
-            style={styles.generateBtn}
+            style={[styles.generateBtn, { backgroundColor: COLORS.primaryContainer }]}
+            textStyle={{ color: COLORS.onPrimaryContainer }}
             disabled={loading}
             icon={
               <Animated.View style={animatedStyle}>
-                <Ionicons name={loading ? "close" : "sparkles-outline"} size={22} color={COLORS.onPrimary} />
+                <Ionicons name={loading ? "close" : "sparkles-outline"} size={22} color={COLORS.onPrimaryContainer} />
               </Animated.View>
             }
           />
@@ -200,6 +206,7 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
   // ─── Header ────────────────────────────────────────────────────────────────
   header: {
     paddingTop: insets.top || 20,
+    paddingHorizontal: 20,
     paddingBottom: 24,
     backgroundColor: COLORS.surface,
     borderBottomLeftRadius: 24,
@@ -211,19 +218,25 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     shadowRadius: 8,
     zIndex: 10
   },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
   headerTitle: {
     fontSize: 32,
     fontWeight: '800',
     color: COLORS.text,
-    paddingHorizontal: 20,
     marginTop: 12,
-    marginBottom: 20,
     letterSpacing: 0.5
+  },
+  backButton: {
+    marginTop: 12,
   },
 
   // ─── Controls ──────────────────────────────────────────────────────────────
   controls: {
-    paddingHorizontal: 20,
     gap: 16
   },
   switchContainer: {
@@ -241,7 +254,6 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     fontWeight: '600'
   },
   generateBtn: {
-    height: 52,
     borderRadius: 16,
     elevation: 4,
     shadowColor: '#000',

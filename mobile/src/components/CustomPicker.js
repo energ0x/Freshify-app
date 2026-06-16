@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useThemeStore from '../store/themeStore';
 
@@ -9,44 +9,66 @@ export default function CustomPicker({
   selectedValue,
   onValueChange,
 }) {
-  const { colors: COLORS } = useThemeStore();
+  const { colors: COLORS, theme } = useThemeStore();
   const [modalVisible, setModalVisible] = useState(false);
-  const styles = getStyles(COLORS);
+  const isDark = theme === 'dark';
+  const styles = getStyles(COLORS, isDark);
 
-  const selectedLabel = items.find(item => item.value === selectedValue)?.label || `Обрати ${label.toLowerCase()}`;
+  const selectedItem = items.find(item => item.value === selectedValue);
+  const selectedLabel = selectedItem ? selectedItem.label : `Обрати ${label?.toLowerCase() || 'значення'}`;
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() => {
-        onValueChange(item.value);
-        setModalVisible(false);
-      }}>
-      <Text style={styles.itemText}>{item.label}</Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }) => {
+    const isSelected = item.value === selectedValue;
+    return (
+      <TouchableOpacity
+        style={[styles.item, isSelected && styles.itemSelected]}
+        onPress={() => {
+          onValueChange(item.value);
+          setModalVisible(false);
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.itemText, isSelected && styles.itemTextSelected]}>
+          {item.label}
+        </Text>
+        {isSelected && <Ionicons name="checkmark" size={20} color={COLORS.primary} />}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
+
       <TouchableOpacity
         style={styles.pickerButton}
-        onPress={() => setModalVisible(true)}>
-        <Text style={styles.pickerButtonText}>{selectedLabel}</Text>
-        <Ionicons name="chevron-down" size={20} color={COLORS.text} />
+        onPress={() => setModalVisible(true)}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.pickerButtonText, !selectedItem && styles.placeholderText]}>
+          {selectedLabel}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color={COLORS.onSurfaceVariant} />
       </TouchableOpacity>
 
       <Modal
         visible={modalVisible}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setModalVisible(false)}>
-        <TouchableOpacity style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setModalVisible(false)}
+        >
           <View style={styles.modalContent}>
             <FlatList
               data={items}
               renderItem={renderItem}
               keyExtractor={item => item.value.toString()}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
             />
           </View>
         </TouchableOpacity>
@@ -55,29 +77,36 @@ export default function CustomPicker({
   );
 }
 
-const getStyles = (COLORS) => StyleSheet.create({
+const getStyles = (COLORS, isDark) => StyleSheet.create({
   container: {
     marginBottom: 20,
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.text,
+    fontWeight: '700',
+    color: COLORS.onSurfaceVariant,
     marginBottom: 8,
+    marginLeft: 4,
   },
   pickerButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: COLORS.surfaceVariant,
-    borderRadius: 12,
+    borderRadius: 16, // Округлення як у наших інпутів
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    height: 56, // Висота як у наших інпутів
   },
   pickerButtonText: {
     fontSize: 16,
+    fontWeight: '500',
     color: COLORS.text,
   },
+  placeholderText: {
+    color: COLORS.onSurfaceVariant,
+  },
+
+  // ─── Modal Styles ────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -86,18 +115,33 @@ const getStyles = (COLORS) => StyleSheet.create({
   },
   modalContent: {
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
-    padding: 10,
-    width: '80%',
+    borderRadius: 24,
+    width: '90%',
     maxHeight: '60%',
+    overflow: 'hidden',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.3 : 0.15,
+    shadowRadius: 10,
   },
   item: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  itemSelected: {
+    backgroundColor: `${COLORS.primary}15`, // Легкий фон для вибраного
   },
   itemText: {
     fontSize: 16,
+    fontWeight: '500',
     color: COLORS.text,
+  },
+  itemTextSelected: {
+    color: COLORS.primary,
+    fontWeight: '700',
   },
 });

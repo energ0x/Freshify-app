@@ -31,9 +31,17 @@ export default function ProductDetailScreen({ route, navigation }) {
   if (!product) {
     const styles = getStyles(COLORS, insets, null, isDark);
     return (
-      <View style={styles.center}>
-        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
-        <Text style={styles.notFoundText}>{t('productDetail.notFound')}</Text>
+      <View style={styles.container}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+            <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('productDetail.title', 'Деталі продукту')}</Text>
+        </View>
+        <View style={styles.center}>
+          <Text style={styles.notFoundText}>{t('productDetail.notFound')}</Text>
+        </View>
       </View>
     );
   }
@@ -90,7 +98,14 @@ export default function ProductDetailScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="arrow-back" size={28} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('productDetail.title', 'Деталі продукту')}</Text>
+      </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
@@ -197,15 +212,47 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.background
+    paddingHorizontal: 20,
   },
   notFoundText: {
-    color: COLORS.textLight,
+    color: COLORS.onSurfaceVariant,
     fontSize: 16,
-    fontWeight: '500'
+    fontWeight: '500',
+    textAlign: 'center',
   },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingTop: insets.top + 8,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: COLORS.text,
+    letterSpacing: 0.5,
+  },
+  backButton: {
+    // Стилі для кнопки "назад"
+  },
+
+  // ─── Content ───────────────────────────────────────────────────────────────
   content: {
     padding: 20,
+    paddingTop: 24,
     paddingBottom: (insets?.bottom || 20) + 40
   },
 
@@ -334,7 +381,6 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     gap: 16
   },
   actionBtn: {
-    height: 52,
     borderRadius: 16,
     elevation: 2,
     shadowColor: '#000',
@@ -343,7 +389,6 @@ const getStyles = (COLORS, insets, expiryColor, isDark) => StyleSheet.create({
     shadowRadius: 4,
   },
   deleteButton: {
-    height: 52,
     borderRadius: 16,
     borderColor: COLORS.danger ?? '#FF3B30',
     borderWidth: 1.5

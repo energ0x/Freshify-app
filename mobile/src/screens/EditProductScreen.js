@@ -104,7 +104,6 @@ export default function EditProductScreen({ navigation, route }) {
     try {
       let finalImageUrl = form.image_url;
 
-      // Якщо обрано нове фото з галереї
       if (form.localImageUri && !form.localImageUri.startsWith('http') && form.localImageUri !== `${API_URL}${form.image_url}`) {
         const uploadRes = await productsAPI.uploadImage(form.localImageUri);
         finalImageUrl = uploadRes.data.image_url;
@@ -150,11 +149,25 @@ export default function EditProductScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.background} />
+      <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={COLORS.surface} />
+      
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton} activeOpacity={0.7}>
+          <Ionicons name="close-outline" size={32} color={COLORS.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t('screens.editProduct', 'Редагувати')}</Text>
+      </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.content} 
+          showsVerticalScrollIndicator={false} 
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.formCard}>
             <View style={styles.imageSection}>
               <TouchableOpacity style={styles.imagePlaceholder} onPress={pickImage} activeOpacity={0.8}>
@@ -279,14 +292,16 @@ export default function EditProductScreen({ navigation, route }) {
               />
             </View>
           </View>
+        </ScrollView>
 
+        <View style={styles.footer}>
           <CustomButton
             title={t('common.save')}
             onPress={handleSave}
             loading={loading}
             style={styles.saveButton}
           />
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -297,9 +312,41 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background
   },
+
+  // ─── Header ────────────────────────────────────────────────────────────────
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center', // Center title
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    backgroundColor: COLORS.surface,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    zIndex: 10,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    padding: 8,
+  },
+
+  // ─── Content ───────────────────────────────────────────────────────────────
   content: {
     padding: 20,
-    paddingBottom: (insets.bottom || 20) + 40
+    paddingBottom: 20,
   },
 
   // ─── Form Card ─────────────────────────────────────────────────────────────
@@ -307,7 +354,6 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     backgroundColor: COLORS.surface,
     padding: 24,
     borderRadius: 24,
-    marginBottom: 24,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -395,10 +441,17 @@ const getStyles = (COLORS, insets, isDark) => StyleSheet.create({
     fontWeight: '500'
   },
 
-  // ─── Button ────────────────────────────────────────────────────────────────
+  // ─── Footer & Button ───────────────────────────────────────────────────────
+  footer: {
+    padding: 20,
+    paddingTop: 10,
+    paddingBottom: insets.bottom || 20,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderColor: COLORS.border,
+  },
   saveButton: {
     height: 52,
     borderRadius: 16,
-    marginBottom: 20
   },
 });

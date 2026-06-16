@@ -1,8 +1,9 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
-import { COLORS } from '../utils/constants';
+import useThemeStore from '../store/themeStore'; // Import theme store
 
 export default function CustomButton({ title, onPress, loading, variant = 'primary', style, textStyle, disabled, icon }) {
+  const { colors: COLORS } = useThemeStore(); // Get colors from theme store
   const isFilled = variant === 'primary';
   const isOutline = variant === 'outline';
   const isDanger = variant === 'danger';
@@ -24,12 +25,57 @@ export default function CustomButton({ title, onPress, loading, variant = 'prima
     return COLORS.text;
   };
 
+  // Dynamically create styles to use theme colors
+  const styles = StyleSheet.create({
+    button: {
+      borderRadius: 100, // Pill shape
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      elevation: 2, // Android shadow
+      shadowColor: '#000', // iOS shadow
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.2,
+      shadowRadius: 2,
+    },
+    outline: {
+      borderWidth: 1.5,
+      borderColor: isDanger ? COLORS.danger : COLORS.outline, // Use danger color for border if variant is danger
+      elevation: 0,
+    },
+    disabled: {
+      elevation: 0,
+      shadowOpacity: 0,
+      backgroundColor: COLORS.surfaceVariant,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center', // Center content horizontally
+    },
+    iconContainer: {
+      marginRight: 10, // A bit more space
+    },
+    text: {
+      fontSize: 16,
+      fontWeight: '700', // Bolder text
+      textAlign: 'center',
+    },
+  });
+
+  // Special style for outline danger
+  const outlineDangerStyle = (isOutline && isDanger) ? { borderColor: COLORS.danger } : {};
+  const outlineDangerTextStyle = (isOutline && isDanger) ? { color: COLORS.danger } : {};
+
+
   return (
     <TouchableOpacity
       style={[
         styles.button,
         { backgroundColor: getBackgroundColor() },
         isOutline && styles.outline,
+        isOutline && isDanger && outlineDangerStyle,
         (disabled || loading) && styles.disabled,
         style,
       ]}
@@ -42,45 +88,9 @@ export default function CustomButton({ title, onPress, loading, variant = 'prima
       ) : (
         <View style={styles.content}>
           {icon && <View style={styles.iconContainer}>{icon}</View>}
-          <Text style={[styles.text, { color: getTextColor() }, textStyle]}>{title}</Text>
+          <Text style={[styles.text, { color: getTextColor() }, textStyle, isOutline && isDanger && outlineDangerTextStyle]}>{title}</Text>
         </View>
       )}
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  button: {
-    borderRadius: 100, // Pill shape
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  outline: {
-    borderWidth: 1,
-    borderColor: COLORS.outline,
-    elevation: 0,
-  },
-  disabled: {
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    marginRight: 8,
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-});

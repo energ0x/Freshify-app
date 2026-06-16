@@ -327,7 +327,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="ProductDetail"
               component={ProductDetailScreen}
-              options={{ headerShown: true, title: t("screens.productDetail") }}
+              options={{ headerShown: false, title: t("screens.productDetail") }}
             />
             <Stack.Screen
               name="History"
@@ -400,7 +400,7 @@ export default function AppNavigator() {
               name="EditProduct"
               component={EditProductScreen}
               options={{
-                headerShown: true,
+                headerShown: false,
                 title: t("screens.editProduct"),
                 ...TransitionPresets.ModalPresentationIOS,
               }}
