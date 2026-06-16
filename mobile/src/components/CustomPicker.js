@@ -79,12 +79,14 @@ export default function CustomPicker({
 
 const getStyles = (COLORS, isDark) => StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: COLORS.onSurfaceVariant,
+    textTransform: 'uppercase', // Додано для ідентичності
+    letterSpacing: 0.5,
     marginBottom: 8,
     marginLeft: 4,
   },
@@ -95,7 +97,7 @@ const getStyles = (COLORS, isDark) => StyleSheet.create({
     backgroundColor: COLORS.surfaceVariant,
     borderRadius: 16, // Округлення як у наших інпутів
     paddingHorizontal: 16,
-    height: 56, // Висота як у наших інпутів
+    height: 52, // Висота як у наших інпутів
   },
   pickerButtonText: {
     fontSize: 16,

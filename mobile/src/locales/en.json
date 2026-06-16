@@ -157,7 +157,8 @@
     "proteins": "Proteins",
     "fats": "Fats",
     "carbs": "Carbs",
-    "calories": "Kcal"
+    "calories": "Kcal",
+    "expiryLabel": "EXPIRY DATE"
   },
   "recipes": {
     "title": "AI Recipes",

@@ -161,7 +161,8 @@
     "proteins": "Білки",
     "fats": "Жири",
     "carbs": "Вугл.",
-    "calories": "Ккал"
+    "calories": "Ккал",
+    "expiryLabel": "ТЕРМІН ПРИДАТНОСТІ"
   },
   "recipes": {
     "title": "Рецепти від AI",

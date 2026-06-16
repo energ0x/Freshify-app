@@ -158,23 +158,84 @@ export default function AnalyticsScreen({ navigation }) {
   if (rawNutritionData.length === 0) {
     finalLabels = [t('analytics.noData', 'Немає даних'), ' '];
     finalData = { calories: [0, 0], proteins: [0, 0], fats: [0, 0], carbs: [0, 0] };
-  } else if (rawNutritionData.length === 1) {
-    finalLabels = [rawNutritionData[0].date, ' '];
-    const d = rawNutritionData[0];
-    finalData = {
-      calories: [d.calories, d.calories],
-      proteins: [d.proteins, d.proteins],
-      fats: [d.fats, d.fats],
-      carbs: [d.carbs, d.carbs],
-    };
   } else {
-    finalLabels = rawNutritionData.map(d => d.date);
-    finalData = {
-      calories: rawNutritionData.map(d => d.calories),
-      proteins: rawNutritionData.map(d => d.proteins),
-      fats: rawNutritionData.map(d => d.fats),
-      carbs: rawNutritionData.map(d => d.carbs),
+    // 1. Визначаємо початкову і кінцеву дати для графіка
+    let startDate, endDate;
+    const now = new Date();
+    
+    if (activePeriod.id === 'custom') {
+      startDate = new Date(customDateRange.start);
+      endDate = new Date(customDateRange.end);
+    } else if (activePeriod.id === 'all') {
+      startDate = new Date(rawNutritionData[0].date);
+      endDate = now;
+    } else {
+      endDate = now;
+      startDate = new Date();
+      startDate.setDate(endDate.getDate() - (activePeriod.days || 30) + 1);
+    }
+
+    // Коригуємо початкову дату, якщо запис був раніше за розрахований період
+    const firstDataDate = new Date(rawNutritionData[0].date);
+    if (firstDataDate < startDate && activePeriod.id !== 'custom') {
+      startDate = firstDataDate;
+    }
+
+    // 2. Генеруємо масив усіх дат (уникаючи проблеми часових поясів з toISOString)
+    const allDates = [];
+    let curr = new Date(startDate);
+    curr.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(0, 0, 0, 0);
+
+    const formatDateLocal = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     };
+
+    while (curr <= end) {
+      allDates.push(formatDateLocal(curr));
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    // 3. Мапимо отримані з бекенду дані по датах
+    const dataByDate = {};
+    rawNutritionData.forEach(d => {
+      dataByDate[d.date] = d;
+    });
+
+    // Крок для відображення підписів осі X, щоб дати не накладалися одна на одну
+    const maxLabels = 6;
+    const step = Math.max(1, Math.floor(allDates.length / maxLabels));
+
+    allDates.forEach((dateStr, index) => {
+      const [, month, day] = dateStr.split('-');
+      
+      // Відображаємо підпис лише для кожного N-го елемента або останнього
+      if (index % step === 0 || index === allDates.length - 1) {
+        finalLabels.push(`${day}.${month}`);
+      } else {
+        finalLabels.push(''); // Пустий підпис для збереження пропорцій графіка
+      }
+
+      // Якщо в цей день не було споживання, ставимо 0
+      const dayData = dataByDate[dateStr] || { calories: 0, proteins: 0, fats: 0, carbs: 0 };
+      finalData.calories.push(dayData.calories);
+      finalData.proteins.push(dayData.proteins);
+      finalData.fats.push(dayData.fats);
+      finalData.carbs.push(dayData.carbs);
+    });
+
+    // Захист для графіка, якщо після всіх маніпуляцій вийшов лише 1 день
+    if (allDates.length === 1) {
+      finalLabels.push(' ');
+      finalData.calories.push(finalData.calories[0]);
+      finalData.proteins.push(finalData.proteins[0]);
+      finalData.fats.push(finalData.fats[0]);
+      finalData.carbs.push(finalData.carbs[0]);
+    }
   }
 
   const nutritionDatasets = [];
@@ -272,9 +333,9 @@ export default function AnalyticsScreen({ navigation }) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <LineChart
               data={lineChartData}
-              width={Math.max(screenWidth - 88, rawNutritionData.length * 40)}
+              width={Math.max(screenWidth - 88, finalLabels.length * 40)}
               height={220}
-              withDots={rawNutritionData.length < 30}
+              withDots={finalLabels.length < 30}
               chartConfig={{
                 backgroundColor: COLORS.surface,
                 backgroundGradientFrom: COLORS.surface,

@@ -320,7 +320,7 @@ export default function AddProductScreen({ navigation, route }) {
 
             <View style={styles.section}>
               <DatePicker
-                label={t('addProduct.expiryLabel', 'Термін придатності')}
+                label={t('addProduct.expiryLabel')}
                 date={form.expiry_date}
                 onDateChange={(date) => updateForm(index, 'expiry_date', date)}
                 minimumDate={today}
