@@ -40,7 +40,8 @@ def get_analytics(
         func.sum(ConsumedProduct.quantity).label("total_quantity"),
         func.count(ConsumedProduct.id).label("times_consumed"),
     ).join(Category, ConsumedProduct.category_id == Category.id, isouter=True).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since,
+             ConsumedProduct.consumed_at <= until)
     ).group_by(
         ConsumedProduct.product_name, Category.name, ConsumedProduct.unit
     ).all()
@@ -49,16 +50,18 @@ def get_analytics(
         Category.name.label("category"),
         func.sum(ConsumedProduct.quantity).label("total"),
     ).join(Category, ConsumedProduct.category_id == Category.id, isouter=True).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since,
+             ConsumedProduct.consumed_at <= until)
     ).group_by(Category.name).all()
 
     daily = db.query(
         func.date_trunc("day", ConsumedProduct.consumed_at).label("day"),
         func.count(ConsumedProduct.id).label("count"),
     ).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since,
+             ConsumedProduct.consumed_at <= until)
     ).group_by("day").order_by("day").all()
-    
+
     multiplier = case(
         (func.lower(ConsumedProduct.unit).in_(['г', 'g', 'мл', 'ml']), ConsumedProduct.quantity / 100.0),
         (func.lower(ConsumedProduct.unit).in_(['кг', 'kg', 'л', 'l']), ConsumedProduct.quantity * 10.0),
@@ -67,32 +70,13 @@ def get_analytics(
 
     nutrition = db.query(
         func.date_trunc("day", ConsumedProduct.consumed_at).label("day"),
-        func.sum(
-            func.coalesce(
-                ConsumedProduct.calories_consumed,
-                func.coalesce(Product.calories, 0) * multiplier
-            )
-        ).label("total_calories"),
-        func.sum(
-            func.coalesce(
-                ConsumedProduct.proteins_consumed,
-                func.coalesce(Product.proteins, 0) * multiplier
-            )
-        ).label("total_proteins"),
-        func.sum(
-            func.coalesce(
-                ConsumedProduct.fats_consumed,
-                func.coalesce(Product.fats, 0) * multiplier
-            )
-        ).label("total_fats"),
-        func.sum(
-            func.coalesce(
-                ConsumedProduct.carbohydrates_consumed,
-                func.coalesce(Product.carbohydrates, 0) * multiplier
-            )
-        ).label("total_carbs"),
-    ).outerjoin(Product, ConsumedProduct.product_id == Product.id).filter(
-        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since, ConsumedProduct.consumed_at <= until)
+        func.sum(Product.calories * multiplier).label("total_calories"),
+        func.sum(Product.proteins * multiplier).label("total_proteins"),
+        func.sum(Product.fats * multiplier).label("total_fats"),
+        func.sum(Product.carbohydrates * multiplier).label("total_carbs"),
+    ).join(Product, ConsumedProduct.product_id == Product.id).filter(
+        and_(ConsumedProduct.user_id == current_user.id, ConsumedProduct.consumed_at >= since,
+             ConsumedProduct.consumed_at <= until)
     ).group_by("day").order_by("day").all()
 
     piece_units = ('pcs', 'шт')
@@ -148,7 +132,7 @@ async def websocket_ai_recommendations(
     websocket: WebSocket,
     days: int = Query(30, ge=7, le=365),
     token: str = Query(...),
-    lang: str = Query("uk"), # <-- ДОДАНО
+    lang: str = Query("uk"),  # <-- ДОДАНО
 ):
     await websocket.accept()
     db: Session = next(get_db())
