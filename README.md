@@ -4,6 +4,31 @@
 
 ---
 
+## 📷 Знімки екрану
+
+<table>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/c336901f-615e-4459-9bdf-af3d1402b57d" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/2a995500-3a2b-4e09-b6ec-f0648d78fe96" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/1585610b-2123-449e-adeb-d0933f8340cb" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/055df70d-9ec2-4930-87c9-ea99bd2baa74" width="200"></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/624edaed-1fa1-4ff1-9540-d377b6d49c53" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/c4b1db43-a326-4a2b-acd5-8d4e574b5636" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/b3051531-f14b-454c-9a2f-ca429670902b" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/5b76c5ac-b90a-4013-bb47-e1a4d131f395" width="200"></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/da02f85d-3290-4dfc-8366-585b491ba31f" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/4a6eaacf-1b75-4ce1-9530-e333772980ba" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/f7f6ddc9-a707-4743-bf85-27f6869451d3" width="200"></td>
+    <td><img src="https://github.com/user-attachments/assets/e8960c06-2786-428b-a43a-6726931b7c23" width="200"></td>
+  </tr>
+</table>
+
+---
+
 ## 🏛 Архітектура
 
 *   **Бекенд:** FastAPI. Використовує SQLAlchemy для взаємодії з базою даних та Pydantic для валідації.
