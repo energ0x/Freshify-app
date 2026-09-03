@@ -1,3 +1,4 @@
+import uuid
 import logging
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -20,6 +21,8 @@ def check_and_reset_limits(user: User, db: Session) -> None:
 
     now = datetime.now(timezone.utc)
     reset_at = user.limits_reset_at
+    if reset_at and reset_at.tzinfo is None:
+        reset_at = reset_at.replace(tzinfo=timezone.utc)
 
     if reset_at is None or (now - reset_at) > timedelta(minutes=LIMIT_RESET_MINUTES):
         user.photo_uploads_count = 0
@@ -28,6 +31,7 @@ def check_and_reset_limits(user: User, db: Session) -> None:
         user.limits_reset_at = now
         db.commit()
         db.refresh(user)
+
 
 
 def get_current_user(
@@ -45,10 +49,11 @@ def get_current_user(
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except JWTError:
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+    except (JWTError, ValueError, AttributeError):
         raise credentials_exception
 
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.id == user_uuid).first()
     if user is None:
         raise credentials_exception
 
@@ -74,7 +79,9 @@ def get_user_from_ws_token(token: str, db: Session) -> User | None:
         user_id: str = payload.get("sub")
         if user_id is None:
             return None
-    except JWTError:
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+    except (JWTError, ValueError, AttributeError):
         return None
 
-    return db.query(User).filter(User.id == user_id).first()
+    return db.query(User).filter(User.id == user_uuid).first()
+

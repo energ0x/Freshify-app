@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
 from app.db.models import User, DailyTask, UserDailyTask, Streak, Product, ConsumedProduct
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from app.core.config import get_settings
 
@@ -12,12 +12,13 @@ def _utc_range_for_local_date(on_date):
     try:
         local_tz = ZoneInfo(tz_name)
     except Exception:
-        local_tz = ZoneInfo('UTC')
+        local_tz = timezone.utc
     start_local = datetime(on_date.year, on_date.month, on_date.day, 0, 0, 0, tzinfo=local_tz)
     end_local = start_local + timedelta(days=1)
-    start_utc = start_local.astimezone(ZoneInfo('UTC'))
-    end_utc = end_local.astimezone(ZoneInfo('UTC'))
+    start_utc = start_local.astimezone(timezone.utc)
+    end_utc = end_local.astimezone(timezone.utc)
     return start_utc, end_utc
+
 
 
 def check_add_product(db, user_id, on_date):
@@ -73,8 +74,9 @@ def _local_today():
     try:
         tz = ZoneInfo(tz_name)
     except Exception:
-        tz = ZoneInfo('UTC')
+        tz = timezone.utc
     return datetime.now(tz).date()
+
 
 
 def init_daily_tasks(db: Session):
