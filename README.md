@@ -51,40 +51,40 @@
 
 <table>
   <tr>
-    <td align="center"><b>Холодильник та бейджі</b></td>
-    <td align="center"><b>Деталі та нутрієнти</b></td>
-    <td align="center"><b>AI-сканер камери</b></td>
-    <td align="center"><b>AI-рецепти (WebSocket)</b></td>
+    <td align="center"><b>Екран алергенів</b></td>
+    <td align="center"><b>Екран дієт</b></td>
+    <td align="center"><b>AI-рецепти (додавання продуктів до кошика)</b></td>
+    <td align="center"><b>Дейліки та стрік (гейміфікація)</b></td>
   </tr>
   <tr>
-    <td><img src="https://github.com/user-attachments/assets/c336901f-615e-4459-9bdf-af3d1402b57d" width="190" alt="Розумний холодильник"></td>
-    <td><img src="https://github.com/user-attachments/assets/2a995500-3a2b-4e09-b6ec-f0648d78fe96" width="190" alt="Деталі продукту"></td>
-    <td><img src="https://github.com/user-attachments/assets/1585610b-2123-449e-adeb-d0933f8340cb" width="190" alt="AI Сканування"></td>
-    <td><img src="https://github.com/user-attachments/assets/055df70d-9ec2-4930-87c9-ea99bd2baa74" width="190" alt="Генерація рецептів"></td>
+    <td><img src="https://github.com/user-attachments/assets/c336901f-615e-4459-9bdf-af3d1402b57d" width="190" alt="Вибір алергенів"></td>
+    <td><img src="https://github.com/user-attachments/assets/2a995500-3a2b-4e09-b6ec-f0648d78fe96" width="190" alt="Вибір дієти"></td>
+    <td><img src="https://github.com/user-attachments/assets/1585610b-2123-449e-adeb-d0933f8340cb" width="190" alt="AI рецепти (можливість додати продукти до кошика)"></td>
+    <td><img src="https://github.com/user-attachments/assets/055df70d-9ec2-4930-87c9-ea99bd2baa74" width="190" alt="Гейміфікація (стрік, дейліки)"></td>
   </tr>
   <tr>
+    <td align="center"><b>AI-рецепти</b></td>
+    <td align="center"><b>Профіль користувача</b></td>
+    <td align="center"><b>Історія спожитих продуктів</b></td>
     <td align="center"><b>Список покупок</b></td>
-    <td align="center"><b>Щоденні квести та стріки</b></td>
-    <td align="center"><b>Досягнення (Achievements)</b></td>
-    <td align="center"><b>Ліга користувачів (Leagues)</b></td>
   </tr>
   <tr>
-    <td><img src="https://github.com/user-attachments/assets/624edaed-1fa1-4ff1-9540-d377b6d49c53" width="190" alt="Список покупок"></td>
-    <td><img src="https://github.com/user-attachments/assets/c4b1db43-a326-4a2b-acd5-8d4e574b5636" width="190" alt="Щоденні квести"></td>
-    <td><img src="https://github.com/user-attachments/assets/b3051531-f14b-454c-9a2f-ca429670902b" width="190" alt="Досягнення"></td>
-    <td><img src="https://github.com/user-attachments/assets/5b76c5ac-b90a-4013-bb47-e1a4d131f395" width="190" alt="Ліги"></td>
+    <td><img src="https://github.com/user-attachments/assets/624edaed-1fa1-4ff1-9540-d377b6d49c53" width="190" alt="AI рецепти"></td>
+    <td><img src="https://github.com/user-attachments/assets/c4b1db43-a326-4a2b-acd5-8d4e574b5636" width="190" alt="Профіль користувача"></td>
+    <td><img src="https://github.com/user-attachments/assets/b3051531-f14b-454c-9a2f-ca429670902b" width="190" alt="Історія спожитих продуктів"></td>
+    <td><img src="https://github.com/user-attachments/assets/5b76c5ac-b90a-4013-bb47-e1a4d131f395" width="190" alt="Список покупок"></td>
   </tr>
   <tr>
     <td align="center"><b>Аналітика споживання</b></td>
-    <td align="center"><b>ШІ-поради щодо раціону</b></td>
-    <td align="center"><b>Профіль, дієта та авто-донат</b></td>
-    <td align="center"><b>Тарифи та Premium</b></td>
+    <td align="center"><b>Головний екран (продукти)</b></td>
+    <td align="center"><b>Досягнення користувача</b></td>
+    <td align="center"><b>Аналітика (поради від ШІ)</b></td>
   </tr>
   <tr>
     <td><img src="https://github.com/user-attachments/assets/da02f85d-3290-4dfc-8366-585b491ba31f" width="190" alt="Аналітика"></td>
-    <td><img src="https://github.com/user-attachments/assets/4a6eaacf-1b75-4ce1-9530-e333772980ba" width="190" alt="ШІ-рекомендації"></td>
-    <td><img src="https://github.com/user-attachments/assets/f7f6ddc9-a707-4743-bf85-27f6869451d3" width="190" alt="Налаштування"></td>
-    <td><img src="https://github.com/user-attachments/assets/e8960c06-2786-428b-a43a-6726931b7c23" width="190" alt="Преміум тариф"></td>
+    <td><img src="https://github.com/user-attachments/assets/4a6eaacf-1b75-4ce1-9530-e333772980ba" width="190" alt="Головний екран"></td>
+    <td><img src="https://github.com/user-attachments/assets/f7f6ddc9-a707-4743-bf85-27f6869451d3" width="190" alt="Досягнення"></td>
+    <td><img src="https://github.com/user-attachments/assets/e8960c06-2786-428b-a43a-6726931b7c23" width="190" alt="Аналітика (з ШІ рекомендаціями)"></td>
   </tr>
 </table>
 
